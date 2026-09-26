@@ -1,4 +1,5 @@
 import { Outlet } from "react-router";
+import { Toaster } from "sonner";
 import { MarketStatus } from "./MarketStatus";
 import { Sidebar } from "./Sidebar";
 
@@ -11,6 +12,7 @@ export function Layout() {
           <Outlet />
         </div>
       </main>
+      <Toaster position="bottom-right" richColors />
     </div>
   );
 }

@@ -36,12 +36,31 @@ export type SimulationOut = components["schemas"]["SimulationOut"];
 export type FeeEstimate = components["schemas"]["FeeEstimate"];
 export type ComponentOut = components["schemas"]["ComponentOut"];
 
-export async function apiSend(method: "PUT" | "DELETE" | "PATCH", path: string, body?: unknown): Promise<unknown> {
+export type OrderIn = components["schemas"]["OrderIn"];
+export type OrderOut = components["schemas"]["OrderOut"];
+export type CounterOut = components["schemas"]["CounterOut"];
+export type PortfolioOut = components["schemas"]["PortfolioOut"];
+export type PositionOut = components["schemas"]["PositionOut"];
+export type HistoryPointOut = components["schemas"]["HistoryPointOut"];
+export type SettingsOut = components["schemas"]["SettingsOut"];
+
+async function errorFrom(response: Response, path: string): Promise<ApiError> {
+  let message = `Erreur ${response.status} sur ${path}`;
+  try {
+    const body = (await response.json()) as { detail?: unknown };
+    if (typeof body.detail === "string") message = body.detail;
+  } catch {
+    // corps absent ou non JSON : message générique
+  }
+  return new ApiError(response.status, message);
+}
+
+export async function apiSend(method: "POST" | "PUT" | "DELETE" | "PATCH", path: string, body?: unknown): Promise<unknown> {
   const response = await fetch(path, {
     method,
     headers: { Accept: "application/json", ...(body !== undefined ? { "Content-Type": "application/json" } : {}) },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (!response.ok) throw new ApiError(response.status, `Erreur ${response.status} sur ${path}`);
+  if (!response.ok) throw await errorFrom(response, path);
   return response.status === 204 ? null : response.json();
 }
