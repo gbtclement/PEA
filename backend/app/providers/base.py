@@ -32,6 +32,24 @@ class DailyBar:
 
 
 @dataclass(frozen=True)
+class IntradayBar:
+    time: datetime
+    open: float | None
+    high: float | None
+    low: float | None
+    close: float
+    volume: int | None
+
+
+@dataclass(frozen=True)
+class NewsItem:
+    title: str
+    url: str
+    publisher: str | None
+    published_at: datetime | None
+
+
+@dataclass(frozen=True)
 class Fundamentals:
     """Ratios en fraction (0,0328 = 3,28 %) ; dette/capitaux propres en ratio."""
 
@@ -58,3 +76,7 @@ class MarketDataProvider(Protocol):
     def get_daily_history(self, tickers: list[str], start: date) -> dict[str, list[DailyBar]]: ...
 
     def get_fundamentals(self, ticker: str) -> Fundamentals | None: ...
+
+    def get_intraday(self, ticker: str, period: str, interval: str) -> list[IntradayBar]: ...
+
+    def get_news(self, ticker: str) -> list[NewsItem]: ...

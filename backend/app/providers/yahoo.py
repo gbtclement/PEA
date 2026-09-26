@@ -10,7 +10,7 @@ from typing import Any
 import pandas as pd
 import yfinance as yf
 
-from app.providers.base import DailyBar, Fundamentals, Quote
+from app.providers.base import DailyBar, Fundamentals, IntradayBar, NewsItem, Quote
 from app.providers.retry import with_retries
 from app.services.market_calendar import PARIS
 
@@ -63,6 +63,44 @@ def bars_from_frame(frame: pd.DataFrame) -> list[DailyBar]:
     ]
 
 
+def intraday_from_frame(frame: pd.DataFrame) -> list[IntradayBar]:
+    bars = []
+    for index, row in frame.iterrows():
+        moment = index.to_pydatetime()
+        moment = moment.replace(tzinfo=UTC) if moment.tzinfo is None else moment.astimezone(UTC)
+        bars.append(IntradayBar(time=moment, open=_num(row["Open"]), high=_num(row["High"]), low=_num(row["Low"]),
+                                close=float(row["Close"]), volume=_int(row["Volume"])))
+    return bars
+
+
+def _parse_datetime(value: Any) -> datetime | None:
+    if isinstance(value, (int, float)):
+        return datetime.fromtimestamp(value, tz=UTC)
+    if isinstance(value, str):
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00")).astimezone(UTC)
+        except ValueError:
+            return None
+    return None
+
+
+def parse_news(items: Any) -> list[NewsItem]:
+    """Accepte l'ancien format yfinance (champs à plat) et le nouveau (sous-objet `content`)."""
+    news = []
+    for item in items if isinstance(items, list) else []:
+        if not isinstance(item, dict):
+            continue
+        content = item.get("content") if isinstance(item.get("content"), dict) else item
+        title = content.get("title")
+        url = (content.get("canonicalUrl") or {}).get("url") or content.get("link")
+        if not title or not url:
+            continue
+        publisher = (content.get("provider") or {}).get("displayName") or content.get("publisher")
+        published = _parse_datetime(content.get("pubDate") or content.get("providerPublishTime"))
+        news.append(NewsItem(title=title, url=url, publisher=publisher, published_at=published))
+    return news
+
+
 def quote_from_frame(frame: pd.DataFrame, fetched_at: datetime) -> Quote:
     last = frame.iloc[-1]
     price = float(last["Close"])
@@ -105,6 +143,7 @@ class YahooProvider:
         fundamentals_pause_seconds: float = 0.5,
         download: Callable[..., pd.DataFrame] | None = None,
         ticker_info: Callable[[str], dict[str, Any]] | None = None,
+        ticker_news: Callable[[str], Any] | None = None,
         sleep: Callable[[float], None] = time.sleep,
         now: Callable[[], datetime] = _utcnow,
     ) -> None:
@@ -113,6 +152,7 @@ class YahooProvider:
         self._fundamentals_pause = fundamentals_pause_seconds
         self._download = download or yf.download
         self._ticker_info = ticker_info or (lambda ticker: yf.Ticker(ticker).info)
+        self._ticker_news = ticker_news or (lambda ticker: yf.Ticker(ticker).news)
         self._sleep = sleep
         self._now = now
         # Un seul appel Yahoo à la fois, toutes tâches confondues (limiteur de débit global).
@@ -162,3 +202,16 @@ class YahooProvider:
         if not info or not (info.get("quoteType") or info.get("symbol")):
             return None
         return fundamentals_from_info(info)
+
+    def get_intraday(self, ticker: str, period: str, interval: str) -> list[IntradayBar]:
+        frames = self._download_frames([ticker], period=period, interval=interval)
+        return intraday_from_frame(frames[ticker]) if ticker in frames else []
+
+    def get_news(self, ticker: str) -> list[NewsItem]:
+        try:
+            with self._lock:
+                items = self._ticker_news(ticker)
+        except Exception:
+            logger.warning("Actualités Yahoo indisponibles pour %s", ticker, exc_info=True)
+            return []
+        return parse_news(items)
