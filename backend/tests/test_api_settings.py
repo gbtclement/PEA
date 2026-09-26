@@ -27,3 +27,24 @@ def test_settings_rejects_invalid_grid(client):
     ):
         assert client.put("/api/settings", json={**base, "fee_grid": grid}).status_code == 422, grid
     assert client.put("/api/settings", json={**base, "min_orders_per_year": -1, "fee_grid": [{"up_to": None, "rate": 0.01}]}).status_code == 422
+
+
+def test_get_user_settings_survives_concurrent_creation(db, monkeypatch):
+    """Deux requêtes simultanées au premier lancement : la seconde ne doit pas planter."""
+    from app.repositories.user_settings import get_user_settings
+
+    user = ensure_default_user(db)
+    db.add(UserSettings(user_id=user.id, min_orders_per_year=7, penalty_fee=50.0, fee_grid=[{"up_to": None, "rate": 0.01}]))
+    db.flush()
+    db.expunge_all()
+    real_get = db.get
+    calls = {"n": 0}
+
+    def stale_get(model, key, *args, **kwargs):
+        calls["n"] += 1
+        if model is UserSettings and calls["n"] == 1:
+            return None  # la ligne a été créée par une autre requête entre-temps
+        return real_get(model, key, *args, **kwargs)
+
+    monkeypatch.setattr(db, "get", stale_get)
+    assert get_user_settings(db, user.id).min_orders_per_year == 7

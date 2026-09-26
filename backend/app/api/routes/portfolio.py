@@ -30,8 +30,15 @@ def _pct(part: float, base: float) -> float | None:
 
 @router.get("/portfolio", response_model=PortfolioOut)
 def get_portfolio(db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> PortfolioOut:
-    positions = compute_positions(order_lines(db, user.id))
+    lines = order_lines(db, user.id)
+    positions = compute_positions(lines)
     realized = round(sum(p.realized_gain for p in positions.values()), 2)
+    today = paris_today()
+    bought_today: dict[int, tuple[int, float]] = {}  # titres achetés aujourd'hui : (quantité, montant)
+    for line in lines:
+        if line.side == "buy" and line.trade_date == today:
+            qty, amount = bought_today.get(line.security_id, (0, 0.0))
+            bought_today[line.security_id] = (qty + line.quantity, amount + line.quantity * line.unit_price)
     open_positions = [p for p in positions.values() if p.quantity]
     rows: list[PositionOut] = []
     day_change = 0.0
@@ -43,7 +50,12 @@ def get_portfolio(db: Session = Depends(get_db), user: User = Depends(get_curren
         price = round(native * rate, 4) if native is not None else None
         value = round(p.quantity * price, 2) if price is not None else round(p.cost, 2)
         if quote and quote.previous_close:
-            day_change += p.quantity * (quote.price - quote.previous_close) * rate
+            # Les titres achetés aujourd'hui varient depuis leur prix d'achat, pas depuis la clôture de la veille.
+            today_qty, today_amount = bought_today.get(p.security_id, (0, 0.0))
+            kept_today = min(today_qty, p.quantity)
+            average_buy = today_amount / today_qty if today_qty else 0.0
+            day_change += (p.quantity - kept_today) * (quote.price - quote.previous_close) * rate
+            day_change += kept_today * (quote.price * rate - average_buy)
         gain = round(value - p.cost, 2)
         rows.append(PositionOut(
             security_id=security.id, symbol=security.symbol, name=security.name, sector=security.sector,

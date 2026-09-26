@@ -76,3 +76,22 @@ def test_tier1_includes_held_securities(db, client):
     held = make_security(db, "HELD.PA")
     order(client, held.id, qty=1, price=10)
     assert "HELD.PA" in tier_tickers(db, 1, tier2_size=150)
+
+
+def test_day_change_for_position_bought_today_starts_from_buy_price(client, db):
+    from app.api.routes.orders import paris_today
+
+    s = make_security(db, "MC.PA")
+    order(client, s.id, qty=10, price=105, fee=0, day=paris_today().isoformat())
+    quote(db, s.id, 106, 100)
+    assert client.get("/api/portfolio").json()["day_change"] == 10.0
+
+
+def test_day_change_mixes_older_and_today_quantities(client, db):
+    from app.api.routes.orders import paris_today
+
+    s = make_security(db, "MC.PA")
+    order(client, s.id, qty=5, price=90, fee=0, day="2026-01-05")
+    order(client, s.id, qty=10, price=105, fee=0, day=paris_today().isoformat())
+    quote(db, s.id, 106, 100)
+    assert client.get("/api/portfolio").json()["day_change"] == 5 * 6 + 10 * 1

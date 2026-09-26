@@ -71,3 +71,31 @@ test("modification : préremplit l'ordre, garde ses frais et envoie un PUT", asy
   await waitFor(() => expect(fetchMock.mock.calls.some(([url, init]) => url === "/api/orders/3" && init?.method === "PUT")).toBe(true));
   expect(postBody(fetchMock, "/api/orders/3")).toMatchObject({ trade_date: "2026-03-02", quantity: 10, fee: 2.4 });
 });
+
+test("modification : changer la quantité recalcule les frais", async () => {
+  const fetchMock = mockFetch((url) => url.startsWith("/api/fees/estimate") ? { body: { amount: 5000, fee: 6, rate: 0.0012 } } : { body: { id: 3 } });
+  const order = { id: 3, security_id: 1, symbol: "MC", name: "LVMH", trade_date: "2026-03-02", side: "buy", quantity: 10,
+    unit_price: 50, fee: 2.4, amount: 500, note: null };
+  renderWithProviders(<OrderDialog open onOpenChange={() => {}} order={order} />);
+  const quantity = screen.getByLabelText("Quantité");
+  await userEvent.clear(quantity);
+  await userEvent.type(quantity, "100");
+  await waitFor(() => expect(screen.getByLabelText("Frais (€)")).toHaveValue("6,00"));
+  await userEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+  await waitFor(() => expect(fetchMock.mock.calls.some(([url, init]) => url === "/api/orders/3" && init?.method === "PUT")).toBe(true));
+  expect(postBody(fetchMock, "/api/orders/3")).toMatchObject({ quantity: 100, fee: null });
+});
+
+test("vider des frais saisis à la main revient à l'estimation automatique", async () => {
+  mockFetch((url) => url.startsWith("/api/fees") ? { body: { amount: 400, fee: 1.92, rate: 0.0048 } } : { status: 201, body: { id: 7 } });
+  renderWithProviders(<OrderDialog open onOpenChange={() => {}} security={LVMH} price={40} />);
+  await userEvent.type(screen.getByLabelText("Quantité"), "10");
+  const fee = screen.getByLabelText("Frais (€)");
+  await userEvent.clear(fee);
+  await userEvent.type(fee, "5");
+  expect(screen.getByText(/frais saisis à la main/)).toBeInTheDocument();
+  await userEvent.clear(fee);
+  await userEvent.tab();
+  await waitFor(() => expect(fee).toHaveValue("1,92"));
+  expect(screen.getByText(/frais estimés automatiquement/)).toBeInTheDocument();
+});
