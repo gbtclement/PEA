@@ -32,3 +32,18 @@ def test_to_eur():
     assert to_eur(100.0, "NOK") == pytest.approx(8.5)
     assert to_eur(100.0, None) == 100.0
     assert to_eur(None, "EUR") is None
+
+
+def test_grid_json_round_trip():
+    from app.services.fees import DEFAULT_GRID, DEFAULT_GRID_JSON, grid_from_json, grid_to_json
+
+    assert grid_from_json(grid_to_json(DEFAULT_GRID)) == DEFAULT_GRID
+    assert DEFAULT_GRID_JSON == [{"up_to": 500.0, "rate": 0.0048}, {"up_to": 1000.0, "rate": 0.0018}, {"up_to": None, "rate": 0.0012}]
+
+
+def test_custom_grid_is_used():
+    from app.services.fees import grid_from_json
+
+    grid = grid_from_json([{"up_to": 1000.0, "rate": 0.01}, {"up_to": None, "rate": 0.005}])
+    assert broker_fee(800, grid) == (8.0, 0.01)
+    assert broker_fee(2000, grid) == (10.0, 0.005)

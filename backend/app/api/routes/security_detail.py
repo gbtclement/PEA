@@ -13,6 +13,7 @@ from app.models import User
 from app.providers.base import MarketDataProvider
 from app.repositories.market_data import all_daily_prices
 from app.repositories.screener import screener_rows
+from app.repositories.user_settings import user_fee_grid
 from app.schemas.security_detail import (
     Bar, ComponentOut, FundamentalsOut, HistoryOut, LinePoint, MacdPoint, NewsOut, ScoreOut, SecurityDetail,
     SimulationOut,
@@ -152,10 +153,11 @@ def simulate(
             message=f"Le montant ne permet pas d'acheter une action (cours de {start_price:.2f} €).".replace(".", ",", 1),
             **empty,
         )
+    grid = user_fee_grid(db, user.id)
     invested = round(shares * start_price, 2)
-    buy_fee, _ = broker_fee(invested)
+    buy_fee, _ = broker_fee(invested, grid)
     current_value = round(shares * current_price, 2)
-    sell_fee, _ = broker_fee(current_value)
+    sell_fee, _ = broker_fee(current_value, grid)
     gain = round(current_value - sell_fee - invested - buy_fee, 2)
     return SimulationOut(
         start_date=start.date, start_price=start_price, current_price=current_price, shares=shares,

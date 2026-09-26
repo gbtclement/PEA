@@ -25,3 +25,14 @@ def broker_fee(amount: float, grid: tuple[FeeTier, ...] = DEFAULT_GRID) -> tuple
             return round(amount * tier.rate, 2), tier.rate
     last = grid[-1]
     return round(amount * last.rate, 2), last.rate
+
+
+def grid_from_json(data: list[dict]) -> tuple[FeeTier, ...]:
+    return tuple(FeeTier(None if t.get("up_to") is None else float(t["up_to"]), float(t["rate"])) for t in data)
+
+
+def grid_to_json(grid: tuple[FeeTier, ...]) -> list[dict]:
+    return [{"up_to": t.up_to, "rate": t.rate} for t in grid]
+
+
+DEFAULT_GRID_JSON = grid_to_json(DEFAULT_GRID)
