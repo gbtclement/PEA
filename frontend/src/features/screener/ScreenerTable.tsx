@@ -1,0 +1,81 @@
+import { useRef } from "react";
+import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type SortingState } from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { ArrowDown, ArrowUp } from "lucide-react";
+import type { ScreenerRow } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
+import type { ColumnSpec } from "./columns";
+
+type Props = {
+  rows: ScreenerRow[];
+  columns: ColumnSpec[];
+  sorting: SortingState;
+  onSortingChange: (sorting: SortingState) => void;
+  onRowClick: (row: ScreenerRow) => void;
+};
+
+const ROW_HEIGHT = 56;
+
+export function ScreenerTable({ rows, columns, sorting, onSortingChange, onRowClick }: Props) {
+  const table = useReactTable({
+    data: rows,
+    columns,
+    state: { sorting },
+    onSortingChange: (updater) => onSortingChange(typeof updater === "function" ? updater(sorting) : updater),
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+  });
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const tableRows = table.getRowModel().rows;
+  const virtualizer = useVirtualizer({
+    count: tableRows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 12,
+    initialRect: { width: 1200, height: 800 },
+  });
+  const template = columns.map((c) => c.width).join(" ");
+
+  return (
+    <div role="table" aria-rowcount={tableRows.length + 1} className="text-sm">
+      <div role="row" className="grid items-center border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground"
+           style={{ gridTemplateColumns: template }}>
+        {table.getHeaderGroups()[0].headers.map((header) => {
+          const spec = header.column.columnDef as ColumnSpec;
+          const sorted = header.column.getIsSorted();
+          return (
+            <div role="columnheader" key={header.id} className={cn(spec.align === "right" && "text-right")}>
+              {header.column.getCanSort() ? (
+                <button type="button" onClick={header.column.getToggleSortingHandler()}
+                        className={cn("inline-flex items-center gap-1 hover:text-foreground", sorted && "text-foreground")}>
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                  {sorted === "asc" && <ArrowUp className="size-3" />}
+                  {sorted === "desc" && <ArrowDown className="size-3" />}
+                </button>
+              ) : flexRender(header.column.columnDef.header, header.getContext())}
+            </div>
+          );
+        })}
+      </div>
+      <div ref={scrollRef} className="h-[calc(100vh-270px)] min-h-[400px] overflow-y-auto">
+        <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+          {virtualizer.getVirtualItems().map((item) => {
+            const row = tableRows[item.index];
+            return (
+              <div role="row" key={row.id} onClick={() => onRowClick(row.original)}
+                   className="absolute inset-x-0 grid cursor-pointer items-center border-b border-border px-4 hover:bg-muted/60"
+                   style={{ gridTemplateColumns: template, height: ROW_HEIGHT, transform: `translateY(${item.start}px)` }}>
+                {row.getVisibleCells().map((cell) => (
+                  <div role="cell" key={cell.id}
+                       className={cn("truncate", (cell.column.columnDef as ColumnSpec).align === "right" && "flex justify-end")}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
