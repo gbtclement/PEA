@@ -127,8 +127,8 @@ Heures de bourse : jours ouvrés 9h00–17h35 (Europe/Paris), hors jours férié
 
 | Niveau | Contenu | Fréquence en séance |
 |---|---|---|
-| T1 | Favoris, positions du portefeuille, top 10, indices (CAC 40, SBF 120, Euro Stoxx 50) | 2 min |
-| T2 | Membres du SBF 120 et de l'Euro Stoxx 50 | 5 min |
+| T1 | Indices (CAC 40, SBF 120, Euro Stoxx 50), puis favoris, positions du portefeuille et top 10 dès que ces fonctions existent (lots 2 et 3) | 2 min |
+| T2 | Les 150 titres les plus échangés (montant moyen sur 20 séances ; ≈ SBF 120 + Euro Stoxx 50, dont la composition n'est fournie par aucune source gratuite) | 5 min |
 | T3 | Reste de l'univers | 30 min |
 | Quotidien 07h00 | Mise à jour de l'univers et de l'éligibilité | 1×/jour |
 | Quotidien 07h30 | Données fondamentales, historique journalier (clôture de la veille) | 1×/jour |
@@ -139,7 +139,7 @@ Historique journalier conservé sur **5 ans**. L'intraday (barres de 5 min) est 
 
 ### 3.4 Modèle de données (tables principales)
 - `users` (id, nom, créé le)
-- `securities` (id, isin, ticker_yahoo, nom, type `stock|etf`, place, pays, secteur, statut_eligibilite, source_eligibilite, indices[], actif)
+- `securities` (id, isin, ticker_yahoo, nom, type `stock|etf|index`, place, pays, secteur, statut_eligibilite, source_eligibilite, indices[], actif)
 - `quotes` (security_id, cours, variation_jour_pct, volume, horodatage) — dernier cours
 - `daily_prices` (security_id, date, ouverture, haut, bas, clôture, volume)
 - `fundamentals` (security_id, per, bpa, croissance_bpa, croissance_ca, dette_capitaux_propres, marge_nette, rendement_dividende, capitalisation, mis à jour le)
