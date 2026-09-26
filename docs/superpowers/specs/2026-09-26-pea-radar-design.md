@@ -1,7 +1,7 @@
 # PEA Radar — Spécification de conception
 
 - **Date :** 2026-09-26
-- **Statut :** en relecture
+- **Statut :** validée
 - **Auteur :** Clément (besoin) · Claude (conception)
 
 ---
@@ -300,5 +300,6 @@ Chaque lot fait l'objet de son propre plan de développement et se termine par u
 | **3. Portefeuille** | Ordres, frais, positions, graphiques, compteur X/12 | Suivi complet du PEA |
 | **4. Assistant IA** | Chat, panneau latéral, outils, streaming, coûts | IA intégrée |
 | **5. SEO & mise en ligne** | Section 10 | Prêt à être publié |
+| **6. Documentation** | `CLAUDE.md` à la racine (généré avec le skill `init` / `claude-md-improver`) : but du site, architecture, arborescence, commandes (lancer, tester, migrer), conventions, points d'attention (éligibilité, score, fournisseur Yahoo) | Les prochaines sessions avec Claude démarrent avec le contexte complet |
 
 Évolutions ultérieures envisagées : import CSV des ordres, comptes utilisateurs, alertes, second fournisseur de données.
