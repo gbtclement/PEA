@@ -8,7 +8,7 @@ export const routes: RouteObject[] = [
     path: "/",
     element: <Layout />,
     children: [
-      { index: true, element: <ComingSoon title="Accueil" description="Le top 10 des actions à surveiller arrive au lot 2." /> },
+      { index: true, lazy: async () => ({ Component: (await import("@/features/home/HomePage")).HomePage }) },
       { path: "explorer", element: <ExplorerPage /> },
       { path: "etf", element: <ComingSoon title="ETF" description="Le classement des ETF éligibles PEA arrive au lot 2." /> },
       { path: "portefeuille", element: <ComingSoon title="Portefeuille" description="Le suivi de votre PEA arrive au lot 3." /> },
