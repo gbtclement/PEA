@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.jobs.context import JobContext
 from app.jobs.market import refresh_daily_history, refresh_fundamentals, refresh_quotes
 from app.jobs.runner import run_job
+from app.jobs.scoring import refresh_scores
 from app.jobs.universe import refresh_universe
 from app.models import DailyPrice, DataStatus, Security, SecurityFundamentals
 from app.services.market_calendar import is_market_open, last_session_close
@@ -24,9 +25,15 @@ def _refresh_tier(ctx: JobContext, tier: int) -> None:
     run_job(ctx, f"quotes_t{tier}", lambda c: refresh_quotes(c, tier))
 
 
+def _refresh_scores(ctx: JobContext) -> None:
+    run_job(ctx, "scores", refresh_scores)
+
+
 def quotes_job(ctx: JobContext, tier: int) -> None:
     if is_market_open(ctx.now()):
         _refresh_tier(ctx, tier)
+        if tier == 2:
+            _refresh_scores(ctx)
 
 
 def universe_job(ctx: JobContext) -> None:
@@ -37,6 +44,7 @@ def universe_job(ctx: JobContext) -> None:
 def daily_job(ctx: JobContext) -> None:
     with HEAVY_JOBS_LOCK:
         run_job(ctx, "daily_history", refresh_daily_history)
+        _refresh_scores(ctx)
         run_job(ctx, "fundamentals", refresh_fundamentals)
 
 
@@ -66,6 +74,7 @@ def bootstrap_job(ctx: JobContext) -> None:
             run_job(ctx, "daily_history", refresh_daily_history)
     for tier in (1, 2, 3):
         _refresh_tier(ctx, tier)
+    _refresh_scores(ctx)
     with HEAVY_JOBS_LOCK:
         if not has_fundamentals or _older_than(fundamentals_at, now - _DAILY_MAX_AGE):
             run_job(ctx, "fundamentals", refresh_fundamentals)

@@ -79,6 +79,16 @@ def upsert_daily_bars(session: Session, security_id: int, bars: list[DailyBar]) 
     return len(rows)
 
 
+def daily_series(session: Session, since: date) -> dict[int, list[DailyPrice]]:
+    rows = session.scalars(
+        select(DailyPrice).where(DailyPrice.date >= since).order_by(DailyPrice.security_id, DailyPrice.date)
+    )
+    result: dict[int, list[DailyPrice]] = {}
+    for row in rows:
+        result.setdefault(row.security_id, []).append(row)
+    return result
+
+
 def latest_price_dates(session: Session) -> dict[int, date]:
     rows = session.execute(select(DailyPrice.security_id, func.max(DailyPrice.date)).group_by(DailyPrice.security_id))
     return {security_id: last for security_id, last in rows}
