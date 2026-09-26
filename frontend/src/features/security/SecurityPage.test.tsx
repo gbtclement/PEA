@@ -65,3 +65,12 @@ test("affiche la devise de cotation", async () => {
   renderPage(200, { ...DETAIL, market: "Oslo Børs", currency: "NOK", price: 721.83 });
   expect(await screen.findByText(/721,83 NOK/)).toBeInTheDocument();
 });
+
+test("le bouton « + J'ai acheté » ouvre le formulaire d'ordre prérempli", async () => {
+  renderPage();
+  await screen.findByRole("heading", { level: 1, name: "LVMH" });
+  await userEvent.click(screen.getByRole("button", { name: "+ J'ai acheté" }));
+  const dialog = await screen.findByRole("dialog");
+  expect(dialog).toHaveTextContent("Nouvel ordre");
+  expect(screen.getByLabelText("Prix unitaire (€)")).toHaveValue("612,4");
+});

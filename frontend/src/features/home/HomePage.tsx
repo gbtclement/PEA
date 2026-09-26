@@ -1,3 +1,4 @@
+import { OrderCounterCard } from "@/features/portfolio/OrderCounterCard";
 import { IndicesBar } from "./IndicesBar";
 import { MarketHeatmap } from "./MarketHeatmap";
 import { Movers } from "./Movers";
@@ -15,7 +16,10 @@ export function HomePage() {
       <IndicesBar />
       <div className="grid grid-cols-[2fr_1fr] gap-6">
         <TopList />
-        <Movers />
+        <div className="space-y-6">
+          <OrderCounterCard />
+          <Movers />
+        </div>
       </div>
       <MarketHeatmap />
     </section>

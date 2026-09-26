@@ -16,6 +16,7 @@ function api(top: unknown[]) {
     if (url.startsWith("/api/rankings/top")) return { body: top };
     if (url.startsWith("/api/rankings/movers")) return { body: { gainers: [row(3, "AIR", "Airbus", 4.2)], losers: [row(4, "KER", "Kering", -3.1)] } };
     if (url.startsWith("/api/market/heatmap")) return { body: [] };
+    if (url.startsWith("/api/orders/counter")) return { body: { year: 2026, count: 3, min_orders: 12, remaining: 9, expected_by_now: 8.8, behind: true, penalty_fee: 96 } };
     if (url.startsWith("/api/status")) return { body: { market_open: true, jobs: [], indices: [{ id: 9, yahoo_ticker: "^FCHI", name: "CAC 40", price: 7500, change_pct: 0.8, as_of: null }] } };
     return { body: { period: "1D", intraday: true, bars: [], sma50: [], sma200: [], rsi: [], macd: [] } };
   });
@@ -30,6 +31,7 @@ test("affiche le top 10 avec raisons, les indices et les mouvements", async () =
   expect(await screen.findByText("CAC 40")).toBeInTheDocument();
   expect(await screen.findByText("Airbus")).toBeInTheDocument();
   expect(screen.getByText("Kering")).toBeInTheDocument();
+  expect(await screen.findByText("3/12 ordres en 2026")).toBeInTheDocument();
 });
 
 test("test_home_empty_state : message d'attente sans classement", async () => {

@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EligibilityBadge } from "@/features/explorer/EligibilityBadge";
+import { OrderDialog } from "@/features/portfolio/OrderDialog";
 import { ApiError, apiGet, type SecurityDetail } from "@/lib/api/client";
 import { formatDateTime, formatPct, formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -14,6 +17,7 @@ import { SimulatorCard } from "./SimulatorCard";
 
 export function SecurityPage() {
   const id = Number(useParams().id);
+  const [ordering, setOrdering] = useState(false);
   const { data, isPending, error } = useQuery({
     queryKey: ["security", id],
     queryFn: () => apiGet<SecurityDetail>(`/api/securities/${id}`),
@@ -38,6 +42,9 @@ export function SecurityPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">{data.name}</h1>
             <FavoriteButton securityId={data.id} isFavorite={data.is_favorite} />
+            {data.kind !== "index" && (
+              <Button variant="outline" size="sm" className="ml-2" onClick={() => setOrdering(true)}>+ J'ai acheté</Button>
+            )}
           </div>
           <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
             {data.symbol} · {data.market}{data.isin && ` · ${data.isin}`} <EligibilityBadge status={data.eligibility} />
@@ -56,6 +63,8 @@ export function SecurityPage() {
         <SimulatorCard securityId={data.id} />
         <NewsCard securityId={data.id} />
       </div>
+      <OrderDialog open={ordering} onOpenChange={setOrdering} security={{ id: data.id, name: data.name, symbol: data.symbol }}
+                   price={data.currency === "EUR" ? data.price : null} />
     </section>
   );
 }
