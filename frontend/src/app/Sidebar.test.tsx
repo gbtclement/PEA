@@ -1,0 +1,21 @@
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
+import { Sidebar } from "./Sidebar";
+
+test("affiche les six entrées de navigation", () => {
+  render(<MemoryRouter><Sidebar /></MemoryRouter>);
+  const nav = screen.getByRole("navigation", { name: "Navigation principale" });
+  const labels = Array.from(nav.querySelectorAll("a")).map((a) => a.textContent);
+  expect(labels).toEqual(["Accueil", "Explorer", "ETF", "Portefeuille", "Assistant IA", "Réglages"]);
+});
+
+test("met en évidence la page courante", () => {
+  render(<MemoryRouter initialEntries={["/explorer"]}><Sidebar /></MemoryRouter>);
+  expect(screen.getByRole("link", { name: "Explorer" })).toHaveAttribute("aria-current", "page");
+  expect(screen.getByRole("link", { name: "Accueil" })).not.toHaveAttribute("aria-current");
+});
+
+test("affiche le pied de barre fourni", () => {
+  render(<MemoryRouter><Sidebar footer={<p>Bourse ouverte</p>} /></MemoryRouter>);
+  expect(screen.getByText("Bourse ouverte")).toBeInTheDocument();
+});

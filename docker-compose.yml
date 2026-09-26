@@ -38,5 +38,14 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  web:
+    build: ./frontend
+    ports:
+      - "8095:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   pgdata:
