@@ -4,7 +4,7 @@ from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.models import Security, SecurityQuote
-from app.services.eligibility.rules import classify_eligibility, effective_eligibility
+from app.services.eligibility.rules import ELIGIBLE, NOT_ELIGIBLE, classify_eligibility, effective_eligibility
 
 
 @dataclass(frozen=True)
@@ -72,6 +72,15 @@ def update_classification(security: Security, sector: str | None, industry: str 
         _apply_eligibility(security, None)
 
 
+_FIXED_BY_KIND = {"etf": ELIGIBLE, "index": NOT_ELIGIBLE}
+
+
+def set_eligibility_override(security: Security, override: str | None) -> None:
+    """Correction manuelle (None = revenir au calcul automatique ou à la liste de départ)."""
+    security.eligibility_override = override
+    _apply_eligibility(security, _FIXED_BY_KIND.get(security.kind))
+
+
 def escape_like(value: str) -> str:
     return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
@@ -83,6 +92,7 @@ def search_securities(
     kind: str | None,
     eligibility: str | None,
     limit: int,
+    overridden: bool = False,
     offset: int,
 ) -> tuple[list[tuple[Security, SecurityQuote | None]], int]:
     stmt = (
@@ -93,6 +103,8 @@ def search_securities(
     stmt = stmt.where(Security.kind == kind) if kind else stmt.where(Security.kind != "index")
     if eligibility:
         stmt = stmt.where(Security.eligibility == eligibility)
+    if overridden:
+        stmt = stmt.where(Security.eligibility_override.is_not(None))
     if q and q.strip():
         pattern = f"%{escape_like(q.strip())}%"
         stmt = stmt.where(or_(
