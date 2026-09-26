@@ -21,7 +21,7 @@ Application web personnelle, exécutée en local via Docker, pour **aider à cho
 - **SEO** complet (Hn, robots.txt, sitemap, schema.org, llms.txt) — en dernière étape.
 
 ### Critères de succès
-1. `docker compose up` lance l'application complète sur `http://localhost:8080`.
+1. `docker compose up` lance l'application complète sur `http://localhost:8095`.
 2. La page d'accueil affiche un top 10 à jour (≤ 5 min de décalage en séance) avec l'explication de chaque score.
 3. On trouve n'importe quelle action éligible PEA en moins de 3 clics et on voit son graphique en chandeliers.
 4. Le portefeuille affiche positions, plus/moins-values et le compteur X/12 ordres.
