@@ -2,7 +2,20 @@ from datetime import UTC, date, datetime
 
 import pytest
 
-from app.services.market_calendar import easter_sunday, euronext_holidays, is_market_open, is_trading_day
+from app.services.market_calendar import (
+    PARIS, easter_sunday, euronext_holidays, is_market_open, is_trading_day, last_session_close,
+)
+
+
+@pytest.mark.parametrize("utc_dt, expected", [
+    (datetime(2026, 9, 29, 7, 0, tzinfo=UTC), datetime(2026, 9, 28, 17, 35, tzinfo=PARIS)),   # mardi 9h : clôture de lundi
+    (datetime(2026, 9, 28, 16, 0, tzinfo=UTC), datetime(2026, 9, 28, 17, 35, tzinfo=PARIS)),  # lundi 18h : clôture du jour
+    (datetime(2026, 9, 28, 14, 0, tzinfo=UTC), datetime(2026, 9, 25, 17, 35, tzinfo=PARIS)),  # lundi 16h : vendredi
+    (datetime(2026, 4, 7, 7, 0, tzinfo=UTC), datetime(2026, 4, 2, 17, 35, tzinfo=PARIS)),     # après Pâques : jeudi
+    (datetime(2026, 12, 24, 14, 0, tzinfo=UTC), datetime(2026, 12, 24, 14, 5, tzinfo=PARIS)), # clôture anticipée
+])
+def test_last_session_close(utc_dt, expected):
+    assert last_session_close(utc_dt) == expected
 
 
 @pytest.mark.parametrize("year, expected", [(2026, date(2026, 4, 5)), (2027, date(2027, 3, 28)), (2025, date(2025, 4, 20))])

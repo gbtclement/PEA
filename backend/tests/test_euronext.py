@@ -51,7 +51,16 @@ def test_parse_rejects_unexpected_format():
 
 def test_provider_uses_download_when_available():
     provider = EuronextListingProvider("http://x", snapshot_path=Path("/nonexistent"),
-                                       http_post=lambda url, data: sample_text(), sleep=lambda s: None)
+                                       http_post=lambda url, data: sample_text(), sleep=lambda s: None, min_rows=1)
+    assert len(provider.fetch_listed()) == 6
+
+
+def test_provider_falls_back_on_truncated_download(tmp_path):
+    truncated = "\n".join(sample_text().splitlines()[:6])  # en-têtes + 2 lignes seulement
+    snapshot = tmp_path / "snapshot.csv"
+    snapshot.write_text(sample_text(), encoding="utf-8")
+    provider = EuronextListingProvider("http://x", snapshot_path=snapshot,
+                                       http_post=lambda url, data: truncated, sleep=lambda s: None, min_rows=5)
     assert len(provider.fetch_listed()) == 6
 
 

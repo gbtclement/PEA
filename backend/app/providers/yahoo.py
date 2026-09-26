@@ -1,5 +1,6 @@
 import logging
 import math
+import threading
 import time
 from collections.abc import Callable, Iterator
 from datetime import UTC, date, datetime
@@ -114,6 +115,8 @@ class YahooProvider:
         self._ticker_info = ticker_info or (lambda ticker: yf.Ticker(ticker).info)
         self._sleep = sleep
         self._now = now
+        # Un seul appel Yahoo à la fois, toutes tâches confondues (limiteur de débit global).
+        self._lock = threading.Lock()
 
     def _chunks(self, tickers: list[str]) -> Iterator[list[str]]:
         for start in range(0, len(tickers), self._chunk_size):
@@ -125,11 +128,12 @@ class YahooProvider:
         frames: dict[str, pd.DataFrame] = {}
         for chunk in self._chunks(tickers):
             try:
-                df = with_retries(
-                    lambda: self._download(chunk, group_by="ticker", auto_adjust=True, progress=False,
-                                           threads=True, **kwargs),
-                    sleep=self._sleep,
-                )
+                with self._lock:
+                    df = with_retries(
+                        lambda: self._download(chunk, group_by="ticker", auto_adjust=True, progress=False,
+                                               threads=True, **kwargs),
+                        sleep=self._sleep,
+                    )
             except Exception:
                 logger.warning("Échec du téléchargement Yahoo pour %d titres", len(chunk), exc_info=True)
                 continue
@@ -147,10 +151,14 @@ class YahooProvider:
 
     def get_fundamentals(self, ticker: str) -> Fundamentals | None:
         try:
-            info = with_retries(lambda: self._ticker_info(ticker), sleep=self._sleep)
+            with self._lock:
+                info = with_retries(lambda: self._ticker_info(ticker), sleep=self._sleep)
         except Exception:
             logger.warning("Fondamentaux Yahoo indisponibles pour %s", ticker, exc_info=True)
             return None
         finally:
             self._sleep(self._fundamentals_pause)
-        return fundamentals_from_info(info) if info else None
+        # Yahoo renvoie parfois un dictionnaire presque vide : on l'ignore plutôt que d'effacer les données.
+        if not info or not (info.get("quoteType") or info.get("symbol")):
+            return None
+        return fundamentals_from_info(info)

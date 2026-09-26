@@ -129,6 +129,35 @@ def test_get_fundamentals_returns_none_on_error():
     assert provider.get_fundamentals("A.PA") is None
 
 
+def test_get_fundamentals_ignores_near_empty_info():
+    provider = YahooProvider(ticker_info=lambda t: {"trailingPegRatio": None}, sleep=lambda s: None)
+    assert provider.get_fundamentals("A.PA") is None
+
+
+def test_yahoo_calls_are_serialized_across_threads():
+    import threading
+    import time as pytime
+
+    active, peak, guard = [0], [0], threading.Lock()
+
+    def slow_download(tickers, **kwargs):
+        with guard:
+            active[0] += 1
+            peak[0] = max(peak[0], active[0])
+        pytime.sleep(0.1)
+        with guard:
+            active[0] -= 1
+        return multi({t: frame(ROWS) for t in tickers})
+
+    provider = YahooProvider(download=slow_download, sleep=lambda s: None)
+    threads = [threading.Thread(target=provider.get_quotes, args=[[f"T{i}.PA"]]) for i in range(3)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert peak[0] == 1
+
+
 @pytest.mark.network
 def test_real_yahoo_quote():
     quotes = YahooProvider().get_quotes(["MC.PA"])

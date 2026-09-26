@@ -58,3 +58,64 @@ def test_bootstrap_fills_empty_database_once(db, make_ctx):
     assert market.history_calls and market.quote_calls and market.fundamental_calls
     bootstrap_job(ctx)
     assert listing.calls == 1  # univers déjà présent : pas de nouveau téléchargement
+
+
+def seeded_ctx(db, make_ctx, now, statuses: dict[str, datetime]):
+    from app.models import DailyPrice, SecurityFundamentals
+    from app.repositories.data_status import record_success
+
+    security = make_security(db, "MC.PA")
+    db.add(DailyPrice(security_id=security.id, date=date(2026, 9, 25), open=1, high=1, low=1, close=1.0, volume=1))
+    db.add(SecurityFundamentals(security_id=security.id, pe=10.0))
+    for job, at in statuses.items():
+        record_success(db, job, 1, at)
+    db.flush()
+    listing = FakeListing([ListedSecurity("FR0000121014", "MC", "LVMH", "Euronext Paris", "MC.PA")])
+    market = FakeMarket(quotes={"MC.PA": Quote(612.0, 600.0, 2.0, 10, now)})
+    return make_ctx(market=market, listing=listing, now=now), market, listing
+
+
+def test_bootstrap_refreshes_stale_data(db, make_ctx):
+    # PC allumé mardi 9h ; dernières mises à jour lundi 9h05 : la clôture de lundi manque.
+    tuesday = datetime(2026, 9, 29, 7, 0, tzinfo=UTC)
+    monday_morning = datetime(2026, 9, 28, 7, 5, tzinfo=UTC)
+    ctx, market, listing = seeded_ctx(db, make_ctx, tuesday, {
+        "universe": monday_morning, "daily_history": monday_morning, "fundamentals": monday_morning,
+    })
+    bootstrap_job(ctx)
+    assert listing.calls == 1
+    assert market.history_calls
+    assert market.fundamental_calls
+
+
+def test_bootstrap_skips_fresh_data(db, make_ctx):
+    tuesday = datetime(2026, 9, 29, 7, 0, tzinfo=UTC)
+    monday_evening = datetime(2026, 9, 28, 20, 0, tzinfo=UTC)
+    ctx, market, listing = seeded_ctx(db, make_ctx, tuesday, {
+        "universe": monday_evening, "daily_history": monday_evening, "fundamentals": monday_evening,
+    })
+    bootstrap_job(ctx)
+    assert listing.calls == 0
+    assert market.history_calls == []
+    assert market.fundamental_calls == []
+
+
+def test_heavy_jobs_are_serialized(db, make_ctx):
+    import threading
+    import time as pytime
+
+    from app.jobs.scheduler import HEAVY_JOBS_LOCK, daily_job
+
+    make_security(db, "MC.PA")
+    market = FakeMarket()
+    ctx = make_ctx(market=market, now=OPEN_MONDAY)
+    HEAVY_JOBS_LOCK.acquire()
+    try:
+        worker = threading.Thread(target=daily_job, args=[ctx])
+        worker.start()
+        pytime.sleep(0.2)
+        assert market.history_calls == []  # attend la fin de la tâche lourde en cours
+    finally:
+        HEAVY_JOBS_LOCK.release()
+    worker.join(timeout=5)
+    assert market.history_calls

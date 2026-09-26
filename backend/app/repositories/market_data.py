@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -24,7 +24,7 @@ def ticker_ids(session: Session, tickers: list[str]) -> dict[str, int]:
     return {ticker: security_id for ticker, security_id in rows}
 
 
-def upsert_quotes(session: Session, quotes: dict[int, Quote]) -> int:
+def upsert_quotes(session: Session, quotes: dict[int, Quote], *, only_if_newer: bool = False) -> int:
     if not quotes:
         return 0
     rows = [
@@ -34,8 +34,35 @@ def upsert_quotes(session: Session, quotes: dict[int, Quote]) -> int:
     ]
     stmt = pg_insert(SecurityQuote).values(rows)
     updated = {col: stmt.excluded[col] for col in ("price", "previous_close", "change_pct", "volume", "as_of")}
-    session.execute(stmt.on_conflict_do_update(index_elements=["security_id"], set_={**updated, "updated_at": func.now()}))
+    session.execute(stmt.on_conflict_do_update(
+        index_elements=["security_id"],
+        set_={**updated, "updated_at": func.now()},
+        where=(SecurityQuote.as_of < stmt.excluded.as_of) if only_if_newer else None,
+    ))
     return len(rows)
+
+
+def last_two_closes(session: Session, security_ids: list[int]) -> dict[int, list[DailyPrice]]:
+    """Les deux dernières séances de chaque titre, la plus récente en premier."""
+    if not security_ids:
+        return {}
+    ranked = select(
+        DailyPrice,
+        func.row_number().over(partition_by=DailyPrice.security_id, order_by=DailyPrice.date.desc()).label("rn"),
+    ).where(DailyPrice.security_id.in_(security_ids)).subquery()
+    rows = session.execute(select(ranked).where(ranked.c.rn <= 2).order_by(ranked.c.security_id, ranked.c.rn)).all()
+    result: dict[int, list[DailyPrice]] = {}
+    for row in rows:
+        result.setdefault(row.security_id, []).append(row)
+    return result
+
+
+def stored_close(session: Session, security_id: int, day: date) -> float | None:
+    return session.scalar(select(DailyPrice.close).where(DailyPrice.security_id == security_id, DailyPrice.date == day))
+
+
+def delete_daily_prices(session: Session, security_id: int) -> None:
+    session.execute(delete(DailyPrice).where(DailyPrice.security_id == security_id))
 
 
 def upsert_daily_bars(session: Session, security_id: int, bars: list[DailyBar]) -> int:

@@ -80,16 +80,21 @@ class EuronextListingProvider:
         snapshot_path: Path = SNAPSHOT_PATH,
         http_post: Callable[[str, dict[str, str]], str] | None = None,
         sleep: Callable[[float], None] = time.sleep,
+        min_rows: int = 500,
     ) -> None:
         self._url = url
         self._snapshot_path = snapshot_path
         self._http_post = http_post or self._default_post
         self._sleep = sleep
+        self._min_rows = min_rows  # un fichier tronqué désactiverait la plupart des titres
 
     def fetch_listed(self) -> list[ListedSecurity]:
         try:
             text = with_retries(lambda: self._http_post(self._url, FORM_DATA), sleep=self._sleep)
-            return parse_euronext_csv(text)
+            listed = parse_euronext_csv(text)
+            if len(listed) < self._min_rows:
+                raise ValueError(f"Liste Euronext incomplète ({len(listed)} titres)")
+            return listed
         except Exception:
             logger.warning("Liste Euronext indisponible, utilisation de l'instantané local", exc_info=True)
             return parse_euronext_csv(self._snapshot_path.read_text(encoding="utf-8"))

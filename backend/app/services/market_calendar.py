@@ -38,9 +38,23 @@ def is_trading_day(day: date) -> bool:
     return day.weekday() < 5 and day not in euronext_holidays(day.year)
 
 
+def _close_time(day: date) -> time:
+    return EARLY_CLOSE if (day.month, day.day) in ((12, 24), (12, 31)) else CLOSE
+
+
 def is_market_open(now: datetime) -> bool:
     local = now.astimezone(PARIS)
     if not is_trading_day(local.date()):
         return False
-    close = EARLY_CLOSE if (local.month, local.day) in ((12, 24), (12, 31)) else CLOSE
-    return OPEN <= local.time() < close
+    return OPEN <= local.time() < _close_time(local.date())
+
+
+def last_session_close(now: datetime) -> datetime:
+    """Heure de clôture de la dernière séance terminée à l'instant `now`."""
+    day = now.astimezone(PARIS).date()
+    while True:
+        if is_trading_day(day):
+            close = datetime.combine(day, _close_time(day), tzinfo=PARIS)
+            if close <= now:
+                return close
+        day -= timedelta(days=1)

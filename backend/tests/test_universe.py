@@ -55,6 +55,15 @@ def test_ticker_change_updates_same_row(db, make_ctx):
     assert by_ticker(db, "MCX.PA").id == first_id
 
 
+def test_empty_listing_does_not_deactivate_universe(db, make_ctx):
+    import pytest
+
+    refresh_universe(make_ctx(listing=FakeListing([LVMH, ASML])))
+    with pytest.raises(RuntimeError):
+        refresh_universe(make_ctx(listing=FakeListing([])))
+    assert by_ticker(db, "ASML.AS").active is True
+
+
 def test_known_industry_is_used_for_classification(db, make_ctx):
     gecina = ListedSecurity("FR0010040865", "GFC", "Gecina", "Euronext Paris", "GFC.PA")
     ctx = make_ctx(listing=FakeListing([gecina]))

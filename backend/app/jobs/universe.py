@@ -7,12 +7,15 @@ _FIXED_BY_KIND = {"etf": ELIGIBLE, "index": NOT_ELIGIBLE}
 
 
 def refresh_universe(ctx: JobContext) -> int:
+    listed = ctx.listing.fetch_listed()
+    if not listed:
+        raise RuntimeError("Liste Euronext vide : univers conservé tel quel")
     items = [
         SecurityUpsert(
             yahoo_ticker=s.yahoo_ticker, symbol=s.symbol, name=s.name, kind="stock",
             market=s.market, isin=s.isin, country=country_from_isin(s.isin),
         )
-        for s in ctx.listing.fetch_listed()
+        for s in listed
     ]
     items += [
         SecurityUpsert(

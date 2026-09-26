@@ -62,9 +62,12 @@ def deactivate_missing(session: Session, seen_tickers: set[str]) -> int:
 
 
 def update_classification(security: Security, sector: str | None, industry: str | None) -> None:
-    """Met à jour secteur/industrie (fondamentaux) et recalcule l'éligibilité des actions."""
-    security.sector = sector
-    security.industry = industry
+    """Met à jour secteur/industrie (fondamentaux) et recalcule l'éligibilité des actions.
+
+    Une réponse Yahoo incomplète (sans secteur/industrie) ne doit pas effacer une classification connue.
+    """
+    security.sector = sector or security.sector
+    security.industry = industry or security.industry
     if security.kind == "stock" and security.eligibility_source != "seed":
         _apply_eligibility(security, None)
 
