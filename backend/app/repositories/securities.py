@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
-from sqlalchemy import select, update
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
-from app.models import Security
+from app.models import Security, SecurityQuote
 from app.services.eligibility.rules import classify_eligibility, effective_eligibility
 
 
@@ -67,3 +67,36 @@ def update_classification(security: Security, sector: str | None, industry: str 
     security.industry = industry
     if security.kind == "stock" and security.eligibility_source != "seed":
         _apply_eligibility(security, None)
+
+
+def escape_like(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def search_securities(
+    session: Session,
+    *,
+    q: str | None,
+    kind: str | None,
+    eligibility: str | None,
+    limit: int,
+    offset: int,
+) -> tuple[list[tuple[Security, SecurityQuote | None]], int]:
+    stmt = (
+        select(Security, SecurityQuote)
+        .outerjoin(SecurityQuote, SecurityQuote.security_id == Security.id)
+        .where(Security.active.is_(True))
+    )
+    stmt = stmt.where(Security.kind == kind) if kind else stmt.where(Security.kind != "index")
+    if eligibility:
+        stmt = stmt.where(Security.eligibility == eligibility)
+    if q and q.strip():
+        pattern = f"%{escape_like(q.strip())}%"
+        stmt = stmt.where(or_(
+            Security.name.ilike(pattern, escape="\\"),
+            Security.symbol.ilike(pattern, escape="\\"),
+            Security.isin.ilike(pattern, escape="\\"),
+        ))
+    total = session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    rows = session.execute(stmt.order_by(Security.name, Security.id).limit(limit).offset(offset)).all()
+    return [(security, quote) for security, quote in rows], total
