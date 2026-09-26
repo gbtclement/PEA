@@ -1,6 +1,7 @@
 import { createBrowserRouter, type RouteObject } from "react-router";
 import { ComingSoon } from "@/components/ComingSoon";
 import { ScreenerPage } from "@/features/screener/ScreenerPage";
+import { SettingsPage } from "@/features/settings/SettingsPage";
 import { Layout } from "./Layout";
 
 export const routes: RouteObject[] = [
@@ -14,7 +15,7 @@ export const routes: RouteObject[] = [
       { path: "portefeuille", element: <ComingSoon title="Portefeuille" description="Le suivi de votre PEA arrive au lot 3." /> },
       { path: "assistant", element: <ComingSoon title="Assistant IA" description="L'assistant IA arrive au lot 4." /> },
       { path: "titres/:id", lazy: async () => ({ Component: (await import("@/features/security/SecurityPage")).SecurityPage }) },
-      { path: "reglages", element: <ComingSoon title="Réglages" description="Les réglages arrivent au lot 2." /> },
+      { path: "reglages", element: <SettingsPage /> },
     ],
   },
 ];
