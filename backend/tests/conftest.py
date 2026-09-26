@@ -35,3 +35,34 @@ def client(db):
     app.dependency_overrides[get_db] = lambda: db
     with TestClient(app) as test_client:
         yield test_client
+
+
+from contextlib import contextmanager
+from datetime import UTC, datetime
+
+from app.core.config import Settings
+from app.jobs.context import JobContext
+from tests.fakes import FakeListing, FakeMarket
+
+
+@pytest.fixture
+def session_factory(db):
+    @contextmanager
+    def factory():
+        yield db
+
+    return factory
+
+
+@pytest.fixture
+def make_ctx(session_factory):
+    def _make(market=None, listing=None, now: datetime | None = None, **settings_overrides) -> JobContext:
+        return JobContext(
+            session_factory=session_factory,
+            market=market or FakeMarket(),
+            listing=listing or FakeListing(),
+            settings=Settings(**settings_overrides),
+            now=(lambda: now) if now else (lambda: datetime.now(UTC)),
+        )
+
+    return _make
