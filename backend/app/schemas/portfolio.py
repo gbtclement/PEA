@@ -36,3 +36,44 @@ class CounterOut(BaseModel):
     expected_by_now: float
     behind: bool
     penalty_fee: float
+
+
+class PositionOut(BaseModel):
+    security_id: int
+    symbol: str
+    name: str
+    sector: str | None
+    kind: str
+    quantity: int
+    avg_cost: float
+    price: float | None
+    change_pct: float | None
+    value: float
+    gain: float
+    gain_pct: float | None
+    weight: float
+
+
+class SectorOut(BaseModel):
+    sector: str
+    value: float
+    weight: float
+
+
+class PortfolioOut(BaseModel):
+    total_value: float
+    invested: float
+    gain: float
+    gain_pct: float | None
+    day_change: float
+    day_change_pct: float | None
+    realized_gain: float
+    positions: list[PositionOut]
+    sectors: list[SectorOut]
+    counter: CounterOut
+
+
+class HistoryPointOut(BaseModel):
+    date: date
+    value: float
+    invested: float
