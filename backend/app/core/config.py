@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     quotes_t2_minutes: int = 5
     quotes_t3_minutes: int = 30
 
+    min_turnover_eur: float = 500_000
+    top_size: int = 10
+    min_history_days: int = 200
+    min_available_ratio: float = 0.6
+
 
 @lru_cache
 def get_settings() -> Settings:
