@@ -30,9 +30,21 @@ def db(engine):
 
 
 @pytest.fixture
-def client(db):
+def fake_market():
+    from tests.fakes import FakeMarket
+
+    return FakeMarket()
+
+
+@pytest.fixture
+def client(db, fake_market):
+    from app.api.deps import INTRADAY_CACHE, NEWS_CACHE, get_market_provider
+
+    INTRADAY_CACHE.clear()
+    NEWS_CACHE.clear()
     app = create_app()
     app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_market_provider] = lambda: fake_market
     with TestClient(app) as test_client:
         yield test_client
 

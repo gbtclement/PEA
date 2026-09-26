@@ -20,7 +20,7 @@ def get_status(db: Session = Depends(get_db)) -> StatusResponse:
         jobs=[JobStatus.model_validate(status) for status in list_statuses(db)],
         indices=[
             IndexQuote(
-                yahoo_ticker=s.yahoo_ticker, name=s.name,
+                id=s.id, yahoo_ticker=s.yahoo_ticker, name=s.name,
                 price=q.price if q else None, change_pct=q.change_pct if q else None, as_of=q.as_of if q else None,
             )
             for s, q in rows

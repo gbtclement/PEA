@@ -14,6 +14,7 @@ class JobStatus(BaseModel):
 
 
 class IndexQuote(BaseModel):
+    id: int
     yahoo_ticker: str
     name: str
     price: float | None
