@@ -29,5 +29,14 @@ services:
       start_period: 15s
     restart: unless-stopped
 
+  worker:
+    build: ./backend
+    env_file: .env
+    command: ["python", "-m", "app.jobs.worker"]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   pgdata:
