@@ -11,7 +11,11 @@ type Props = {
 
 const unique = (values: (string | null)[]) => [...new Set(values.filter((v): v is string => !!v))].sort((a, b) => a.localeCompare(b, "fr"));
 
-function Select({ label, value, options, onChange }: { label: string; value: string | null; options: string[]; onChange: (v: string | null) => void }) {
+const ELIGIBILITY_LABELS: Record<string, string> = { eligible: "Éligibles PEA", a_verifier: "À vérifier", non_eligible: "Non éligibles" };
+
+function Select({ label, value, options, onChange, labels = {} }: {
+  label: string; value: string | null; options: string[]; onChange: (v: string | null) => void; labels?: Record<string, string>;
+}) {
   return (
     <select
       aria-label={label}
@@ -20,7 +24,7 @@ function Select({ label, value, options, onChange }: { label: string; value: str
       className="h-8 rounded-lg border border-input bg-white px-2 text-sm"
     >
       <option value="">{label} : tous</option>
-      {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      {options.map((o) => <option key={o} value={o}>{labels[o] ?? o}</option>)}
     </select>
   );
 }
@@ -29,12 +33,14 @@ export function ScreenerFilters({ rows, filters, onChange, count }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Input
-        type="search" aria-label="Rechercher" placeholder="Nom ou ticker…" className="w-60 bg-white"
+        type="search" aria-label="Rechercher" placeholder="Nom, ticker ou ISIN…" className="w-60 bg-white"
         value={filters.q} onChange={(e) => onChange("q", e.target.value || null)}
       />
       <Select label="Secteur" value={filters.sector} options={unique(rows.map((r) => r.sector))} onChange={(v) => onChange("sector", v)} />
       <Select label="Pays" value={filters.country} options={unique(rows.map((r) => r.country))} onChange={(v) => onChange("country", v)} />
       <Select label="Place" value={filters.market} options={unique(rows.map((r) => r.market))} onChange={(v) => onChange("market", v)} />
+      <Select label="Éligibilité" value={filters.eligibility} options={Object.keys(ELIGIBILITY_LABELS)} labels={ELIGIBILITY_LABELS}
+              onChange={(v) => onChange("eligibility", v)} />
       <Input type="number" aria-label="Score minimum" placeholder="Score min" className="w-28 bg-white" min={0} max={100}
              value={filters.minScore ?? ""} onChange={(e) => onChange("minScore", e.target.value || null)} />
       <Input type="number" aria-label="Prix minimum" placeholder="Prix min" className="w-24 bg-white" min={0}

@@ -21,6 +21,8 @@ class ScreenerRow(BaseModel):
     pe: float | None
     dividend_yield: float | None
     liquid: bool
+    available_ratio: float | None
+    isin: str | None
     is_favorite: bool
     sparkline: list[float]
 
@@ -40,6 +42,8 @@ class ScreenerRow(BaseModel):
             pe=fundamentals.pe if fundamentals else None,
             dividend_yield=fundamentals.dividend_yield if fundamentals else None,
             liquid=bool(score and score.liquid),
+            available_ratio=score.available_ratio if score else None,
+            isin=security.isin,
             is_favorite=bool(is_favorite),
             sparkline=list(score.sparkline) if score and score.sparkline else [],
         )

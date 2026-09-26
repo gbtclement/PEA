@@ -44,7 +44,7 @@ export function SecurityPage() {
           </p>
         </div>
         <div className="text-right">
-          <p className="text-3xl font-semibold">{formatPrice(data.price)} €</p>
+          <p className="text-3xl font-semibold">{formatPrice(data.price)} {data.currency === "EUR" ? "€" : data.currency}</p>
           <p className={cn("text-sm font-medium", change > 0 && "text-up", change < 0 && "text-down")}>{formatPct(data.change_pct)} aujourd'hui</p>
           <p className="text-xs text-muted-foreground">Mis à jour {formatDateTime(data.as_of)}</p>
         </div>

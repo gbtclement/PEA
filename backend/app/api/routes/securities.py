@@ -3,8 +3,9 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.core.current_user import get_current_user
 from app.core.db import get_db
-from app.models import Security, SecurityQuote
+from app.models import Security, SecurityQuote, User
 from app.repositories.securities import search_securities, set_eligibility_override
 from app.schemas.securities import EligibilityUpdate, SecurityItem, SecurityList
 
@@ -26,7 +27,12 @@ def list_securities(
 
 
 @router.patch("/securities/{security_id}/eligibility", response_model=SecurityItem)
-def update_eligibility(security_id: int, update: EligibilityUpdate, db: Session = Depends(get_db)) -> SecurityItem:
+def update_eligibility(
+    security_id: int,
+    update: EligibilityUpdate,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),  # point d'entrée unique de l'authentification future
+) -> SecurityItem:
     security = db.get(Security, security_id)
     if security is None:
         raise HTTPException(status_code=404, detail="Titre introuvable")

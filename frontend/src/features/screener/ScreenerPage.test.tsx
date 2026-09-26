@@ -9,7 +9,7 @@ afterEach(() => vi.unstubAllGlobals());
 const row = (id: number, symbol: string, name: string, score: number | null, change: number) => ({
   id, yahoo_ticker: `${symbol}.PA`, symbol, name, kind: "stock", market: "Euronext Paris", country: "FR", sector: "Luxe",
   eligibility: "eligible", price: 100 + id, change_pct: change, perf_1w: 1, perf_1m: 2, perf_1y: 3, score, pe: 15,
-  dividend_yield: 0.02, liquid: true, is_favorite: false, sparkline: [1, 2],
+  dividend_yield: 0.02, liquid: true, available_ratio: 1, isin: null, is_favorite: false, sparkline: [1, 2],
 });
 const ROWS = [row(1, "MC", "LVMH", 80, 2.07), row(2, "AIR", "Airbus", 60, -1.2), row(3, "BN", "Danone", null, 0.5)];
 
@@ -64,4 +64,18 @@ test("clic sur une ligne ouvre la fiche", async () => {
 test("message si rien ne correspond", async () => {
   renderPage("/explorer?q=zzzz");
   expect(await screen.findByText(/Aucun titre ne correspond/)).toBeInTheDocument();
+});
+
+test("le favori change immédiatement sans recharger toute la liste", async () => {
+  const fetchMock = mockFetch((url) => (url.startsWith("/api/favorites") ? { status: 204, body: null } : { body: ROWS }));
+  renderWithProviders(
+    <Routes><Route path="/explorer" element={<ScreenerPage kind="stock" title="Explorer" description="d" />} /></Routes>,
+    { route: "/explorer" },
+  );
+  await screen.findByText("LVMH");
+  const lvmhRow = screen.getAllByRole("row").find((r) => r.textContent?.includes("LVMH"))!;
+  await userEvent.click(within(lvmhRow).getByRole("button", { name: "Ajouter aux favoris" }));
+  expect(await within(lvmhRow).findByRole("button", { name: "Retirer des favoris" })).toBeInTheDocument();
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/favorites/1", expect.objectContaining({ method: "PUT" })));
+  expect(fetchMock.mock.calls.filter(([url]) => String(url).startsWith("/api/screener"))).toHaveLength(1);
 });

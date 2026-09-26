@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import Row, delete, func, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -85,11 +85,14 @@ def all_daily_prices(session: Session, security_id: int) -> list[DailyPrice]:
     ))
 
 
-def daily_series(session: Session, since: date) -> dict[int, list[DailyPrice]]:
-    rows = session.scalars(
-        select(DailyPrice).where(DailyPrice.date >= since).order_by(DailyPrice.security_id, DailyPrice.date)
+def daily_series(session: Session, since: date) -> dict[int, list[Row]]:
+    """Colonnes utiles seulement (pas d'objets ORM) : ~500 000 lignes lues toutes les 5 minutes."""
+    rows = session.execute(
+        select(DailyPrice.security_id, DailyPrice.date, DailyPrice.close, DailyPrice.volume)
+        .where(DailyPrice.date >= since)
+        .order_by(DailyPrice.security_id, DailyPrice.date)
     )
-    result: dict[int, list[DailyPrice]] = {}
+    result: dict[int, list[Row]] = {}
     for row in rows:
         result.setdefault(row.security_id, []).append(row)
     return result

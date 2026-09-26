@@ -5,6 +5,20 @@ import type { HistoryOut } from "@/lib/api/client";
 const UP = "#16a34a";
 const DOWN = "#dc2626";
 const priceFormat = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const parisDateTime = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+const parisTime = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", minute: "2-digit" });
+const parisDay = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", day: "2-digit", month: "short" });
+
+// L'intraday arrive en secondes UTC : on l'affiche à l'heure de Paris (les séances quotidiennes restent des dates).
+function formatTime(time: unknown): string {
+  return typeof time === "number" ? parisDateTime.format(time * 1000) : String(time);
+}
+
+function formatTick(time: unknown): string | null {
+  if (typeof time !== "number") return null;
+  const moment = time * 1000;
+  return parisTime.format(moment) === "09:00" ? parisDay.format(moment) : parisTime.format(moment);
+}
 
 type Props = { history: HistoryOut; showSma50: boolean; showSma200: boolean; showRsi: boolean; showMacd: boolean };
 
@@ -16,8 +30,8 @@ export function PriceChart({ history, showSma50, showSma200, showRsi, showMacd }
       autoSize: true,
       layout: { background: { color: "#ffffff" }, textColor: "#52525b", attributionLogo: true, panes: { separatorColor: "#e4e4e7" } },
       grid: { vertLines: { color: "#f4f4f5" }, horzLines: { color: "#f4f4f5" } },
-      localization: { locale: "fr-FR", priceFormatter: (p: number) => priceFormat.format(p) },
-      timeScale: { timeVisible: history.intraday, borderColor: "#e4e4e7" },
+      localization: { locale: "fr-FR", priceFormatter: (p: number) => priceFormat.format(p), timeFormatter: formatTime },
+      timeScale: { timeVisible: history.intraday, borderColor: "#e4e4e7", tickMarkFormatter: formatTick },
       rightPriceScale: { borderColor: "#e4e4e7" },
     });
     const t = (time: string | number) => time as Time;

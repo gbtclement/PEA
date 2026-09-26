@@ -18,6 +18,7 @@ from app.schemas.security_detail import (
     SimulationOut,
 )
 from app.services.fees import broker_fee
+from app.services.fx import currency_for_market, to_eur
 from app.services.indicators import macd, rsi, sma
 
 router = APIRouter(tags=["securities"])
@@ -30,8 +31,7 @@ SIMULATION_WINDOW = {"1W": 7, "1M": 31, "6M": 183, "1Y": 365}
 
 
 def _row_or_404(db: Session, user_id: int, security_id: int):
-    rows = [r for r in screener_rows(db, user_id) if r[0].id == security_id]
-    rows = rows or [r for r in screener_rows(db, user_id, kind="index") if r[0].id == security_id]
+    rows = screener_rows(db, user_id, security_id=security_id)
     if not rows:
         raise HTTPException(status_code=404, detail="Titre introuvable")
     return rows[0]
@@ -51,7 +51,8 @@ def get_security(security_id: int, db: Session = Depends(get_db), user: User = D
         )
     return SecurityDetail(
         **SecurityDetail.fields_from(row),
-        isin=security.isin, industry=security.industry, eligibility_source=security.eligibility_source,
+        industry=security.industry, eligibility_source=security.eligibility_source,
+        currency=currency_for_market(security.market),
         as_of=quote.as_of if quote else None,
         fundamentals=FundamentalsOut.model_validate(fundamentals) if fundamentals else None,
         score_detail=score_detail,
@@ -133,7 +134,8 @@ def simulate(
     user: User = Depends(get_current_user),
 ) -> SimulationOut:
     row = _row_or_404(db, user.id, security_id)
-    quote = row[1]
+    security, quote = row[0], row[1]
+    rate = to_eur(1.0, currency_for_market(security.market)) or 1.0  # le PEA se paie en euros
     prices = all_daily_prices(db, security_id)
     empty = dict(shares=0, invested=0.0, buy_fee=0.0, sell_fee=0.0, current_value=0.0, gain=0.0, gain_pct=None)
     if not prices:
@@ -141,21 +143,22 @@ def simulate(
                              message="Pas assez d'historique pour simuler cet achat.", **empty)
     first_day = prices[-1].date - timedelta(days=SIMULATION_WINDOW[period])
     start = next((p for p in prices if p.date >= first_day), prices[0])
-    current_price = quote.price if quote else prices[-1].close
-    shares = math.floor(amount / start.close) if start.close > 0 else 0
+    start_price = round(start.close * rate, 4)
+    current_price = round((quote.price if quote else prices[-1].close) * rate, 4)
+    shares = math.floor(amount / start_price) if start_price > 0 else 0
     if shares == 0:
         return SimulationOut(
-            start_date=start.date, start_price=start.close, current_price=current_price,
-            message=f"Le montant ne permet pas d'acheter une action (cours de {start.close:.2f} €).".replace(".", ",", 1),
+            start_date=start.date, start_price=start_price, current_price=current_price,
+            message=f"Le montant ne permet pas d'acheter une action (cours de {start_price:.2f} €).".replace(".", ",", 1),
             **empty,
         )
-    invested = round(shares * start.close, 2)
+    invested = round(shares * start_price, 2)
     buy_fee, _ = broker_fee(invested)
     current_value = round(shares * current_price, 2)
     sell_fee, _ = broker_fee(current_value)
     gain = round(current_value - sell_fee - invested - buy_fee, 2)
     return SimulationOut(
-        start_date=start.date, start_price=start.close, current_price=current_price, shares=shares,
+        start_date=start.date, start_price=start_price, current_price=current_price, shares=shares,
         invested=invested, buy_fee=buy_fee, sell_fee=sell_fee, current_value=current_value, gain=gain,
         gain_pct=round(gain / (invested + buy_fee) * 100, 2), message=None,
     )

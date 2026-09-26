@@ -10,7 +10,7 @@ afterEach(() => vi.unstubAllGlobals());
 const DETAIL = {
   id: 1, yahoo_ticker: "MC.PA", symbol: "MC", name: "LVMH", kind: "stock", market: "Euronext Paris", country: "FR",
   sector: "Consumer Cyclical", industry: "Luxury Goods", isin: "FR0000121014", eligibility: "eligible",
-  eligibility_source: "auto", price: 612.4, change_pct: 2.07, as_of: "2026-09-25T15:35:00Z", perf_1w: 1, perf_1m: 2,
+  eligibility_source: "auto", currency: "EUR", available_ratio: 1, price: 612.4, change_pct: 2.07, as_of: "2026-09-25T15:35:00Z", perf_1w: 1, perf_1m: 2,
   perf_1y: 3, score: 72, pe: 18, dividend_yield: 0.0328, liquid: true, is_favorite: false, sparkline: [],
   fundamentals: { pe: 18.07, eps: 33.9, earnings_growth: 0.008, revenue_growth: -0.029, debt_to_equity: 0.53,
                   profit_margin: 0.137, dividend_yield: 0.0328, market_cap: 195_600_000_000, currency: "EUR", updated_at: null },
@@ -59,4 +59,9 @@ test("test_security_page_without_score : titre sans score ni fondamentaux", asyn
 test("titre introuvable", async () => {
   renderPage(404, { detail: "Titre introuvable" });
   expect(await screen.findByText("Titre introuvable.")).toBeInTheDocument();
+});
+
+test("affiche la devise de cotation", async () => {
+  renderPage(200, { ...DETAIL, market: "Oslo Børs", currency: "NOK", price: 721.83 });
+  expect(await screen.findByText(/721,83 NOK/)).toBeInTheDocument();
 });

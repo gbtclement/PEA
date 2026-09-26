@@ -2,10 +2,10 @@ from collections import defaultdict
 from dataclasses import asdict
 from datetime import timedelta
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.jobs.context import JobContext
-from app.models import SecurityFundamentals, SecurityQuote
+from app.models import SecurityFundamentals, SecurityQuote, SecurityScore
 from app.repositories.market_data import daily_series, refreshable_securities
 from app.repositories.scores import sector_median_pe, upsert_score
 from app.services.fx import currency_for_market, to_eur
@@ -16,6 +16,14 @@ from app.services.scoring.score import ScoreInputs, compute_score
 HISTORY_WINDOW = timedelta(days=420)  # ≈ 290 séances : assez pour la moyenne 200 jours et la perf 1 an
 SPARKLINE_POINTS = 63
 INDEX_TICKER = "^FCHI"
+
+
+_FUNDAMENTAL_FIELDS = ("pe", "eps", "earnings_growth", "revenue_growth", "debt_to_equity", "profit_margin", "market_cap")
+
+
+def _has_fundamentals(f: SecurityFundamentals | None) -> bool:
+    """Une ligne vide (Yahoo n'a rien renvoyé) ne permet pas de conclure à l'absence de dividende."""
+    return f is not None and any(getattr(f, name) is not None for name in _FUNDAMENTAL_FIELDS)
 
 
 def _last(values: list) -> float | None:
@@ -51,15 +59,17 @@ def refresh_scores(ctx: JobContext) -> int:
         index_perf_3m = performance(closes_for(index), 63) if index else None
 
         count = 0
+        processed: list[int] = []
         for s in securities:
             if s.kind == "index":
                 continue
+            processed.append(s.id)
             bars = series.get(s.id, [])
             closes = closes_for(s)
             f = fundamentals.get(s.id)
             macd_values = macd(closes)
             dividend_yield = None
-            if f is not None:
+            if _has_fundamentals(f):
                 dividend_yield = f.dividend_yield if f.dividend_yield is not None else 0.0  # pas de dividende déclaré
             result = compute_score(ScoreInputs(
                 price=_last(closes),
@@ -105,5 +115,11 @@ def refresh_scores(ctx: JobContext) -> int:
                 "sparkline": [round(c, 4) for c in closes[-SPARKLINE_POINTS:]],
             })
             count += 1
+        # Titres sortis du périmètre (devenus non éligibles, inactifs) : ils ne peuvent plus figurer dans le top.
+        session.execute(
+            update(SecurityScore)
+            .where(SecurityScore.security_id.notin_(processed), SecurityScore.eligible_for_top.is_(True))
+            .values(eligible_for_top=False)
+        )
         session.commit()
     return count

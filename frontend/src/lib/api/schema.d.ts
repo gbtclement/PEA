@@ -477,6 +477,10 @@ export interface components {
             dividend_yield: number | null;
             /** Liquid */
             liquid: boolean;
+            /** Available Ratio */
+            available_ratio: number | null;
+            /** Isin */
+            isin: string | null;
             /** Is Favorite */
             is_favorite: boolean;
             /** Sparkline */
@@ -520,16 +524,20 @@ export interface components {
             dividend_yield: number | null;
             /** Liquid */
             liquid: boolean;
+            /** Available Ratio */
+            available_ratio: number | null;
+            /** Isin */
+            isin: string | null;
             /** Is Favorite */
             is_favorite: boolean;
             /** Sparkline */
             sparkline: number[];
-            /** Isin */
-            isin: string | null;
             /** Industry */
             industry: string | null;
             /** Eligibility Source */
             eligibility_source: string;
+            /** Currency */
+            currency: string;
             /** As Of */
             as_of: string | null;
             fundamentals: components["schemas"]["FundamentalsOut"] | null;
@@ -645,6 +653,10 @@ export interface components {
             dividend_yield: number | null;
             /** Liquid */
             liquid: boolean;
+            /** Available Ratio */
+            available_ratio: number | null;
+            /** Isin */
+            isin: string | null;
             /** Is Favorite */
             is_favorite: boolean;
             /** Sparkline */

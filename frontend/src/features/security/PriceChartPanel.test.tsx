@@ -52,3 +52,12 @@ test("message quand il n'y a pas de données", async () => {
   expect(await screen.findByText(/Pas de données pour cette période/)).toBeInTheDocument();
   expect(screen.getByRole("checkbox", { name: "RSI" })).toBeDisabled();
 });
+
+test("les heures intraday sont affichées à l'heure de Paris", async () => {
+  const { createChart } = await import("lightweight-charts");
+  mockFetch(() => ({ body: DAILY }));
+  renderWithProviders(<PriceChartPanel securityId={5} />);
+  await waitFor(() => expect(createChart).toHaveBeenCalled());
+  const options = vi.mocked(createChart).mock.calls.at(-1)![1] as { localization: { timeFormatter: (t: number | string) => string } };
+  expect(options.localization.timeFormatter(Date.UTC(2026, 8, 25, 7, 0) / 1000)).toContain("09:00");
+});

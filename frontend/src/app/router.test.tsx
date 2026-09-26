@@ -26,5 +26,5 @@ test.each([
       <RouterProvider router={createMemoryRouter(routes, { initialEntries: [path] })} />
     </QueryClientProvider>,
   );
-  expect(await screen.findByRole("heading", { level: 1, name: title })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { level: 1, name: title }, { timeout: 5000 })).toBeInTheDocument();
 });

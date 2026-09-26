@@ -5,6 +5,7 @@ export type ScreenerFilters = {
   sector: string | null;
   country: string | null;
   market: string | null;
+  eligibility: string | null;
   minScore: number | null;
   minPrice: number | null;
   maxPrice: number | null;
@@ -28,6 +29,7 @@ export function filtersFromParams(params: URLSearchParams): ScreenerFilters {
     sector: params.get("sector"),
     country: params.get("country"),
     market: params.get("market"),
+    eligibility: params.get("eligibility"),
     minScore: numberParam(params, "minScore"),
     minPrice: numberParam(params, "minPrice"),
     maxPrice: numberParam(params, "maxPrice"),
@@ -41,10 +43,11 @@ export const normalize = (text: string) => text.normalize("NFD").replace(/[̀-ͯ
 export function filterRows(rows: ScreenerRow[], f: ScreenerFilters): ScreenerRow[] {
   const q = normalize(f.q.trim());
   return rows.filter((r) =>
-    (!q || normalize(r.name).includes(q) || normalize(r.symbol).includes(q))
+    (!q || normalize(r.name).includes(q) || normalize(r.symbol).includes(q) || normalize(r.isin ?? "").includes(q))
     && (!f.sector || r.sector === f.sector)
     && (!f.country || r.country === f.country)
     && (!f.market || r.market === f.market)
+    && (!f.eligibility || r.eligibility === f.eligibility)
     && (f.minScore === null || (r.score !== null && r.score >= f.minScore))
     && (f.minPrice === null || (r.price !== null && r.price >= f.minPrice))
     && (f.maxPrice === null || (r.price !== null && r.price <= f.maxPrice))
