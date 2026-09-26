@@ -13,3 +13,12 @@ test("accueil, explorateur et fiche s'affichent", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: /LVMH/i })).toBeVisible();
   await expect(page.getByText("Score mixte")).toBeVisible();
 });
+
+test("portefeuille et compteur d'ordres", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Portefeuille" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Portefeuille" })).toBeVisible();
+  await expect(page.getByText(/\d+\/\d+ ordres en \d{4}/)).toBeVisible();
+  await page.getByRole("button", { name: "+ Nouvel ordre" }).click();
+  await expect(page.getByRole("dialog")).toContainText("Nouvel ordre");
+});

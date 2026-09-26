@@ -27,12 +27,13 @@ npm test
 npm run gen:api   # régénère les types TypeScript depuis l'API
 ```
 
-## Fonctionnalités (lot 2)
+## Fonctionnalités
 
-- **Accueil** : top 10 du score mixte, indices, plus fortes hausses/baisses, carte du marché.
+- **Accueil** : top 10 du score mixte, indices, compteur d'ordres de l'année, plus fortes hausses/baisses, carte du marché.
 - **Explorer / ETF** : tous les titres, filtres (secteur, pays, place, score, prix, liquidité, favoris) et tris, conservés dans l'URL.
-- **Fiche d'un titre** : graphique TradingView (bougies, volume, moyennes 50/200 jours, RSI, MACD), score détaillé, fondamentaux, simulateur « et si j'avais investi », frais estimés, actualités.
-- **Réglages** : corrections manuelles de l'éligibilité PEA.
+- **Fiche d'un titre** : graphique TradingView (bougies, volume, moyennes 50/200 jours, RSI, MACD), score détaillé, fondamentaux, simulateur « et si j'avais investi », frais estimés, actualités, bouton « + J'ai acheté ».
+- **Portefeuille** : saisie manuelle des ordres (frais calculés selon votre grille, modifiables), positions avec PRU frais inclus, plus/moins-values latentes et réalisées, répartition par titre et par secteur, évolution de la valeur, compteur X/12 ordres avec alerte de rythme. Une vente supérieure à la quantité détenue est refusée.
+- **Réglages** : ordres minimum par an, frais en cas de non-respect, grille de courtage de votre caisse régionale ; corrections manuelles de l'éligibilité PEA.
 
 Le score est recalculé toutes les 5 minutes pendant la séance. Il sert à trier et à comprendre, pas à prédire.
 
