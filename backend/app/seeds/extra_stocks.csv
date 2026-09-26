@@ -1,0 +1,76 @@
+yahoo_ticker,symbol,name,market,country
+ADS.DE,ADS,Adidas,Xetra,DE
+ALV.DE,ALV,Allianz,Xetra,DE
+BAS.DE,BAS,BASF,Xetra,DE
+BAYN.DE,BAYN,Bayer,Xetra,DE
+BEI.DE,BEI,Beiersdorf,Xetra,DE
+BMW.DE,BMW,BMW,Xetra,DE
+BNR.DE,BNR,Brenntag,Xetra,DE
+CBK.DE,CBK,Commerzbank,Xetra,DE
+CON.DE,CON,Continental,Xetra,DE
+DTG.DE,DTG,Daimler Truck,Xetra,DE
+DBK.DE,DBK,Deutsche Bank,Xetra,DE
+DB1.DE,DB1,Deutsche Börse,Xetra,DE
+DHL.DE,DHL,DHL Group,Xetra,DE
+DTE.DE,DTE,Deutsche Telekom,Xetra,DE
+EOAN.DE,EOAN,E.ON,Xetra,DE
+FRE.DE,FRE,Fresenius,Xetra,DE
+FME.DE,FME,Fresenius Medical Care,Xetra,DE
+G1A.DE,G1A,GEA Group,Xetra,DE
+HNR1.DE,HNR1,Hannover Rück,Xetra,DE
+HEI.DE,HEI,Heidelberg Materials,Xetra,DE
+HEN3.DE,HEN3,Henkel,Xetra,DE
+IFX.DE,IFX,Infineon,Xetra,DE
+MBG.DE,MBG,Mercedes-Benz Group,Xetra,DE
+MRK.DE,MRK,Merck KGaA,Xetra,DE
+MTX.DE,MTX,MTU Aero Engines,Xetra,DE
+MUV2.DE,MUV2,Munich Re,Xetra,DE
+P911.DE,P911,Porsche AG,Xetra,DE
+PAH3.DE,PAH3,Porsche SE,Xetra,DE
+QIA.DE,QIA,Qiagen,Xetra,NL
+RHM.DE,RHM,Rheinmetall,Xetra,DE
+RWE.DE,RWE,RWE,Xetra,DE
+SAP.DE,SAP,SAP,Xetra,DE
+SRT3.DE,SRT3,Sartorius,Xetra,DE
+SIE.DE,SIE,Siemens,Xetra,DE
+ENR.DE,ENR,Siemens Energy,Xetra,DE
+SHL.DE,SHL,Siemens Healthineers,Xetra,DE
+SY1.DE,SY1,Symrise,Xetra,DE
+VOW3.DE,VOW3,Volkswagen,Xetra,DE
+VNA.DE,VNA,Vonovia,Xetra,DE
+ZAL.DE,ZAL,Zalando,Xetra,DE
+SAN.MC,SAN,Banco Santander,Bolsa de Madrid,ES
+BBVA.MC,BBVA,BBVA,Bolsa de Madrid,ES
+ITX.MC,ITX,Inditex,Bolsa de Madrid,ES
+IBE.MC,IBE,Iberdrola,Bolsa de Madrid,ES
+TEF.MC,TEF,Telefónica,Bolsa de Madrid,ES
+REP.MC,REP,Repsol,Bolsa de Madrid,ES
+AMS.MC,AMS,Amadeus IT Group,Bolsa de Madrid,ES
+CABK.MC,CABK,CaixaBank,Bolsa de Madrid,ES
+AENA.MC,AENA,Aena,Bolsa de Madrid,ES
+ACS.MC,ACS,ACS,Bolsa de Madrid,ES
+ELE.MC,ELE,Endesa,Bolsa de Madrid,ES
+NTGY.MC,NTGY,Naturgy,Bolsa de Madrid,ES
+RED.MC,RED,Redeia,Bolsa de Madrid,ES
+GRF.MC,GRF,Grifols,Bolsa de Madrid,ES
+CLNX.MC,CLNX,Cellnex Telecom,Bolsa de Madrid,ES
+IAG.MC,IAG,International Airlines Group,Bolsa de Madrid,ES
+MAP.MC,MAP,Mapfre,Bolsa de Madrid,ES
+BKT.MC,BKT,Bankinter,Bolsa de Madrid,ES
+SAB.MC,SAB,Banco Sabadell,Bolsa de Madrid,ES
+ENG.MC,ENG,Enagás,Bolsa de Madrid,ES
+ACX.MC,ACX,Acerinox,Bolsa de Madrid,ES
+MEL.MC,MEL,Meliá Hotels,Bolsa de Madrid,ES
+COL.MC,COL,Inmobiliaria Colonial,Bolsa de Madrid,ES
+MRL.MC,MRL,Merlin Properties,Bolsa de Madrid,ES
+LOG.MC,LOG,Logista,Bolsa de Madrid,ES
+FDR.MC,FDR,Fluidra,Bolsa de Madrid,ES
+IDR.MC,IDR,Indra Sistemas,Bolsa de Madrid,ES
+ANA.MC,ANA,Acciona,Bolsa de Madrid,ES
+ANE.MC,ANE,Acciona Energía,Bolsa de Madrid,ES
+SLR.MC,SLR,Solaria,Bolsa de Madrid,ES
+ROVI.MC,ROVI,Laboratorios Rovi,Bolsa de Madrid,ES
+UNI.MC,UNI,Unicaja Banco,Bolsa de Madrid,ES
+PUIG.MC,PUIG,Puig Brands,Bolsa de Madrid,ES
+SCYR.MC,SCYR,Sacyr,Bolsa de Madrid,ES
+NOKIA.HE,NOKIA,Nokia,Nasdaq Helsinki,FI
