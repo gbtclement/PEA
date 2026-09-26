@@ -38,6 +38,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/securities/{security_id}/eligibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Eligibility */
+        patch: operations["update_eligibility_api_securities__security_id__eligibility_patch"];
+        trace?: never;
+    };
+    "/api/securities/{security_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Security */
+        get: operations["get_security_api_securities__security_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/securities/{security_id}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get History */
+        get: operations["get_history_api_securities__security_id__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/securities/{security_id}/news": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get News */
+        get: operations["get_news_api_securities__security_id__news_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/securities/{security_id}/simulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Simulate */
+        get: operations["simulate_api_securities__security_id__simulate_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/status": {
         parameters: {
             query?: never;
@@ -55,17 +140,221 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/screener": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Screener */
+        get: operations["get_screener_api_screener_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rankings/top": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Top */
+        get: operations["get_top_api_rankings_top_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/rankings/movers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Movers */
+        get: operations["get_movers_api_rankings_movers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/market/heatmap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Heatmap */
+        get: operations["get_heatmap_api_market_heatmap_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/fees/estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Estimate Fee */
+        get: operations["estimate_fee_api_fees_estimate_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/favorites/{security_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Add Favorite */
+        put: operations["add_favorite_api_favorites__security_id__put"];
+        post?: never;
+        /** Remove Favorite */
+        delete: operations["remove_favorite_api_favorites__security_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Bar */
+        Bar: {
+            /** Time */
+            time: string | number;
+            /** Open */
+            open: number | null;
+            /** High */
+            high: number | null;
+            /** Low */
+            low: number | null;
+            /** Close */
+            close: number;
+            /** Volume */
+            volume: number | null;
+        };
+        /** ComponentOut */
+        ComponentOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Points */
+            points: number;
+            /** Max Points */
+            max_points: number;
+            /** Message */
+            message: string;
+            /** Group */
+            group: string;
+        };
+        /** EligibilityUpdate */
+        EligibilityUpdate: {
+            /** Override */
+            override: ("eligible" | "non_eligible") | null;
+        };
+        /** FeeEstimate */
+        FeeEstimate: {
+            /** Amount */
+            amount: number;
+            /** Fee */
+            fee: number;
+            /** Rate */
+            rate: number;
+        };
+        /** FundamentalsOut */
+        FundamentalsOut: {
+            /** Pe */
+            pe: number | null;
+            /** Eps */
+            eps: number | null;
+            /** Earnings Growth */
+            earnings_growth: number | null;
+            /** Revenue Growth */
+            revenue_growth: number | null;
+            /** Debt To Equity */
+            debt_to_equity: number | null;
+            /** Profit Margin */
+            profit_margin: number | null;
+            /** Dividend Yield */
+            dividend_yield: number | null;
+            /** Market Cap */
+            market_cap: number | null;
+            /** Currency */
+            currency: string | null;
+            /** Updated At */
+            updated_at: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HeatmapItem */
+        HeatmapItem: {
+            /** Id */
+            id: number;
+            /** Symbol */
+            symbol: string;
+            /** Name */
+            name: string;
+            /** Sector */
+            sector: string;
+            /** Market Cap Eur */
+            market_cap_eur: number;
+            /** Change Pct */
+            change_pct: number;
+        };
+        /** HistoryOut */
+        HistoryOut: {
+            /** Period */
+            period: string;
+            /** Intraday */
+            intraday: boolean;
+            /** Bars */
+            bars: components["schemas"]["Bar"][];
+            /** Sma50 */
+            sma50: components["schemas"]["LinePoint"][];
+            /** Sma200 */
+            sma200: components["schemas"]["LinePoint"][];
+            /** Rsi */
+            rsi: components["schemas"]["LinePoint"][];
+            /** Macd */
+            macd: components["schemas"]["MacdPoint"][];
+        };
         /** IndexQuote */
         IndexQuote: {
+            /** Id */
+            id: number;
             /** Yahoo Ticker */
             yahoo_ticker: string;
             /** Name */
@@ -90,8 +379,68 @@ export interface components {
             /** Last Count */
             last_count: number;
         };
-        /** SecurityItem */
-        SecurityItem: {
+        /** LinePoint */
+        LinePoint: {
+            /** Time */
+            time: string;
+            /** Value */
+            value: number;
+        };
+        /** MacdPoint */
+        MacdPoint: {
+            /** Time */
+            time: string;
+            /** Macd */
+            macd: number;
+            /** Signal */
+            signal: number;
+            /** Histogram */
+            histogram: number;
+        };
+        /** Movers */
+        Movers: {
+            /** Gainers */
+            gainers: components["schemas"]["ScreenerRow"][];
+            /** Losers */
+            losers: components["schemas"]["ScreenerRow"][];
+        };
+        /** NewsOut */
+        NewsOut: {
+            /** Title */
+            title: string;
+            /** Url */
+            url: string;
+            /** Publisher */
+            publisher: string | null;
+            /** Published At */
+            published_at: string | null;
+        };
+        /** ScoreOut */
+        ScoreOut: {
+            /** Total */
+            total: number | null;
+            /** Technical */
+            technical: number | null;
+            /** Fundamental */
+            fundamental: number | null;
+            /** Available Ratio */
+            available_ratio: number;
+            /** Liquid */
+            liquid: boolean;
+            /** Eligible For Top */
+            eligible_for_top: boolean;
+            /** History Days */
+            history_days: number;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Components */
+            components: components["schemas"]["ComponentOut"][];
+        };
+        /** ScreenerRow */
+        ScreenerRow: {
             /** Id */
             id: number;
             /** Yahoo Ticker */
@@ -114,6 +463,106 @@ export interface components {
             price: number | null;
             /** Change Pct */
             change_pct: number | null;
+            /** Perf 1W */
+            perf_1w: number | null;
+            /** Perf 1M */
+            perf_1m: number | null;
+            /** Perf 1Y */
+            perf_1y: number | null;
+            /** Score */
+            score: number | null;
+            /** Pe */
+            pe: number | null;
+            /** Dividend Yield */
+            dividend_yield: number | null;
+            /** Liquid */
+            liquid: boolean;
+            /** Is Favorite */
+            is_favorite: boolean;
+            /** Sparkline */
+            sparkline: number[];
+        };
+        /** SecurityDetail */
+        SecurityDetail: {
+            /** Id */
+            id: number;
+            /** Yahoo Ticker */
+            yahoo_ticker: string;
+            /** Symbol */
+            symbol: string;
+            /** Name */
+            name: string;
+            /** Kind */
+            kind: string;
+            /** Market */
+            market: string;
+            /** Country */
+            country: string | null;
+            /** Sector */
+            sector: string | null;
+            /** Eligibility */
+            eligibility: string;
+            /** Price */
+            price: number | null;
+            /** Change Pct */
+            change_pct: number | null;
+            /** Perf 1W */
+            perf_1w: number | null;
+            /** Perf 1M */
+            perf_1m: number | null;
+            /** Perf 1Y */
+            perf_1y: number | null;
+            /** Score */
+            score: number | null;
+            /** Pe */
+            pe: number | null;
+            /** Dividend Yield */
+            dividend_yield: number | null;
+            /** Liquid */
+            liquid: boolean;
+            /** Is Favorite */
+            is_favorite: boolean;
+            /** Sparkline */
+            sparkline: number[];
+            /** Isin */
+            isin: string | null;
+            /** Industry */
+            industry: string | null;
+            /** Eligibility Source */
+            eligibility_source: string;
+            /** As Of */
+            as_of: string | null;
+            fundamentals: components["schemas"]["FundamentalsOut"] | null;
+            score_detail: components["schemas"]["ScoreOut"] | null;
+        };
+        /** SecurityItem */
+        SecurityItem: {
+            /** Id */
+            id: number;
+            /** Yahoo Ticker */
+            yahoo_ticker: string;
+            /** Symbol */
+            symbol: string;
+            /** Name */
+            name: string;
+            /** Kind */
+            kind: string;
+            /** Market */
+            market: string;
+            /** Country */
+            country: string | null;
+            /** Sector */
+            sector: string | null;
+            /** Eligibility */
+            eligibility: string;
+            /** Eligibility Source */
+            eligibility_source: string;
+            /** Eligibility Override */
+            eligibility_override: string | null;
+            /** Price */
+            price: number | null;
+            /** Change Pct */
+            change_pct: number | null;
             /** As Of */
             as_of: string | null;
         };
@@ -124,6 +573,31 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** SimulationOut */
+        SimulationOut: {
+            /** Start Date */
+            start_date: string | null;
+            /** Start Price */
+            start_price: number | null;
+            /** Current Price */
+            current_price: number | null;
+            /** Shares */
+            shares: number;
+            /** Invested */
+            invested: number;
+            /** Buy Fee */
+            buy_fee: number;
+            /** Sell Fee */
+            sell_fee: number;
+            /** Current Value */
+            current_value: number;
+            /** Gain */
+            gain: number;
+            /** Gain Pct */
+            gain_pct: number | null;
+            /** Message */
+            message: string | null;
+        };
         /** StatusResponse */
         StatusResponse: {
             /** Market Open */
@@ -132,6 +606,55 @@ export interface components {
             jobs: components["schemas"]["JobStatus"][];
             /** Indices */
             indices: components["schemas"]["IndexQuote"][];
+        };
+        /** TopItem */
+        TopItem: {
+            /** Id */
+            id: number;
+            /** Yahoo Ticker */
+            yahoo_ticker: string;
+            /** Symbol */
+            symbol: string;
+            /** Name */
+            name: string;
+            /** Kind */
+            kind: string;
+            /** Market */
+            market: string;
+            /** Country */
+            country: string | null;
+            /** Sector */
+            sector: string | null;
+            /** Eligibility */
+            eligibility: string;
+            /** Price */
+            price: number | null;
+            /** Change Pct */
+            change_pct: number | null;
+            /** Perf 1W */
+            perf_1w: number | null;
+            /** Perf 1M */
+            perf_1m: number | null;
+            /** Perf 1Y */
+            perf_1y: number | null;
+            /** Score */
+            score: number | null;
+            /** Pe */
+            pe: number | null;
+            /** Dividend Yield */
+            dividend_yield: number | null;
+            /** Liquid */
+            liquid: boolean;
+            /** Is Favorite */
+            is_favorite: boolean;
+            /** Sparkline */
+            sparkline: number[];
+            /** Technical */
+            technical: number | null;
+            /** Fundamental */
+            fundamental: number | null;
+            /** Reasons */
+            reasons: string[];
         };
         /** ValidationError */
         ValidationError: {
@@ -185,6 +708,7 @@ export interface operations {
                 eligibility?: ("eligible" | "a_verifier" | "non_eligible") | null;
                 limit?: number;
                 offset?: number;
+                overridden?: boolean;
             };
             header?: never;
             path?: never;
@@ -199,6 +723,170 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SecurityList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_eligibility_api_securities__security_id__eligibility_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                security_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EligibilityUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecurityItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_security_api_securities__security_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                security_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecurityDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_history_api_securities__security_id__history_get: {
+        parameters: {
+            query?: {
+                period?: "1D" | "1W" | "1M" | "6M" | "1Y" | "5Y";
+            };
+            header?: never;
+            path: {
+                security_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_news_api_securities__security_id__news_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                security_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    simulate_api_securities__security_id__simulate_get: {
+        parameters: {
+            query: {
+                amount: number;
+                period?: "1W" | "1M" | "6M" | "1Y";
+            };
+            header?: never;
+            path: {
+                security_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimulationOut"];
                 };
             };
             /** @description Validation Error */
@@ -228,6 +916,208 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["StatusResponse"];
+                };
+            };
+        };
+    };
+    get_screener_api_screener_get: {
+        parameters: {
+            query?: {
+                kind?: ("stock" | "etf") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScreenerRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_top_api_rankings_top_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TopItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_movers_api_rankings_movers_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Movers"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_heatmap_api_market_heatmap_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HeatmapItem"][];
+                };
+            };
+        };
+    };
+    estimate_fee_api_fees_estimate_get: {
+        parameters: {
+            query: {
+                amount: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeeEstimate"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_favorite_api_favorites__security_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                security_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_favorite_api_favorites__security_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                security_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
