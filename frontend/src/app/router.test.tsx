@@ -78,3 +78,12 @@ test("pied de page avec l'avertissement et titres de cartes en h2", async () => 
   expect(screen.getByRole("contentinfo")).toHaveTextContent(/pas un conseil en investissement/);
   expect(screen.getByRole("heading", { level: 2, name: "Éligibilité PEA — corrections manuelles" })).toBeInTheDocument();
 });
+
+test("adresse inconnue : page introuvable dans la mise en page, jamais indexée", async () => {
+  renderRoute("/page-qui-n-existe-pas");
+  expect(await screen.findByRole("heading", { level: 1, name: "Page introuvable" }, { timeout: 5000 })).toBeInTheDocument();
+  expect(screen.getByRole("navigation", { name: "Navigation principale" })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Retour à l'accueil" })).toHaveAttribute("href", "/");
+  await waitFor(() => expect(robots()).toBe("noindex, nofollow"));
+  expect(document.title).toBe("Page introuvable | PEA Radar");
+});

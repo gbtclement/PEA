@@ -18,6 +18,9 @@ router = APIRouter(prefix="/seo", tags=["seo"])
 
 PUBLIC_PATHS = ["/", "/explorer", "/etf"]
 PRIVATE_PATHS = ["/portefeuille", "/assistant", "/reglages"]
+# Les pages sont rendues dans le navigateur : les robots doivent pouvoir lire les données publiques de l'API,
+# seules les données personnelles leur sont fermées.
+PRIVATE_API_PATHS = ["/api/portfolio", "/api/orders", "/api/assistant/", "/api/settings", "/api/favorites/"]
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 DbDep = Annotated[Session, Depends(get_db)]
@@ -39,7 +42,8 @@ def robots(settings: SettingsDep) -> Response:
     else:
         lines += ["Allow: /$", "Allow: /explorer", "Allow: /etf", "Allow: /titres/", "Allow: /llms.txt"]
         lines += [f"Disallow: {path}" for path in PRIVATE_PATHS]
-        lines += ["Disallow: /api/", "", f"Sitemap: {_url(settings, '/sitemap.xml')}"]
+        lines += [f"Disallow: {path}" for path in PRIVATE_API_PATHS]
+        lines += ["", f"Sitemap: {_url(settings, '/sitemap.xml')}"]
     return Response("\n".join(lines) + "\n", media_type="text/plain")
 
 

@@ -31,8 +31,12 @@ def test_robots_online_allows_public_pages_only(online):
     lines = text.splitlines()
     assert "Disallow: /" not in lines
     for line in ("Allow: /$", "Allow: /explorer", "Allow: /etf", "Allow: /titres/", "Allow: /llms.txt",
-                 "Disallow: /portefeuille", "Disallow: /assistant", "Disallow: /reglages", "Disallow: /api/"):
+                 "Disallow: /portefeuille", "Disallow: /assistant", "Disallow: /reglages"):
         assert line in lines
+    # Les pages sont rendues côté navigateur : Google doit pouvoir lire les données publiques de l'API
+    assert "Disallow: /api/" not in lines
+    for private_api in ("/api/portfolio", "/api/orders", "/api/assistant/", "/api/settings", "/api/favorites/"):
+        assert f"Disallow: {private_api}" in lines
     assert "Sitemap: https://pea.example/sitemap.xml" in lines
 
 
