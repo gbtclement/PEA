@@ -16,7 +16,7 @@ Application web personnelle, exécutée en local via Docker, pour **aider à cho
 - Respecter la contrainte de la formule : **≥ 12 ordres/an** sinon ~96 €/an de frais (valeurs variables selon la caisse régionale).
 - Un **assistant IA** (Claude) intégré pour analyser actions, top 10 et portefeuille.
 - Données issues d'**API gratuites** (Yahoo Finance), avec quelques minutes de retard acceptables.
-- Interface **React fluide**, thème **clair**, navigation **à gauche**, sobre mais soignée, **PC uniquement** (≥ 1280 px, optimisé 1400 px+).
+- Interface **React fluide**, thème **clair**, navigation **à gauche**, sobre mais soignée, **PC uniquement** (utilisable dès 1024 px de large, sur deux colonnes à partir de 1280 px, optimisé 1400 px+).
 - Architecture **propre et évolutive** : comptes utilisateurs et mise en ligne possibles plus tard.
 - **SEO** complet (Hn, robots.txt, sitemap, schema.org, llms.txt) — en dernière étape.
 

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkline } from "@/components/Sparkline";
 import { apiGet, type HistoryOut, type StatusResponse } from "@/lib/api/client";
 import { formatPct, formatPrice } from "@/lib/format";
@@ -26,7 +27,9 @@ function IndexCard({ index }: { index: StatusResponse["indices"][number] }) {
 
 export function IndicesBar() {
   const { data } = useQuery({ queryKey: ["status"], queryFn: () => apiGet<StatusResponse>("/api/status"), refetchInterval: 60_000 });
-  if (!data?.indices.length) return null;
+  // Place réservée pendant le chargement : sans elle, toute la page descend quand les indices arrivent.
+  if (!data) return <div className="grid grid-cols-3 gap-4">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-[102px] rounded-xl" />)}</div>;
+  if (!data.indices.length) return null;
   return (
     <div className="grid grid-cols-3 gap-4">
       {data.indices.map((index) => <IndexCard key={index.id} index={index} />)}

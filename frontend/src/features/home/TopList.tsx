@@ -24,7 +24,7 @@ export function TopList() {
       </CardHeader>
       <CardContent className="px-0">
         {isPending ? (
-          <div className="space-y-3 px-6">{Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
+          <div className="space-y-3 px-6">{Array.from({ length: 10 }, (_, i) => <Skeleton key={i} className="h-20 w-full" />)}</div>
         ) : isError ? (
           <p role="alert" className="px-6 text-sm text-down">Impossible de charger le classement.</p>
         ) : data.length === 0 ? (
@@ -43,7 +43,7 @@ export function TopList() {
                   </Link>
                   <ul className="mt-1 flex flex-wrap gap-1.5">
                     {item.reasons.map((reason) => (
-                      <li key={reason} className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">{reason}</li>
+                      <li key={reason} className="rounded-md bg-muted px-2 py-0.5 text-xs text-neutral-600">{reason}</li>
                     ))}
                   </ul>
                 </div>

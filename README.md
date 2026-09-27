@@ -38,11 +38,28 @@ npm run gen:api   # régénère les types TypeScript depuis l'API
 
 Le score est recalculé toutes les 5 minutes pendant la séance. Il sert à trier et à comprendre, pas à prédire.
 
-## Test de fumée
+## Référencement (SEO)
+
+L'application est prête à être indexée le jour où elle sera mise en ligne :
+
+- chaque page a son titre, sa description, son adresse canonique, ses balises Open Graph/Twitter et ses données schema.org (`WebApplication`, `Corporation`, `InvestmentFund`, `BreadcrumbList`) ;
+- `/robots.txt`, `/sitemap.xml` et `/llms.txt` sont générés par l'API ;
+- le portefeuille, l'assistant et les réglages sont toujours en `noindex`.
+
+Deux variables dans `.env` :
+
+| Variable | Local (défaut) | En ligne |
+|---|---|---|
+| `SEO_INDEXING` | `false` : robots.txt interdit tout | `true` : seules les pages publiques (accueil, explorateur, ETF, fiches) sont autorisées |
+| `PUBLIC_BASE_URL` | `http://localhost:8095` | l'adresse publique, utilisée dans le sitemap, robots.txt et llms.txt |
+
+À la mise en ligne, prévoir aussi une pré-génération (prerendering) des pages publiques : les moteurs indexent plus sûrement du HTML déjà rempli qu'une application React.
+
+## Tests de bout en bout
 
 ```bash
 cd frontend && npx playwright install chromium   # une fois
-npm run e2e                                        # l'application doit tourner sur http://localhost:8095
+npm run e2e                                        # l'application doit tourner sur http://localhost:8095 (parcours, mise en page de 1100 à 1440 px, SEO)
 ```
 
 Documentation de conception : `docs/superpowers/specs/`.
