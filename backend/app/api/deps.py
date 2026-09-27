@@ -24,3 +24,10 @@ def get_llm_factory():
         return anthropic.Anthropic(api_key=api_key, max_retries=2).beta.messages
 
     return make
+
+
+def get_session_maker():
+    """Ouvre des sessions hors requête (fil de réponse de l'assistant) ; remplacée en test."""
+    from app.core.db import get_session_factory
+
+    return get_session_factory()

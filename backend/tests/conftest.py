@@ -45,7 +45,9 @@ def fake_llm():
 
 @pytest.fixture
 def client(db, fake_market, fake_llm):
-    from app.api.deps import INTRADAY_CACHE, NEWS_CACHE, get_llm_factory, get_market_provider
+    from contextlib import nullcontext
+
+    from app.api.deps import INTRADAY_CACHE, NEWS_CACHE, get_llm_factory, get_market_provider, get_session_maker
 
     INTRADAY_CACHE.clear()
     NEWS_CACHE.clear()
@@ -60,6 +62,7 @@ def client(db, fake_market, fake_llm):
         return make
 
     app.dependency_overrides[get_llm_factory] = llm_factory
+    app.dependency_overrides[get_session_maker] = lambda: (lambda: nullcontext(db))
     with TestClient(app) as test_client:
         yield test_client
 

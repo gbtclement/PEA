@@ -1,5 +1,7 @@
 import logging
+import threading
 from collections.abc import Callable, Iterator
+from types import SimpleNamespace
 from typing import Any, Protocol
 
 import anthropic
@@ -12,6 +14,7 @@ REFUSAL = "Claude a refusé de répondre à cette demande. Reformulez votre ques
 TRUNCATED = "La réponse a été coupée car elle était trop longue."
 TOO_MANY_STEPS = "L'assistant a atteint la limite d'étapes pour cette question. Posez une question plus précise."
 UNAVAILABLE = "Le service Claude est momentanément indisponible. Réessayez dans un instant."
+INTERRUPTED = "Réponse interrompue."
 
 
 class LLM(Protocol):
@@ -42,9 +45,11 @@ class ChatRun:
     """Un tour de conversation : appels successifs à Claude tant qu'il demande des outils."""
 
     def __init__(self, llm: LLM, *, model: AssistantModel, system: str, history: list[dict],
-                 execute_tool: Callable[[str, dict, str], dict], max_tokens: int, max_rounds: int) -> None:
+                 execute_tool: Callable[[str, dict, str], dict] | None, max_tokens: int, max_rounds: int,
+                 cancel: threading.Event | None = None) -> None:
         self.llm, self.model, self.system, self.history = llm, model, system, history
         self.execute_tool, self.max_tokens, self.max_rounds = execute_tool, max_tokens, max_rounds
+        self.cancel = cancel or threading.Event()
         self.parts: list[str] = []
         self.tools: list[str] = []
         self.usage = Usage()
@@ -68,12 +73,25 @@ class ChatRun:
 
     def events(self) -> Iterator[dict]:
         messages: list = list(self.history)
+        # Consommation du tour en cours, comptée même s'il n'aboutit pas (erreur, navigateur parti) : Anthropic la facture.
+        partial: dict | None = None
         try:
             for _ in range(self.max_rounds):
                 new_round = True
+                partial = {"input_tokens": 0, "output_tokens": 0}
                 with self.llm.stream(**self._params(messages)) as stream:
                     for event in stream:
-                        if event.type == "text" and event.text:
+                        if self.cancel.is_set():  # sortir du bloc ferme la connexion : Claude arrête de générer
+                            self.error = INTERRUPTED
+                            return
+                        if event.type == "message_start":
+                            usage = event.message.usage
+                            partial["input_tokens"] = getattr(usage, "input_tokens", 0) or 0
+                            partial["cache_read_input_tokens"] = getattr(usage, "cache_read_input_tokens", 0) or 0
+                            partial["cache_creation_input_tokens"] = getattr(usage, "cache_creation_input_tokens", 0) or 0
+                        elif event.type == "message_delta" and getattr(event, "usage", None) is not None:
+                            partial["output_tokens"] = getattr(event.usage, "output_tokens", 0) or 0
+                        elif event.type == "text" and event.text:
                             if new_round and self.parts and not self.text.endswith("\n"):
                                 self.parts.append("\n\n")  # sépare le texte de deux tours
                                 yield {"type": "text", "text": "\n\n"}
@@ -85,6 +103,7 @@ class ChatRun:
                             self.tools.append(name)
                             yield {"type": "tool", "name": name, "label": tool_label(name)}
                     final = stream.get_final_message()
+                partial = None
                 self.usage.add(final.usage)
                 if final.stop_reason == "refusal":
                     self.error = REFUSAL
@@ -105,3 +124,6 @@ class ChatRun:
         except Exception as exc:  # erreurs API ou réseau : message lisible, sans détails techniques
             logger.warning("Assistant error: %s", type(exc).__name__)
             self.error = friendly_error(exc)
+        finally:
+            if partial is not None:
+                self.usage.add(SimpleNamespace(**partial))

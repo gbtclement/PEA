@@ -38,3 +38,12 @@ def test_usage_add_and_cost():
     assert (usage.input_tokens, usage.output_tokens, usage.web_searches) == (2000, 2000, 2)
     # Opus 5 : 5 $/Mtok en entrée, 25 $/Mtok en sortie, 0,01 $ par recherche
     assert estimate_cost(get_model("claude-opus-5"), usage) == pytest.approx(0.002 * 5 + 0.002 * 25 + 0.02)
+
+
+def test_usage_sums_fallback_iterations():
+    usage = Usage()
+    usage.add(SimpleNamespace(input_tokens=100, output_tokens=10, iterations=[
+        SimpleNamespace(type="message", input_tokens=300, output_tokens=50),
+        SimpleNamespace(type="fallback_message", input_tokens=100, output_tokens=10),
+    ]))
+    assert (usage.input_tokens, usage.output_tokens) == (400, 60)

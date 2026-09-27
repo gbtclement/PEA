@@ -163,3 +163,15 @@ def test_round_limit_stops_with_error(client, fake_llm, monkeypatch):
 
 def test_blank_message_is_422(client):
     assert send(client, new_conversation(client), "   ").status_code == 422
+
+
+def test_usage_of_failed_round_is_counted(client, fake_llm):
+    from types import SimpleNamespace
+
+    turn = error_turn(_status_error(anthropic.InternalServerError, 529), "Début")
+    turn["events"] = [SimpleNamespace(type="message_start", message=SimpleNamespace(usage=SimpleNamespace(input_tokens=800, output_tokens=1))),
+                      *turn["events"], SimpleNamespace(type="message_delta", usage=SimpleNamespace(output_tokens=25))]
+    fake_llm.turns = [turn]
+    saved = events(send(client, new_conversation(client)))[-1]["message"]
+    assert saved["cost_usd"] == pytest.approx(800 * 5e-6 + 25 * 25e-6, abs=1e-4)  # arrondi à 4 décimales
+    assert saved["cost_usd"] > 0

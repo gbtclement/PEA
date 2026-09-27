@@ -40,12 +40,21 @@ class Usage:
     web_searches: int = 0
 
     def add(self, usage: object) -> None:
+        iterations = getattr(usage, "iterations", None)
+        if iterations:
+            # repli après un refus : chaque tentative est facturée, le total de premier niveau ne compte que la dernière
+            for iteration in iterations:
+                self._add_tokens(iteration)
+        else:
+            self._add_tokens(usage)
+        server = getattr(usage, "server_tool_use", None)
+        self.web_searches += (getattr(server, "web_search_requests", 0) or 0) if server else 0
+
+    def _add_tokens(self, usage: object) -> None:
         self.input_tokens += getattr(usage, "input_tokens", 0) or 0
         self.output_tokens += getattr(usage, "output_tokens", 0) or 0
         self.cache_read_tokens += getattr(usage, "cache_read_input_tokens", 0) or 0
         self.cache_write_tokens += getattr(usage, "cache_creation_input_tokens", 0) or 0
-        server = getattr(usage, "server_tool_use", None)
-        self.web_searches += (getattr(server, "web_search_requests", 0) or 0) if server else 0
 
 
 def estimate_cost(model: AssistantModel, usage: Usage) -> float:

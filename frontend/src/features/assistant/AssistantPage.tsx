@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,12 +14,22 @@ export function AssistantPage() {
   const selected = params.get("c") ? Number(params.get("c")) : null;
   const conversations = useConversations();
   const remove = useDeleteConversation();
-  // Le chat n'est recréé que si l'on change de conversation : la création pendant l'envoi ne coupe pas le flux.
-  const [viewKey, setViewKey] = useState(0);
-  const show = (id: number | null) => setParams(id === null ? {} : { c: String(id) });
+  // Le chat suit l'adresse (liens, retour arrière), sauf quand l'adresse change parce qu'il vient lui-même
+  // de créer la conversation : le recréer couperait la réponse en cours.
+  const created = useRef<number | null>(null);
+  const shown = useRef<number | null>(selected);
+  if (selected !== shown.current && (created.current === null || selected !== created.current)) {
+    shown.current = selected;
+    created.current = null;
+  }
+  const [resets, setResets] = useState(0);
+  const onCreated = (id: number) => {
+    created.current = id;
+    setParams({ c: String(id) }, { replace: true });
+  };
   const select = (id: number | null) => {
-    setViewKey((k) => k + 1);
-    show(id);
+    setResets((n) => n + 1);  // « Nouvelle conversation » repart de zéro même si l'adresse ne change pas
+    setParams(id === null ? {} : { c: String(id) });
   };
   return (
     <section className="space-y-4">
@@ -57,7 +67,7 @@ export function AssistantPage() {
           </ul>
         </Card>
         <Card className="p-5">
-          <ChatView key={viewKey} conversationId={selected} onConversationCreated={show} />
+          <ChatView key={`${shown.current}-${resets}`} conversationId={shown.current ?? selected} onConversationCreated={onCreated} />
         </Card>
       </div>
     </section>
