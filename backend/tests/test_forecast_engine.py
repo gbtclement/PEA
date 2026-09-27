@@ -122,3 +122,14 @@ def test_active_signals_on_the_last_session():
     assert last_day == DATES[299].date()
     assert "drop_week" in active
     assert active_signals(make_series(2, values, volume=1.0), min_turnover=500_000) is None
+
+
+def test_liquidity_is_judged_in_euros():
+    # 100 NOK × 10 000 titres = 1 000 000 NOK par jour ≈ 85 000 € : sous le seuil de 500 000 €
+    closes = random_walk(3)
+    in_nok = SeriesInput(1, make_series(1, closes).close, pd.Series(10_000.0, index=DATES), eur_rate=0.085)
+    in_eur = SeriesInput(1, make_series(1, closes).close, pd.Series(10_000.0, index=DATES))
+    assert active_signals(in_eur, 400_000) is not None
+    assert active_signals(in_nok, 400_000) is None
+    stats = by_key(run_analysis([in_nok], INDEX, min_turnover=400_000, cost=0.01).stats)
+    assert (BASELINE, "1d") not in stats  # aucun jour liquide : rien ne compte

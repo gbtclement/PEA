@@ -27,7 +27,7 @@ Code : `backend/app/services/forecast/` (pandas/numpy, sans API externe), tâche
 
 Pour chaque couple (signal, horizon), avec les horizons **1d = 1**, **1w = 5** et **1m = 21 séances** :
 
-- **Univers :** actions actives ou radiées (pour éviter le biais du survivant). Un jour t ne compte que si le titre était **liquide ce jour-là** : montant moyen échangé sur 20 séances ≥ `MIN_TURNOVER_EUR`.
+- **Univers :** actions actives ou radiées (pour éviter le biais du survivant). Un jour t ne compte que si le titre était **liquide ce jour-là** : montant moyen échangé sur 20 séances, **converti en euros** (les actions d'Oslo cotent en couronnes), ≥ `MIN_TURNOVER_EUR`.
 - **Rendement futur** `r = clôture(t+h) / clôture(t) − 1`. Les observations avec |r| > 100 % sont exclues, car ce sont presque toujours des erreurs de données.
 - **Écart au CAC 40** `x = r − r(^FCHI)` aux mêmes dates.
 - **Mesures :** `n`, moyenne, médiane, % de hausses, écart moyen au CAC, % au-dessus du CAC, % gagnants après frais.

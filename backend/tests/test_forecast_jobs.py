@@ -133,3 +133,13 @@ def test_delisted_stocks_still_count_in_the_statistics(db, make_ctx, market):
     runs = db.scalars(select(ForecastRun).order_by(ForecastRun.id)).all()
     after = next(s for s in runs[-1].stats if s["signal"] == "__all__" and s["horizon"] == "1d")["n"]
     assert after > before
+
+
+def test_oslo_turnover_is_converted_to_euros(db, make_ctx, market):
+    # Mêmes cours et volumes que « Montée », mais en couronnes : environ 11 fois moins d'euros échangés
+    oslo = make_security(db, "UP.OL", name="Montée Oslo", market="Oslo Børs", country="NO")
+    add_prices(db, oslo, np.linspace(20, 60, 320))
+    refresh_forecasts(make_ctx(now=NOW, min_turnover_eur=1_000_000))
+    ids = set(db.scalars(select(Forecast.security_id)))
+    assert market["rising"].id in ids
+    assert oslo.id not in ids

@@ -45,6 +45,11 @@ def stock_series(session: Session, since: date, *, include_inactive: bool = Fals
     return {sid: group.set_index("date")[["close", "volume"]].astype(float) for sid, group in frame.groupby("security_id")}
 
 
+def stock_markets(session: Session) -> dict[int, str]:
+    """Place de cotation de chaque action, pour en déduire la devise : {security_id: marché}."""
+    return dict(session.execute(select(Security.id, Security.market).where(Security.kind == "stock")).all())
+
+
 def index_closes(session: Session, since: date) -> pd.Series:
     rows = session.execute(
         select(DailyPrice.date, DailyPrice.close).join(Security, Security.id == DailyPrice.security_id)

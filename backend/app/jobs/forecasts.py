@@ -7,13 +7,14 @@ from app.core.current_user import ensure_default_user
 from app.jobs.context import JobContext
 from app.models import ForecastRun
 from app.repositories.forecasts import (
-    closes_between, index_closes, latest_run, pending_forecasts, replace_forecasts, stock_series,
+    closes_between, index_closes, latest_run, pending_forecasts, replace_forecasts, stock_markets, stock_series,
 )
 from app.repositories.user_settings import user_fee_grid
 from app.services.fees import broker_fee
 from app.services.forecast.engine import SeriesInput, active_signals, run_analysis
 from app.services.forecast.predict import predict
 from app.services.forecast.stats import HORIZONS, SignalStat
+from app.services.fx import currency_for_market, to_eur
 from app.services.market_calendar import PARIS, last_session_close
 
 REFERENCE_ORDER_EUR = 500.0
@@ -21,8 +22,12 @@ STATS_MAX_AGE = timedelta(days=7)
 RECENT_WINDOW = timedelta(days=420)  # ≈ 290 séances : assez pour la moyenne 200 jours et le plus haut sur 1 an
 
 
-def _inputs(frames) -> list[SeriesInput]:
-    return [SeriesInput(sid, f["close"], f["volume"]) for sid, f in frames.items() if len(f)]
+def _inputs(frames, markets: dict[int, str]) -> list[SeriesInput]:
+    # Les actions d'Oslo cotent en couronnes : sans conversion, leur liquidité paraîtrait ~11 fois plus grande
+    return [
+        SeriesInput(sid, f["close"], f["volume"], eur_rate=to_eur(1.0, currency_for_market(markets.get(sid, ""))))
+        for sid, f in frames.items() if len(f)
+    ]
 
 
 def _closed_until(ctx: JobContext) -> date:
@@ -38,7 +43,8 @@ def refresh_forecast_stats(ctx: JobContext) -> int:
         _, rate = broker_fee(REFERENCE_ORDER_EUR, user_fee_grid(session, user.id))
         cost = 2 * rate
         closed = pd.Timestamp(_closed_until(ctx))
-        series = _inputs({sid: f.loc[:closed] for sid, f in stock_series(session, since, include_inactive=True).items()})
+        frames = {sid: f.loc[:closed] for sid, f in stock_series(session, since, include_inactive=True).items()}
+        series = _inputs(frames, stock_markets(session))
         index = index_closes(session, since).loc[:closed]
         analysis = run_analysis(series, index, ctx.settings.min_turnover_eur, cost)
         session.add(ForecastRun(
@@ -70,7 +76,7 @@ def refresh_forecasts(ctx: JobContext) -> int:
         frames = {sid: f for sid, f in frames.items() if len(f)}
         as_of = max((f.index[-1].date() for f in frames.values()), default=None)
         rows: list[dict] = []
-        for s in _inputs(frames):
+        for s in _inputs(frames, stock_markets(session)):
             found = active_signals(s, ctx.settings.min_turnover_eur)
             if not found or found[0] != as_of or not found[1]:
                 continue

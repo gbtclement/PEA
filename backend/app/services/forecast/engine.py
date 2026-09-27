@@ -26,6 +26,7 @@ class SeriesInput:
     security_id: int
     close: pd.Series   # indexé par dates (Timestamp), ordre croissant
     volume: pd.Series
+    eur_rate: float = 1.0  # valeur en euros d'une unité de la devise de cotation (liquidité comparée en euros)
 
 
 @dataclass(frozen=True)
@@ -65,7 +66,7 @@ class Analysis:
 
 
 def _liquid(series: SeriesInput, min_turnover: float) -> pd.Series:
-    turnover = (series.close * series.volume).rolling(20).mean()
+    turnover = (series.close * series.volume * series.eur_rate).rolling(20).mean()
     return turnover >= min_turnover  # moyenne inconnue (début d'historique, volumes absents) → non liquide
 
 
