@@ -31,6 +31,11 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
     - cours par paliers T1/T2/T3 (2, 5 et 30 min), en séance seulement ;
     - score après chaque passage T2.
   - `services/scoring/` : le score sur 100, avec 50 points techniques et 50 fondamentaux par défaut. Les maxima sont dans `scoring/config.py`, et les ETF n'ont que la partie technique.
+  - `services/forecast/` : prévisions court terme sans API (pandas).
+    - `signals.py` : 14 signaux calculés uniquement avec les données disponibles le jour même — **jamais de donnée future** (un test le vérifie).
+    - `stats.py` et `predict.py` : statistiques par signal et horizon (1, 5, 21 séances), fiabilité (t de Student corrigé du chevauchement), prédiction pondérée et ramenée vers la moyenne.
+    - `engine.py` : calcul complet et test sur l'année écoulée, avec des statistiques d'entraînement limitées aux fenêtres terminées avant la date de coupure.
+    - Tâches `jobs/forecasts.py` : statistiques recalculées si elles ont plus de 7 jours (environ 45 s), prédictions du jour et vérification des anciennes chaque matin après l'historique (environ 10 s).
   - `services/eligibility/rules.py` : pays du siège déduit du préfixe ISIN (UE/EEE → éligible, foncières REIT → « à vérifier »). Une correction manuelle (`eligibility_override`) est toujours prioritaire.
   - `services/assistant/` : chat Claude (SDK `anthropic`) avec une boucle d'outils manuelle, en streaming SSE, et le catalogue des modèles et de leurs prix.
   - `seeds/` : CSV de secours (instantané Euronext, ETF, indices, actions hors Euronext).
@@ -113,6 +118,6 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
 - **SEO** :
   - en local, `SEO_INDEXING=false`, donc robots.txt interdit tout. En ligne, passer à `true` et renseigner `PUBLIC_BASE_URL` ;
   - l'API publique doit rester lisible par les robots, car les pages sont rendues dans le navigateur ;
-  - le portefeuille, l'assistant et les réglages sont toujours en `noindex` ;
+  - le portefeuille, l'assistant, les réglages et les **prévisions** sont toujours en `noindex` (prudence AMF pour les prévisions) ;
   - pré-générer les pages publiques à la mise en ligne.
 - **Fuseau** : `Europe/Paris` pour le calendrier de bourse (`services/market_calendar.py`).

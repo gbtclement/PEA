@@ -10,6 +10,7 @@ import { OrderDialog } from "@/features/portfolio/OrderDialog";
 import { ApiError, apiGet, type SecurityDetail } from "@/lib/api/client";
 import { formatDateTime, formatPct, formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { ForecastCard } from "./ForecastCard";
 import { FundamentalsCard } from "./FundamentalsCard";
 import { NewsCard } from "./NewsCard";
 import { PriceChartPanel } from "./PriceChartPanel";
@@ -88,7 +89,8 @@ export function SecurityPage() {
         <ScoreCard detail={data} />
         <FundamentalsCard detail={data} />
         <SimulatorCard securityId={data.id} />
-        <NewsCard securityId={data.id} />
+        {data.kind === "stock" && <ForecastCard securityId={data.id} />}
+        <NewsCard securityId={data.id} className={data.kind === "stock" ? "xl:col-span-2" : undefined} />
       </div>
       <OrderDialog open={ordering} onOpenChange={setOrdering} security={{ id: data.id, name: data.name, symbol: data.symbol }}
                    price={data.currency === "EUR" ? data.price : null} />

@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router";
 import { mockFetch, renderWithProviders } from "@/test/utils";
@@ -19,8 +19,16 @@ const DETAIL = {
                   components: [{ key: "trend", label: "Tendance", points: 20, max_points: 20, message: "✅ Tendance haussière", group: "technical" }] },
 };
 
-function renderPage(detailStatus = 200, detail: object = DETAIL) {
+const FORECAST = {
+  as_of: "2026-09-25",
+  signals: [{ key: "high_52w", label: "Plus haut sur 1 an", bullish: true }],
+  horizons: { "1d": { expected_return: 0.001, prob_up: 0.51, reliability: "faible", rank: 40 },
+              "1w": { expected_return: 0.003, prob_up: 0.53, reliability: "elevee", rank: 12 }, "1m": null },
+};
+
+function renderPage(detailStatus = 200, detail: object = DETAIL, forecast: object = FORECAST) {
   const fetchMock = mockFetch((url) => {
+    if (url.startsWith("/api/securities/1/forecast")) return { body: forecast };
     if (url.startsWith("/api/securities/1/news")) return { body: [{ title: "LVMH accélère", url: "https://ex.com/a", publisher: "Reuters", published_at: null }] };
     if (url.startsWith("/api/securities/1/simulate")) return { body: { start_date: "2026-08-25", start_price: 368, current_price: 400, shares: 2, invested: 736, buy_fee: 1.32, sell_fee: 1.44, current_value: 800, gain: 61.24, gain_pct: 8.3, message: null } };
     if (url.startsWith("/api/fees/estimate")) return { body: { amount: 500, fee: 2.4, rate: 0.0048 } };
@@ -99,4 +107,19 @@ test("métadonnées : titre introuvable non indexé, sans données structurées"
   await screen.findByText("Titre introuvable.");
   await waitFor(() => expect(document.head.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe("noindex, nofollow"));
   expect(jsonLd()).toEqual([]);
+});
+
+test("carte des prévisions court terme : signaux actifs et horizons", async () => {
+  renderPage();
+  const card = (await screen.findByRole("heading", { level: 2, name: "Prévisions court terme" })).closest("[data-slot=card]") as HTMLElement;
+  expect(await within(card).findByText(/Plus haut sur 1 an/)).toBeInTheDocument();
+  expect(within(card).getByText("+0,30 %")).toBeInTheDocument();
+  expect(within(card).getByText("53 % de hausse")).toBeInTheDocument();
+  expect(within(card).getByText(/12e du jour/)).toBeInTheDocument();
+  expect(within(card).getByRole("link", { name: /Voir toutes les prévisions/ })).toHaveAttribute("href", "/previsions");
+});
+
+test("carte des prévisions : aucun signal aujourd'hui", async () => {
+  renderPage(200, DETAIL, { as_of: "2026-09-25", signals: [], horizons: { "1d": null, "1w": null, "1m": null } });
+  expect(await screen.findByText("Aucun signal actif aujourd'hui.")).toBeInTheDocument();
 });

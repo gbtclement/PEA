@@ -4,14 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiGet, type NewsOut } from "@/lib/api/client";
 import { formatDateTime } from "@/lib/format";
 
-export function NewsCard({ securityId }: { securityId: number }) {
+export function NewsCard({ securityId, className }: { securityId: number; className?: string }) {
   const { data, isPending } = useQuery({
     queryKey: ["news", securityId],
     queryFn: () => apiGet<NewsOut[]>(`/api/securities/${securityId}/news`),
     staleTime: 900_000,
   });
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader><CardTitle className="text-base">Actualités récentes</CardTitle></CardHeader>
       <CardContent>
         {isPending ? <p className="text-sm text-muted-foreground">Chargement…</p> : !data?.length ? (
