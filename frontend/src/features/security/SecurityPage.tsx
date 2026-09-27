@@ -15,6 +15,28 @@ import { NewsCard } from "./NewsCard";
 import { PriceChartPanel } from "./PriceChartPanel";
 import { ScoreCard } from "./ScoreCard";
 import { SimulatorCard } from "./SimulatorCard";
+import { breadcrumb, corporation, DEFAULT_DESCRIPTION, investmentFund } from "@/seo/schema";
+import { usePageMeta, type PageMeta } from "@/seo/usePageMeta";
+
+const ELIGIBILITY_TEXT: Record<string, string> = { eligible: "Éligible au PEA.", non_eligible: "Non éligible au PEA.", a_verifier: "Éligibilité au PEA à vérifier." };
+
+function securityMeta(data: SecurityDetail | undefined, error: Error | null): PageMeta {
+  if (!data) {
+    return { title: error ? "Titre introuvable" : "Chargement", description: DEFAULT_DESCRIPTION, noindex: !!error };
+  }
+  const etf = data.kind === "etf";
+  const section = etf ? { name: "ETF", path: "/etf" } : { name: "Explorer", path: "/explorer" };
+  const score = data.score != null ? `score PEA Radar ${Math.round(data.score)}/100, ` : "";
+  return {
+    title: `${data.name} (${data.symbol}) — cours, score et analyse`,
+    description: `${data.name} (${data.symbol}, ${data.market}) : cours, ${score}graphique en chandeliers, ${etf ? "" : "données fondamentales, "}actualités et simulateur. ${ELIGIBILITY_TEXT[data.eligibility] ?? ELIGIBILITY_TEXT.a_verifier}`,
+    path: `/titres/${data.id}`,
+    jsonLd: [
+      ...(data.kind === "index" ? [] : [etf ? investmentFund(data) : corporation(data)]),
+      breadcrumb([{ name: "Accueil", path: "/" }, section, { name: data.name, path: `/titres/${data.id}` }]),
+    ],
+  };
+}
 
 export function SecurityPage() {
   const id = Number(useParams().id);
@@ -25,6 +47,7 @@ export function SecurityPage() {
     refetchInterval: 60_000,
     retry: (count, err) => !(err instanceof ApiError && err.status === 404) && count < 2,
   });
+  usePageMeta(securityMeta(data, error));
 
   if (isPending) return <Skeleton className="h-96 w-full" />;
   if (error || !data) {

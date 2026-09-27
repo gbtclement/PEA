@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router";
 import { mockFetch, renderWithProviders } from "@/test/utils";
@@ -73,4 +73,30 @@ test("le bouton « + J'ai acheté » ouvre le formulaire d'ordre prérempli", as
   const dialog = await screen.findByRole("dialog");
   expect(dialog).toHaveTextContent("Nouvel ordre");
   expect(screen.getByLabelText("Prix unitaire (€)")).toHaveValue("612,4");
+});
+
+const jsonLd = () => [...document.head.querySelectorAll('script[type="application/ld+json"]')].map((s) => JSON.parse(s.textContent!));
+
+test("métadonnées : titre, Corporation avec ticker et fil d'Ariane", async () => {
+  renderPage();
+  await screen.findByRole("heading", { level: 1, name: "LVMH" });
+  await waitFor(() => expect(document.title).toBe("LVMH (MC) — cours, score et analyse | PEA Radar"));
+  expect(document.head.querySelector('meta[name="description"]')?.getAttribute("content")).toMatch(/LVMH/);
+  const types = jsonLd().map((d) => d["@type"]);
+  expect(types).toEqual(["Corporation", "BreadcrumbList"]);
+  expect(jsonLd()[0]).toMatchObject({ tickerSymbol: "MC", identifier: "FR0000121014" });
+  expect(document.head.querySelector('meta[name="robots"]')).toBeNull();
+});
+
+test("métadonnées : un ETF est un InvestmentFund", async () => {
+  renderPage(200, { ...DETAIL, kind: "etf", name: "Amundi MSCI World", symbol: "CW8", score_detail: null });
+  await screen.findByRole("heading", { level: 1, name: "Amundi MSCI World" });
+  await waitFor(() => expect(jsonLd()[0]?.["@type"]).toBe("InvestmentFund"));
+});
+
+test("métadonnées : titre introuvable non indexé, sans données structurées", async () => {
+  renderPage(404, { detail: "Titre introuvable" });
+  await screen.findByText("Titre introuvable.");
+  await waitFor(() => expect(document.head.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe("noindex, nofollow"));
+  expect(jsonLd()).toEqual([]);
 });

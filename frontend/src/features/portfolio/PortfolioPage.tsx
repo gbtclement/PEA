@@ -1,3 +1,4 @@
+import { usePageMeta } from "@/seo/usePageMeta";
 import { useMemo, useState } from "react";
 import { EChart } from "@/components/charts/EChart";
 import { Button } from "@/components/ui/button";
@@ -50,11 +51,11 @@ function Charts({ data }: { data: PortfolioOut }) {
       <div className="grid grid-cols-2 gap-6">
         <Card>
           <CardHeader><CardTitle className="text-base">Répartition par titre</CardTitle></CardHeader>
-          <CardContent><EChart option={byTitle} className="h-60 w-full" /></CardContent>
+          <CardContent><EChart option={byTitle} label="Répartition du portefeuille par titre" className="h-60 w-full" /></CardContent>
         </Card>
         <Card>
           <CardHeader><CardTitle className="text-base">Répartition par secteur</CardTitle></CardHeader>
-          <CardContent><EChart option={bySector} className="h-60 w-full" /></CardContent>
+          <CardContent><EChart option={bySector} label="Répartition du portefeuille par secteur" className="h-60 w-full" /></CardContent>
         </Card>
       </div>
       <Card>
@@ -65,7 +66,7 @@ function Charts({ data }: { data: PortfolioOut }) {
         <CardContent>
           {history.data && history.data.length === 0
             ? <p className="py-8 text-center text-sm text-muted-foreground">Les premiers points apparaîtront après la prochaine clôture.</p>
-            : <EChart option={evolution} className="h-72 w-full" />}
+            : <EChart option={evolution} label="Évolution de la valeur du portefeuille" className="h-72 w-full" />}
         </CardContent>
       </Card>
     </>
@@ -100,6 +101,7 @@ function EmptyCard({ onAdd }: { onAdd: () => void }) {
 }
 
 export function PortfolioPage() {
+  usePageMeta({ title: "Portefeuille", description: "Vos positions, vos plus-values et le suivi de vos ordres annuels.", noindex: true });
   const portfolio = usePortfolio();
   const orders = useOrders();
   const [dialog, setDialog] = useState<DialogState>({ open: false });

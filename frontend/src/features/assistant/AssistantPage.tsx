@@ -1,3 +1,4 @@
+import { usePageMeta } from "@/seo/usePageMeta";
 import { useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { Trash2 } from "lucide-react";
@@ -10,6 +11,7 @@ import { ChatView } from "./ChatView";
 const formatCost = (usd: number) => `≈ ${usd.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
 
 export function AssistantPage() {
+  usePageMeta({ title: "Assistant IA", description: "Posez vos questions à Claude sur les actions, les ETF et votre portefeuille.", noindex: true });
   const [params, setParams] = useSearchParams();
   const selected = params.get("c") ? Number(params.get("c")) : null;
   const conversations = useConversations();

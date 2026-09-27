@@ -10,9 +10,11 @@ type Props = {
   option: echarts.EChartsCoreOption;
   className?: string;
   onItemClick?: (data: unknown) => void;
+  /** Description du graphique pour les lecteurs d'écran. */
+  label: string;
 };
 
-export function EChart({ option, className, onItemClick }: Props) {
+export function EChart({ option, className, onItemClick, label }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
 
@@ -43,5 +45,5 @@ export function EChart({ option, className, onItemClick }: Props) {
     };
   }, [onItemClick]);
 
-  return <div ref={ref} className={className} />;
+  return <div ref={ref} role="img" aria-label={label} className={className} />;
 }

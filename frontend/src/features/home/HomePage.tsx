@@ -1,3 +1,5 @@
+import { usePageMeta } from "@/seo/usePageMeta";
+import { DEFAULT_DESCRIPTION, webApplication } from "@/seo/schema";
 import { OrderCounterCard } from "@/features/portfolio/OrderCounterCard";
 import { IndicesBar } from "./IndicesBar";
 import { MarketHeatmap } from "./MarketHeatmap";
@@ -5,6 +7,7 @@ import { Movers } from "./Movers";
 import { TopList } from "./TopList";
 
 export function HomePage() {
+  usePageMeta({ title: null, description: DEFAULT_DESCRIPTION, jsonLd: webApplication() });
   return (
     <section className="space-y-6">
       <header>

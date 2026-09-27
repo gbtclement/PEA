@@ -1,5 +1,7 @@
+import { breadcrumb } from "@/seo/schema";
+import { usePageMeta } from "@/seo/usePageMeta";
 import { useMemo } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +14,8 @@ import { useScreener } from "./useScreener";
 type Props = { kind: "stock" | "etf"; title: string; description: string };
 
 export function ScreenerPage({ kind, title, description }: Props) {
+  const { pathname } = useLocation();
+  usePageMeta({ title, description, jsonLd: breadcrumb([{ name: "Accueil", path: "/" }, { name: title, path: pathname }]) });
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { data, isPending, isError } = useScreener(kind);

@@ -14,6 +14,12 @@ export function Layout() {
             <Outlet />
           </div>
         </main>
+        <footer className="ml-60 px-8 pb-6">
+          <p className="mx-auto max-w-[1400px] border-t border-border pt-4 text-xs text-muted-foreground">
+            PEA Radar est un outil d'aide à la décision et d'apprentissage, pas un conseil en investissement. Cours Yahoo Finance
+            en différé ; éligibilité PEA déduite du pays du siège, à confirmer auprès de votre banque.
+          </p>
+        </footer>
         <Toaster position="bottom-right" richColors />
       </div>
     </AssistantPanelProvider>

@@ -1,3 +1,4 @@
+import { usePageMeta } from "@/seo/usePageMeta";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +41,7 @@ function OverrideRow({ item }: { item: SecurityItem }) {
 }
 
 export function SettingsPage() {
+  usePageMeta({ title: "Réglages", description: "Assistant IA, frais de courtage et corrections d'éligibilité PEA.", noindex: true });
   const [search, setSearch] = useState("");
   const q = useDebouncedValue(search.trim(), 300);
   const results = useQuery({
