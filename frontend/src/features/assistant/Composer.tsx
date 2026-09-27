@@ -18,7 +18,8 @@ export function Composer({ onSend, onStop, streaming }: Props) {
         rows={2}
         maxLength={4000}
         value={text}
-        placeholder="Posez votre question… (Entrée pour envoyer, Maj+Entrée pour aller à la ligne)"
+        placeholder="Posez votre question…"
+        title="Entrée pour envoyer, Maj+Entrée pour aller à la ligne"
         className="min-h-[44px] flex-1 resize-none rounded-lg border border-input bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {

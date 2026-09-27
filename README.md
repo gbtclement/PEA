@@ -6,7 +6,7 @@ Outil d'aide à la décision et d'apprentissage — pas un conseil en investisse
 ## Lancer l'application
 
 ```bash
-cp .env.example .env        # la première fois
+cp .env.example .env        # la première fois, puis remplacer APP_SECRET par une longue chaîne aléatoire
 docker compose up -d --build
 ```
 
@@ -33,7 +33,8 @@ npm run gen:api   # régénère les types TypeScript depuis l'API
 - **Explorer / ETF** : tous les titres, filtres (secteur, pays, place, score, prix, liquidité, favoris) et tris, conservés dans l'URL.
 - **Fiche d'un titre** : graphique TradingView (bougies, volume, moyennes 50/200 jours, RSI, MACD), score détaillé, fondamentaux, simulateur « et si j'avais investi », frais estimés, actualités, bouton « + J'ai acheté ».
 - **Portefeuille** : saisie manuelle des ordres (frais calculés selon votre grille, modifiables), positions avec PRU frais inclus, plus/moins-values latentes et réalisées, répartition par titre et par secteur, évolution de la valeur, compteur X/12 ordres avec alerte de rythme. Une vente supérieure à la quantité détenue est refusée.
-- **Réglages** : ordres minimum par an, frais en cas de non-respect, grille de courtage de votre caisse régionale ; corrections manuelles de l'éligibilité PEA.
+- **Assistant IA** (Claude) : page dédiée avec l'historique des conversations et leur coût estimé, et panneau latéral ouvert par les boutons ✨ (top 10, fiche d'un titre) avec des questions prêtes. Claude consulte les données de l'application (recherche, fiche, historique et indicateurs, top 10, portefeuille, simulation d'achat passé) et l'actualité sur le web ; réponses en direct, mot par mot.
+- **Réglages** : clé API Claude (chiffrée en base avec `APP_SECRET`, jamais renvoyée au navigateur ; ou variable `ANTHROPIC_API_KEY`) et modèle IA (Claude Opus 5 par défaut) ; ordres minimum par an, frais en cas de non-respect, grille de courtage de votre caisse régionale ; corrections manuelles de l'éligibilité PEA.
 
 Le score est recalculé toutes les 5 minutes pendant la séance. Il sert à trier et à comprendre, pas à prédire.
 

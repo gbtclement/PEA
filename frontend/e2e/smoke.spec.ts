@@ -22,3 +22,10 @@ test("portefeuille et compteur d'ordres", async ({ page }) => {
   await page.getByRole("button", { name: "+ Nouvel ordre" }).click();
   await expect(page.getByRole("dialog")).toContainText("Nouvel ordre");
 });
+
+test("assistant : page et réglages", async ({ page }) => {
+  await page.goto("/assistant");
+  await expect(page.getByRole("heading", { level: 1, name: "Assistant IA" })).toBeVisible();
+  await page.goto("/reglages");
+  await expect(page.getByText("Assistant IA (Claude)")).toBeVisible();
+});
