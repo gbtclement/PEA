@@ -9,6 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.jobs.context import JobContext
+from app.jobs.forecasts import refresh_forecast_stats, refresh_forecasts, stats_are_stale
 from app.jobs.market import refresh_daily_history, refresh_fundamentals, refresh_quotes
 from app.jobs.runner import run_job
 from app.jobs.scoring import refresh_scores
@@ -45,7 +46,15 @@ def daily_job(ctx: JobContext) -> None:
     with HEAVY_JOBS_LOCK:
         run_job(ctx, "daily_history", refresh_daily_history)
         _refresh_scores(ctx)
+        _refresh_forecasts(ctx)
         run_job(ctx, "fundamentals", refresh_fundamentals)
+
+
+def _refresh_forecasts(ctx: JobContext) -> None:
+    """Statistiques des signaux une fois par semaine, prédictions du jour à chaque passage."""
+    if stats_are_stale(ctx):
+        run_job(ctx, "forecast_stats", refresh_forecast_stats)
+    run_job(ctx, "forecasts", refresh_forecasts)
 
 
 def _last_success(session: Session, job: str) -> datetime | None:
@@ -67,11 +76,14 @@ def bootstrap_job(ctx: JobContext) -> None:
         universe_at = _last_success(session, "universe")
         history_at = _last_success(session, "daily_history")
         fundamentals_at = _last_success(session, "fundamentals")
+        forecasts_at = _last_success(session, "forecasts")
     with HEAVY_JOBS_LOCK:
         if not has_securities or _older_than(universe_at, now - _DAILY_MAX_AGE):
             run_job(ctx, "universe", refresh_universe)
         if not has_prices or _older_than(history_at, last_session_close(now)):
             run_job(ctx, "daily_history", refresh_daily_history)
+        if _older_than(forecasts_at, last_session_close(now)):
+            _refresh_forecasts(ctx)
     for tier in (1, 2, 3):
         _refresh_tier(ctx, tier)
     _refresh_scores(ctx)

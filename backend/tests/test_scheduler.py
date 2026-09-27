@@ -4,7 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import func, select
 
 from app.jobs.scheduler import bootstrap_job, build_scheduler, quotes_job
-from app.models import Security
+from app.models import DataStatus, ForecastRun, Security
 from app.providers.base import DailyBar, ListedSecurity, Quote
 from tests.factories import make_security
 from tests.fakes import FakeListing, FakeMarket
@@ -119,3 +119,24 @@ def test_heavy_jobs_are_serialized(db, make_ctx):
         HEAVY_JOBS_LOCK.release()
     worker.join(timeout=5)
     assert market.history_calls
+
+
+def test_daily_job_computes_forecasts(db, make_ctx):
+    from app.jobs.scheduler import daily_job
+
+    ctx, _, _ = seeded_ctx(db, make_ctx, datetime(2026, 9, 29, 5, 30, tzinfo=UTC), {})
+    daily_job(ctx)
+    for job in ("forecast_stats", "forecasts"):
+        status = db.get(DataStatus, job)
+        assert status is not None and status.last_success_at is not None, job
+    daily_job(ctx)  # statistiques de moins de 7 jours : pas recalculées
+    assert db.scalar(select(func.count()).select_from(ForecastRun)) == 1
+
+
+def test_bootstrap_computes_missing_forecasts(db, make_ctx):
+    ctx, _, _ = seeded_ctx(db, make_ctx, datetime(2026, 9, 29, 7, 0, tzinfo=UTC), {
+        "universe": datetime(2026, 9, 28, 20, 0, tzinfo=UTC), "daily_history": datetime(2026, 9, 28, 20, 0, tzinfo=UTC),
+        "fundamentals": datetime(2026, 9, 28, 20, 0, tzinfo=UTC),
+    })
+    bootstrap_job(ctx)
+    assert db.get(DataStatus, "forecasts").last_success_at is not None
