@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     assistant_max_tokens: int = 16000
     assistant_max_rounds: int = 8
 
+    public_base_url: str = "http://localhost:8095"
+    seo_indexing: bool = False
+
 
 @lru_cache
 def get_settings() -> Settings:
