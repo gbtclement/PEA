@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { mockFetch, renderWithProviders } from "@/test/utils";
 import { SettingsPage } from "./SettingsPage";
 
+vi.mock("./AssistantSettingsCard", () => ({ AssistantSettingsCard: () => null }));
 afterEach(() => vi.unstubAllGlobals());
 
 const SETTINGS = { min_orders_per_year: 12, penalty_fee: 96, fee_grid: [{ up_to: null, rate: 0.0012 }] };

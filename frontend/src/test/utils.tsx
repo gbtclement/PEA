@@ -21,3 +21,16 @@ export function mockFetch(handler: (url: string) => { status?: number; body: unk
   vi.stubGlobal("fetch", fn);
   return fn;
 }
+
+export function sseResponse(events: unknown[], { split = false } = {}) {
+  const text = events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join("");
+  const encoder = new TextEncoder();
+  const chunks = split ? [text.slice(0, 7), text.slice(7, text.length - 3), text.slice(text.length - 3)] : [text];
+  const body = new ReadableStream<Uint8Array>({
+    start(controller) {
+      for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
+      controller.close();
+    },
+  });
+  return new Response(body, { status: 200, headers: { "Content-Type": "text/event-stream" } });
+}

@@ -43,6 +43,10 @@ export type PortfolioOut = components["schemas"]["PortfolioOut"];
 export type PositionOut = components["schemas"]["PositionOut"];
 export type HistoryPointOut = components["schemas"]["HistoryPointOut"];
 export type SettingsOut = components["schemas"]["SettingsOut"];
+export type AssistantSettingsOut = components["schemas"]["AssistantSettingsOut"];
+export type ConversationOut = components["schemas"]["ConversationOut"];
+export type ConversationDetail = components["schemas"]["ConversationDetail"];
+export type MessageOut = components["schemas"]["MessageOut"];
 
 async function errorFrom(response: Response, path: string): Promise<ApiError> {
   let message = `Erreur ${response.status} sur ${path}`;
@@ -63,4 +67,38 @@ export async function apiSend(method: "POST" | "PUT" | "DELETE" | "PATCH", path:
   });
   if (!response.ok) throw await errorFrom(response, path);
   return response.status === 204 ? null : response.json();
+}
+
+export type ChatEvent =
+  | { type: "start"; user_message: MessageOut }
+  | { type: "text"; text: string }
+  | { type: "tool"; name: string; label: string }
+  | { type: "error"; message: string }
+  | { type: "done"; message: MessageOut; conversation: ConversationOut };
+
+/** Envoie un POST et lit la réponse SSE au fil de l'eau (EventSource ne sait pas faire de POST). */
+export async function streamSSE(path: string, body: unknown, onEvent: (event: ChatEvent) => void, signal?: AbortSignal): Promise<void> {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { Accept: "text/event-stream", "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!response.ok) throw await errorFrom(response, path);
+  if (!response.body) return;
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let index;
+    while ((index = buffer.indexOf("\n\n")) >= 0) {
+      const block = buffer.slice(0, index);
+      buffer = buffer.slice(index + 2);
+      const data = block.split("\n").filter((line) => line.startsWith("data: ")).map((line) => line.slice(6)).join("\n");
+      if (data) onEvent(JSON.parse(data) as ChatEvent);
+    }
+  }
 }

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { EligibilityBadge } from "@/features/explorer/EligibilityBadge";
 import { apiGet, apiSend, type SecurityItem, type SecurityList } from "@/lib/api/client";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
+import { AssistantSettingsCard } from "./AssistantSettingsCard";
 import { FeeSettingsCard } from "./FeeSettingsCard";
 
 function OverrideRow({ item }: { item: SecurityItem }) {
@@ -55,8 +56,9 @@ export function SettingsPage() {
     <section className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Réglages</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Frais de votre caisse régionale et corrections d'éligibilité. L'assistant IA arrive au lot 4.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Assistant IA, frais de votre caisse régionale et corrections d'éligibilité.</p>
       </header>
+      <AssistantSettingsCard />
       <FeeSettingsCard />
       <Card>
         <CardHeader>
