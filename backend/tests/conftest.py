@@ -37,14 +37,29 @@ def fake_market():
 
 
 @pytest.fixture
-def client(db, fake_market):
-    from app.api.deps import INTRADAY_CACHE, NEWS_CACHE, get_market_provider
+def fake_llm():
+    from tests.fake_llm import FakeLLM
+
+    return FakeLLM()
+
+
+@pytest.fixture
+def client(db, fake_market, fake_llm):
+    from app.api.deps import INTRADAY_CACHE, NEWS_CACHE, get_llm_factory, get_market_provider
 
     INTRADAY_CACHE.clear()
     NEWS_CACHE.clear()
     app = create_app()
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_market_provider] = lambda: fake_market
+
+    def llm_factory():
+        def make(api_key: str):
+            fake_llm.api_keys.append(api_key)
+            return fake_llm
+        return make
+
+    app.dependency_overrides[get_llm_factory] = llm_factory
     with TestClient(app) as test_client:
         yield test_client
 

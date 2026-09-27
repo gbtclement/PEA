@@ -1,21 +1,30 @@
+import json
 import logging
+from collections.abc import Callable, Iterator
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from fastapi.responses import StreamingResponse
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_llm_factory
+from app.api.routes.orders import paris_today
 from app.core.config import get_settings
 from app.core.current_user import get_current_user
 from app.core.db import get_db
-from app.models import Conversation, Security, User, UserSettings
+from app.models import ChatMessage, Conversation, Security, User, UserSettings
 from app.repositories.assistant import (
-    DEFAULT_TITLE, conversation_messages, conversation_out, message_out, owned_conversation, resolve_api_key,
+    DEFAULT_TITLE, claude_history, conversation_messages, conversation_out, message_out, owned_conversation,
+    resolve_api_key,
 )
 from app.repositories.user_settings import get_user_settings
 from app.schemas.assistant import (
     AssistantSettingsOut, AssistantSettingsUpdate, ConversationDetail, ConversationIn, ConversationOut, MessageIn, ModelOut,
 )
-from app.services.assistant.catalog import MODELS, get_model
+from app.services.assistant.catalog import MODELS, estimate_cost, get_model
+from app.services.assistant.chat import ChatRun
+from app.services.assistant.prompt import system_prompt
+from app.services.assistant.tools import ToolError, run_tool
 from app.services.secrets import MissingSecretError, encrypt_secret
 
 router = APIRouter(tags=["assistant"])
@@ -85,7 +94,80 @@ def delete_conversation(conversation_id: int, db: Session = Depends(get_db), use
     db.commit()
 
 
+def _sse(payload: dict) -> str:
+    return f"data: {json.dumps(payload, ensure_ascii=False, default=str)}\n\n"
+
+
+def _tool_executor(db: Session, user: User) -> Callable[[str, dict, str], dict]:
+    def execute(name: str, tool_input: dict, tool_use_id: str) -> dict:
+        try:
+            content = json.dumps(run_tool(db, user, name, tool_input), ensure_ascii=False, default=str)
+            return {"type": "tool_result", "tool_use_id": tool_use_id, "content": content}
+        except ToolError as exc:
+            return {"type": "tool_result", "tool_use_id": tool_use_id, "content": str(exc), "is_error": True}
+        except Exception:
+            logger.exception("Tool %s failed", name)
+            db.rollback()
+            return {"type": "tool_result", "tool_use_id": tool_use_id, "content": "Erreur interne de l'outil.",
+                    "is_error": True}
+    return execute
+
+
 @router.post("/assistant/conversations/{conversation_id}/messages")
-def send_message(conversation_id: int, payload: MessageIn, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    owned_conversation(db, user.id, conversation_id)
-    raise HTTPException(status_code=501, detail="Bientôt disponible")
+def send_message(
+    conversation_id: int, payload: MessageIn, db: Session = Depends(get_db), user: User = Depends(get_current_user),
+    llm_factory: Callable = Depends(get_llm_factory),
+) -> StreamingResponse:
+    conv = owned_conversation(db, user.id, conversation_id)
+    row = get_user_settings(db, user.id)
+    api_key, _ = resolve_api_key(row)
+    if not api_key:
+        raise HTTPException(status_code=409, detail="Aucune clé API Claude n'est configurée. Ajoutez-la dans les Réglages.")
+    config = get_settings()
+    model = get_model(row.ai_model)
+    security = db.get(Security, conv.security_id) if conv.security_id else None
+    history = claude_history([*conversation_messages(db, conv.id), ChatMessage(role="user", content=payload.content)])
+    user_msg = ChatMessage(conversation_id=conv.id, role="user", content=payload.content, tools=[])
+    db.add(user_msg)
+    if conv.title == DEFAULT_TITLE:
+        conv.title = payload.content[:60] + ("…" if len(payload.content) > 60 else "")
+    conv.updated_at = func.now()
+    db.commit()
+    run = ChatRun(llm_factory(api_key), model=model,
+                  system=system_prompt(paris_today(), row.min_orders_per_year, security),
+                  history=history, execute_tool=_tool_executor(db, user),
+                  max_tokens=config.assistant_max_tokens, max_rounds=config.assistant_max_rounds)
+
+    def save() -> ChatMessage:
+        cost = estimate_cost(model, run.usage)
+        msg = ChatMessage(conversation_id=conv.id, role="assistant", content=run.text,
+                          tools=list(dict.fromkeys(run.tools)), input_tokens=run.usage.input_tokens,
+                          output_tokens=run.usage.output_tokens, cost_usd=cost, model=model.id,
+                          interrupted=not run.completed, error=run.error)
+        db.add(msg)
+        conv.input_tokens += run.usage.input_tokens
+        conv.output_tokens += run.usage.output_tokens
+        conv.cost_usd += cost
+        conv.updated_at = func.now()
+        db.commit()
+        return msg
+
+    def stream() -> Iterator[str]:
+        saved = False
+        try:
+            yield _sse({"type": "start", "user_message": message_out(user_msg).model_dump(mode="json")})
+            for event in run.events():
+                yield _sse(event)
+            if run.error:
+                yield _sse({"type": "error", "message": run.error})
+            msg = save()
+            saved = True
+            yield _sse({"type": "done", "message": message_out(msg).model_dump(mode="json"),
+                        "conversation": conversation_out(db, conv).model_dump(mode="json")})
+        finally:
+            if not saved:  # navigateur déconnecté en plein flux : on garde ce qui a été reçu
+                run.error = run.error or "Réponse interrompue."
+                save()
+
+    return StreamingResponse(stream(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
