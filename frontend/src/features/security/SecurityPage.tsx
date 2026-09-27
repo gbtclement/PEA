@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { AskAiButton } from "@/features/assistant/AskAiButton";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EligibilityBadge } from "@/features/explorer/EligibilityBadge";
@@ -43,7 +44,10 @@ export function SecurityPage() {
             <h1 className="text-2xl font-semibold tracking-tight">{data.name}</h1>
             <FavoriteButton securityId={data.id} isFavorite={data.is_favorite} />
             {data.kind !== "index" && (
-              <Button variant="outline" size="sm" className="ml-2" onClick={() => setOrdering(true)}>+ J'ai acheté</Button>
+              <>
+                <Button variant="outline" size="sm" className="ml-2" onClick={() => setOrdering(true)}>+ J'ai acheté</Button>
+                <AskAiButton security={{ id: data.id, name: data.name }} label />
+              </>
             )}
           </div>
           <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">

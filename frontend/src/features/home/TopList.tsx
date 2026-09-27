@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FavoriteButton } from "@/components/FavoriteButton";
+import { AskAiButton } from "@/features/assistant/AskAiButton";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkline } from "@/components/Sparkline";
@@ -53,6 +54,7 @@ export function TopList() {
                     {formatPct(item.change_pct)}
                   </p>
                 </div>
+                <AskAiButton security={{ id: item.id, name: item.name }} />
                 <FavoriteButton securityId={item.id} isFavorite={item.is_favorite} />
               </li>
             ))}
