@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -28,3 +29,46 @@ class AssistantSettingsUpdate(BaseModel):
         if value not in {m.id for m in MODELS}:
             raise ValueError("Modèle inconnu.")
         return value
+
+
+class ConversationIn(BaseModel):
+    security_id: int | None = None
+
+
+class ConversationOut(BaseModel):
+    id: int
+    title: str
+    security_id: int | None
+    security_name: str | None
+    security_symbol: str | None
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
+    created_at: datetime
+    updated_at: datetime
+
+
+class MessageOut(BaseModel):
+    id: int
+    role: Literal["user", "assistant"]
+    content: str
+    tools: list[str]
+    interrupted: bool
+    error: str | None
+    cost_usd: float
+    created_at: datetime
+
+
+class ConversationDetail(ConversationOut):
+    messages: list[MessageOut]
+
+
+class MessageIn(BaseModel):
+    content: str = Field(min_length=1, max_length=4000)
+
+    @field_validator("content")
+    @classmethod
+    def not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Message vide.")
+        return value.strip()

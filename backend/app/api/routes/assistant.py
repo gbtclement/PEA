@@ -1,15 +1,20 @@
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.current_user import get_current_user
 from app.core.db import get_db
-from app.models import User, UserSettings
-from app.repositories.assistant import resolve_api_key
+from app.models import Conversation, Security, User, UserSettings
+from app.repositories.assistant import (
+    DEFAULT_TITLE, conversation_messages, conversation_out, message_out, owned_conversation, resolve_api_key,
+)
 from app.repositories.user_settings import get_user_settings
-from app.schemas.assistant import AssistantSettingsOut, AssistantSettingsUpdate, ModelOut
+from app.schemas.assistant import (
+    AssistantSettingsOut, AssistantSettingsUpdate, ConversationDetail, ConversationIn, ConversationOut, MessageIn, ModelOut,
+)
 from app.services.assistant.catalog import MODELS, get_model
 from app.services.secrets import MissingSecretError, encrypt_secret
 
@@ -44,3 +49,43 @@ def update_assistant_settings(
             raise HTTPException(status_code=503, detail="Ajoutez APP_SECRET dans le fichier .env pour enregistrer une clé.")
     db.commit()
     return _settings_out(row)
+
+
+@router.get("/assistant/conversations", response_model=list[ConversationOut])
+def list_conversations(db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> list[ConversationOut]:
+    rows = db.scalars(select(Conversation).where(Conversation.user_id == user.id)
+                      .order_by(Conversation.updated_at.desc(), Conversation.id.desc()))
+    return [conversation_out(db, c) for c in rows]
+
+
+@router.post("/assistant/conversations", response_model=ConversationOut, status_code=201)
+def create_conversation(payload: ConversationIn, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> ConversationOut:
+    title = DEFAULT_TITLE
+    if payload.security_id is not None:
+        security = db.get(Security, payload.security_id)
+        if security is None:
+            raise HTTPException(status_code=404, detail="Titre introuvable")
+        title = f"À propos de {security.name}"[:120]
+    conv = Conversation(user_id=user.id, title=title, security_id=payload.security_id)
+    db.add(conv)
+    db.commit()
+    return conversation_out(db, conv)
+
+
+@router.get("/assistant/conversations/{conversation_id}", response_model=ConversationDetail)
+def get_conversation(conversation_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> ConversationDetail:
+    conv = owned_conversation(db, user.id, conversation_id)
+    return ConversationDetail(**conversation_out(db, conv).model_dump(),
+                              messages=[message_out(m) for m in conversation_messages(db, conv.id)])
+
+
+@router.delete("/assistant/conversations/{conversation_id}", status_code=204)
+def delete_conversation(conversation_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> None:
+    db.delete(owned_conversation(db, user.id, conversation_id))
+    db.commit()
+
+
+@router.post("/assistant/conversations/{conversation_id}/messages")
+def send_message(conversation_id: int, payload: MessageIn, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    owned_conversation(db, user.id, conversation_id)
+    raise HTTPException(status_code=501, detail="Bientôt disponible")
