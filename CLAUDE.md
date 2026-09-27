@@ -48,12 +48,14 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
   - `lib/api/schema.d.ts` est **généré** depuis l'OpenAPI de l'API (`npm run gen:api`, API de dev lancée). Ne pas l'éditer à la main.
   - `seo/usePageMeta.ts` : chaque page l'appelle pour son titre, sa description, sa canonical et son JSON-LD. Les pages privées passent `noindex: true`.
 
-### Documentation (`frontend/public/documentation`)
+### Guide et documentation admin (`frontend/public/guide`, `frontend/public/documentation`)
 
-- Site **Docsify** en Markdown (guide d'utilisation et documentation technique), servi par nginx sur `/documentation/`, **hors du routeur React**. La barre latérale y renvoie par un `<a>` classique, pas un `NavLink`.
-- Docsify et ses plugins sont copiés dans `vendor/` (pas de CDN, versions dans `vendor/VERSIONS.md`).
-- Liens entre pages toujours depuis la racine de la documentation (`technique/score.md`), menu dans `_sidebar.md`. Dans un tableau, écrire `&lt;` au lieu de `<` devant du gras.
-- Quand une fonctionnalité change, mettre à jour la page du guide et la page technique concernées dans la même branche. `e2e/documentation.spec.ts` vérifie que chaque page s'affiche et que les liens internes existent.
+- Deux sites **Docsify** en Markdown, servis par nginx **hors du routeur React** :
+  - `/guide/` : guide utilisateur (`app/` une page par écran, `bourse/` cours avec exemples chiffrés), sans nom de fichier ni commande. Lié en bas de la barre latérale par un `<a>` classique, pas un `NavLink` ;
+  - `/documentation/` : documentation admin (technique, installation, API, formules), **non liée** dans la navigation, `noindex`, sans protection pour l'instant (à protéger avant une mise en ligne).
+- Docsify, ses plugins, `theme.css` et `back-to-app.js` sont partagés dans `public/docsify/` (pas de CDN, versions dans `VERSIONS.md`).
+- Liens entre pages toujours depuis la racine du site (`bourse/pea.md`), menu dans le `_sidebar.md` de chaque site. Le guide ne renvoie jamais vers la documentation admin. Dans un tableau, écrire `&lt;` au lieu de `<` devant du gras.
+- Quand une fonctionnalité change, mettre à jour la page du guide et la page de la documentation admin concernées dans la même branche. `e2e/documentation.spec.ts` vérifie que chaque page des deux sites s'affiche et que les liens internes existent.
 
 ## Commandes
 

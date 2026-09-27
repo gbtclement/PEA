@@ -6,7 +6,8 @@
                      ┌────────────────────────────────────────────┐
 Navigateur ────────► │ web  (nginx)                               │
   :8095              │  /               → interface React (SPA)   │
-                     │  /documentation/ → cette documentation     │
+                     │  /guide/         → guide utilisateur       │
+                     │  /documentation/ → documentation admin     │
                      │  /api/*          → proxy vers api          │
                      │  /robots.txt, /sitemap.xml, /llms.txt → api│
                      └──────────────────────┬─────────────────────┘
@@ -20,7 +21,7 @@ Quatre conteneurs Docker Compose :
 
 | Service | Rôle | Technologies |
 |---|---|---|
-| `web` | Sert l'interface compilée et la documentation, relaie `/api` | nginx 1.27, build Vite |
+| `web` | Sert l'interface compilée, le guide et la documentation admin, relaie `/api` | nginx 1.27, build Vite |
 | `api` | API REST et flux SSE de l'assistant. **Ne contacte pas Yahoo pendant une requête**, sauf pour l'intraday (graphique 1J) et les actualités, mis en cache | Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Pydantic v2 |
 | `worker` | Liste des titres, cours, historique, fondamentaux, scores, prévisions | Même image que `api`, APScheduler |
 | `db` | Stockage persistant (volume `pgdata`) | PostgreSQL 16 |
@@ -50,7 +51,9 @@ PEA/
 │   │   └── seeds/              # CSV de départ et de secours
 │   └── tests/
 └── frontend/
-    ├── public/documentation/   # cette documentation (Docsify)
+    ├── public/guide/           # guide utilisateur (Docsify)
+    ├── public/documentation/   # documentation admin (Docsify)
+    ├── public/docsify/         # Docsify et plugins partagés
     ├── e2e/                    # tests Playwright
     └── src/
         ├── app/                # layout, barre latérale, routeur, page 404
@@ -95,7 +98,7 @@ Toutes les valeurs sont dans `backend/app/core/config.py` (`Settings`, pydantic-
 | `MIN_TURNOVER_EUR` | `500000` | Montant moyen échangé minimum pour être « liquide » |
 | `MIN_HISTORY_DAYS` | `200` | Séances minimum pour entrer dans le top 10 |
 | `MIN_AVAILABLE_RATIO` | `0.6` | Part minimum des points du score calculables pour le top 10 |
-| `SEO_INDEXING` | `false` | Voir [SEO et mise en ligne](technique/seo.md) |
+| `SEO_INDEXING` | `false` | Voir [SEO et mise en ligne](seo.md) |
 | `PUBLIC_BASE_URL` | `http://localhost:8095` | Adresse publique du site |
 
 ## Ports

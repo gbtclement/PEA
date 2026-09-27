@@ -1,0 +1,29 @@
+/* Réglages communs au guide et à la documentation admin, par-dessus le thème vue de Docsify */
+:root {
+  --theme-color: #4f46e5;
+}
+body,
+.sidebar,
+.markdown-section {
+  font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+}
+.markdown-section code,
+.markdown-section pre {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+.app-name-link {
+  font-weight: 600;
+}
+.back-to-app {
+  display: block;
+  margin: 0 0 1rem 15px;
+  font-size: 0.9em;
+}
+.markdown-section table {
+  display: table;
+  width: 100%;
+}
+.markdown-section td,
+.markdown-section th {
+  vertical-align: top;
+}

@@ -31,5 +31,6 @@ Portefeuille, Assistant IA, Réglages et **Prévisions** sont toujours en `noind
 
 - **Pré-génération** (prerendering) des pages publiques : les moteurs indexent plus sûrement du HTML déjà rempli qu'une application React.
 - **Comptes utilisateurs** : aujourd'hui, `get_current_user()` renvoie toujours l'utilisateur par défaut, donc n'importe quel visiteur verrait le portefeuille.
+- **Protéger `/documentation/`** (authentification nginx, ou accès réservé aux administrateurs) : elle décrit le fonctionnement interne et n'a aujourd'hui aucune protection.
 - **HTTPS** et un nom de domaine devant nginx.
 - Vérifier le cadre **AMF** si des recommandations sont affichées au grand public.

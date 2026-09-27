@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guide · PEA Radar</title>
+    <meta name="description" content="Guide de PEA Radar : utiliser l'application et comprendre la bourse et le PEA, avec des exemples." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Docsify et ses plugins sont partagés avec la documentation admin dans /docsify/ : pas de CDN -->
+    <link rel="stylesheet" href="/docsify/vue.css" />
+    <link rel="stylesheet" href="/docsify/theme.css" />
+  </head>
+  <body>
+    <div id="app">Chargement du guide…</div>
+    <script>
+      window.$docsify = {
+        name: "PEA Radar · Guide",
+        nameLink: "#/",
+        loadSidebar: true,
+        subMaxLevel: 2,
+        auto2top: true,
+        notFoundPage: true,
+        search: { placeholder: "Rechercher", noData: "Aucun résultat", depth: 3, namespace: "guide" },
+        pagination: { previousText: "Précédent", nextText: "Suivant", crossChapter: true, crossChapterText: true },
+      };
+    </script>
+    <script src="/docsify/back-to-app.js"></script>
+    <script src="/docsify/docsify.min.js"></script>
+    <script src="/docsify/search.min.js"></script>
+    <script src="/docsify/docsify-pagination.min.js"></script>
+  </body>
+</html>

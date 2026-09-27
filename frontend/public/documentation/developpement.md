@@ -77,7 +77,8 @@ Le projet a été construit par lots. Chaque lot a sa spécification et son plan
 | 5. SEO | Métadonnées, schema.org, robots.txt, sitemap, llms.txt |
 | 6. CLAUDE.md | Contexte pour Claude Code |
 | Prévisions | Signaux, statistiques, prédictions, bulletin de notes |
-| Documentation | Ce site Docsify |
+| Documentation | Guide utilisateur (`/guide/`) et documentation admin (`/documentation/`), en Docsify |
+| Fraîcheur des données | Top 10 dès le premier démarrage, passage du soir à 18 h 15, cours toutes les 1 à 5 min |
 
 ## Dépannage
 

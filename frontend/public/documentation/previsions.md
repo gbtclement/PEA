@@ -76,8 +76,8 @@ Sans signal actif, pas de prédiction.
 
 | Tâche | Quand | Durée |
 |---|---|---|
-| `forecast_stats` : statistiques complètes et test | si la dernière exécution a plus de 7 jours, dans la tâche quotidienne de 7 h 30 | ≈ 45 s |
-| `forecasts` : prédictions du jour et vérification des anciennes | chaque matin après l'historique, et au démarrage si en retard | ≈ 10 s |
+| `forecast_stats` : statistiques complètes et test | si la dernière exécution a plus de 7 jours, dans les tâches de 7 h 30 et 18 h 15 | ≈ 45 s |
+| `forecasts` : prédictions du jour et vérification des anciennes | chaque soir à 18 h 15 après les clôtures, chaque matin à 7 h 30, et au démarrage si en retard | ≈ 10 s |
 
 - Seules les **séances clôturées** sont utilisées (`last_session_close`) : une barre prise en pleine séance n'est pas un cours de clôture.
 - Relancer le même jour **remplace** les prédictions du jour.
@@ -87,5 +87,5 @@ Sans signal actif, pas de prédiction.
 
 - `forecast_runs` : une ligne par calcul complet (statistiques et test en JSON, coupure, frais). Seule la dernière est lue.
 - `forecasts` : une ligne par (titre, jour, horizon), avec rendement attendu, probabilité, fiabilité, signaux, rang, puis `actual_return` et `resolved_on` une fois l'horizon atteint.
-- Routes : voir [API REST](technique/api.md?id=prévisions). Avant le premier calcul, les réponses sont vides avec `as_of: null`.
+- Routes : voir [API REST](api.md?id=prévisions). Avant le premier calcul, les réponses sont vides avec `as_of: null`.
 - `/previsions` est toujours en `noindex` et absente du sitemap, par prudence réglementaire (AMF).

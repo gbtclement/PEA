@@ -2,7 +2,7 @@
 
 Code : `backend/app/services/scoring/` (fonctions pures), calcul planifié dans `backend/app/jobs/scoring.py`.
 
-Chaque titre reçoit un score **sur 100** : **50 points techniques** (le comportement du cours) et **50 points fondamentaux** (la santé de l'entreprise). Il est recalculé après chaque passage T2, donc environ toutes les 5 minutes en séance, et après l'historique quotidien.
+Chaque titre reçoit un score **sur 100** : **50 points techniques** (le comportement du cours) et **50 points fondamentaux** (la santé de l'entreprise). Il est recalculé après chaque passage T2, donc environ toutes les 5 minutes en séance, après l'historique quotidien (7 h 30 et 18 h 15) et, au démarrage, une fois les fondamentaux chargés.
 
 ?> Le score sert à **trier et expliquer**, pas à prédire. Chaque composant produit une phrase en français, affichée telle quelle dans l'interface.
 

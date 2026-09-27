@@ -54,7 +54,8 @@ Chaque dossier `features/<domaine>/` contient la page, ses composants et leurs t
 | `/assistant` | Assistant IA |
 | `/titres/:id` | Fiche d'un titre |
 | `/reglages` | Réglages |
-| `/documentation/` | Cette documentation. Servie par nginx comme fichiers statiques, **hors** du routeur React |
+| `/guide/` | Guide utilisateur (lien en bas de la barre latérale). Fichiers statiques servis par nginx, **hors** du routeur React |
+| `/documentation/` | Cette documentation admin, **non liée** dans la navigation. Même fonctionnement |
 
 ## Conventions d'interface
 
@@ -73,4 +74,4 @@ cd frontend && npm run gen:api
 
 ## En développement
 
-`npm run dev` lance Vite sur http://localhost:5180. Vite relaie `/api`, `/robots.txt`, `/sitemap.xml` et `/llms.txt` vers l'API de dev (`:8000`, ou `VITE_API_PROXY`). La documentation est servie depuis `public/documentation/` sur http://localhost:5180/documentation/.
+`npm run dev` lance Vite sur http://localhost:5180. Vite relaie `/api`, `/robots.txt`, `/sitemap.xml` et `/llms.txt` vers l'API de dev (`:8000`, ou `VITE_API_PROXY`). Le guide et la documentation sont servis depuis `public/guide/` et `public/documentation/` sur http://localhost:5180/guide/ et http://localhost:5180/documentation/.

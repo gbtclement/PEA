@@ -55,4 +55,4 @@ La vérification de survente est faite **à la date de l'ordre**, y compris quan
 
 ## Rafraîchissement
 
-Les titres détenus sont automatiquement placés dans le palier **T1** : leur cours est rafraîchi toutes les 2 minutes en séance.
+Les titres détenus sont automatiquement placés dans le palier **T1** : leur cours est rafraîchi toutes les minutes en séance.

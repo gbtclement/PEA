@@ -40,14 +40,15 @@ export function Sidebar({ footer }: { footer?: ReactNode }) {
           </NavLink>
         ))}
       </nav>
-      {/* La documentation est servie par nginx hors de l'application : lien classique, pas NavLink */}
+      {/* Le guide est servi par nginx hors de l'application : lien classique, pas NavLink.
+          La documentation admin (/documentation/) n'est volontairement pas liée. */}
       <div className="px-3 pb-3">
         <a
-          href="/documentation/"
+          href="/guide/"
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <BookOpen className="size-4" aria-hidden />
-          Documentation
+          Guide
         </a>
       </div>
       {footer && <div className="border-t border-border px-6 py-4">{footer}</div>}

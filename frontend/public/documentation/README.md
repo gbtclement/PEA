@@ -1,36 +1,35 @@
-# PEA Radar
+# Documentation admin
 
-PEA Radar est une application web personnelle, lancée en local avec Docker, pour :
+Cette documentation s'adresse à la personne qui **installe, fait tourner et fait évoluer** PEA Radar. Elle décrit l'architecture, les calculs exacts, l'API, la base de données et les commandes.
 
-- **repérer** les actions et ETF européens éligibles au PEA ;
-- les **classer** avec un score sur 100 qui explique ses raisons ;
-- consulter des **prévisions court terme** fondées sur des statistiques historiques ;
-- **suivre son portefeuille** et le compteur d'ordres annuels de la formule Invest Store Intégral du Crédit Agricole ;
-- **poser des questions** à un assistant IA (Claude) qui consulte les données de l'application.
+?> Vous cherchez comment **utiliser** l'application ou comprendre la bourse ? C'est le [guide utilisateur](/guide/ ':ignore'), accessible depuis la barre latérale de l'application.
 
-!> PEA Radar est un **outil d'aide à la décision et d'apprentissage**, pas un conseil en investissement. Les cours viennent de Yahoo Finance, avec quelques minutes de retard. Les scores et prévisions sont des estimations, jamais des certitudes.
+!> Cette documentation n'est pas protégée : elle n'est pas liée dans la navigation, mais toute personne qui connaît l'adresse `/documentation/` peut la lire. C'est acceptable en local. Avant une mise en ligne, il faudra la protéger (voir [SEO et mise en ligne](seo.md)).
 
 ## Par où commencer ?
 
 | Vous voulez… | Lisez |
 |---|---|
-| Lancer l'application pour la première fois | [Démarrer](guide/demarrer.md) |
-| Comprendre une page de l'application | Le **Guide d'utilisation**, dans le menu à gauche |
-| Savoir ce que veut dire PRU, RSI, MACD, ETF… | [Lexique et questions fréquentes](guide/lexique.md) |
-| Comprendre comment est calculé le score | [Score mixte](technique/score.md) |
-| Comprendre comment sont faites les prévisions | [Moteur de prévisions](technique/previsions.md) |
-| Modifier le code | [Architecture](technique/architecture.md) puis [Développement et tests](technique/developpement.md) |
+| Installer l'application, la démarrer, la sauvegarder | [Installation et exploitation](installation.md) |
+| Comprendre comment les morceaux s'emboîtent | [Architecture](architecture.md) |
+| Savoir quand et comment les données sont rafraîchies | [Données et worker](donnees.md) |
+| Connaître les formules exactes du score | [Score mixte](score.md) |
+| Connaître les calculs des prévisions | [Moteur de prévisions](previsions.md) |
+| Modifier le code et lancer les tests | [Développement et tests](developpement.md) |
 
 ## En un coup d'œil
 
 ```text
-Navigateur ─► web (nginx : interface React + /documentation) ─► api (FastAPI) ─► db (PostgreSQL 16)
-                                                                      ▲
-                               worker (tâches planifiées : Yahoo, scores, prévisions) ─┘
+Navigateur ─► web (nginx : React, /guide, /documentation) ─► api (FastAPI) ─► db (PostgreSQL 16)
+                                                                   ▲
+                        worker (tâches planifiées : Yahoo, scores, prévisions) ─┘
 ```
 
-- **Adresse de l'application :** http://localhost:8095
-- **Adresse de cette documentation :** http://localhost:8095/documentation/
-- **Code source :** https://github.com/gbtclement/PEA
+| Adresse | Contenu |
+|---|---|
+| http://localhost:8095 | L'application |
+| http://localhost:8095/guide/ | Le guide utilisateur |
+| http://localhost:8095/documentation/ | Cette documentation admin |
+| http://localhost:8000/docs | La doc interactive de l'API (mode développement uniquement) |
 
-Utilisez la recherche en haut à gauche pour trouver un mot dans toute la documentation.
+Le code source est sur https://github.com/gbtclement/PEA.

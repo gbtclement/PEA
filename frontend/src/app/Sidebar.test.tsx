@@ -15,9 +15,10 @@ test("met en évidence la page courante", () => {
   expect(screen.getByRole("link", { name: "Accueil" })).not.toHaveAttribute("aria-current");
 });
 
-test("renvoie vers la documentation, servie hors de l'application", () => {
+test("renvoie vers le guide, servi hors de l'application, mais pas vers la documentation admin", () => {
   render(<MemoryRouter><Sidebar /></MemoryRouter>);
-  expect(screen.getByRole("link", { name: "Documentation" })).toHaveAttribute("href", "/documentation/");
+  expect(screen.getByRole("link", { name: "Guide" })).toHaveAttribute("href", "/guide/");
+  expect(document.querySelector("a[href^='/documentation']")).toBeNull();
 });
 
 test("affiche le pied de barre fourni", () => {

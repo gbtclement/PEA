@@ -42,9 +42,10 @@ Planifiées dans `jobs/scheduler.py` (APScheduler, fuseau Paris) :
 | `bootstrap` | Au démarrage du worker | Rattrape ce qui manque ou a vieilli, puis charge tous les cours et calcule les scores |
 | `universe` | 7 h 00, lundi à vendredi | Met à jour la liste des titres et leur éligibilité |
 | `daily` | 7 h 30, lundi à vendredi | Historique journalier → scores → prévisions → fondamentaux |
-| `quotes_t1` | Toutes les 2 min, **en séance** | Cours des indices, favoris, titres détenus et top 10 |
+| `evening` | 18 h 15, lundi à vendredi | Clôtures officielles du jour → scores → prévisions. Le soir et le week-end, l'app affiche ainsi les chiffres exacts de la dernière séance, fixing de clôture compris |
+| `quotes_t1` | Toutes les minutes, **en séance** | Cours des indices, favoris, titres détenus et top 10 |
 | `quotes_t2` | Toutes les 5 min, en séance | Cours des 150 titres les plus échangés, **puis recalcul des scores** |
-| `quotes_t3` | Toutes les 30 min, en séance | Cours de tous les autres titres |
+| `quotes_t3` | Toutes les 5 min, en séance | Cours de tous les autres titres (environ 1 600 ; un passage dure environ 2 min 30) |
 
 Détails :
 
