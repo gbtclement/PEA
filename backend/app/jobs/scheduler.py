@@ -50,6 +50,14 @@ def daily_job(ctx: JobContext) -> None:
         run_job(ctx, "fundamentals", refresh_fundamentals)
 
 
+def evening_job(ctx: JobContext) -> None:
+    """Après la clôture : cours de clôture officiels du jour, puis scores et prévisions (soirée et week-end exacts)."""
+    with HEAVY_JOBS_LOCK:
+        run_job(ctx, "daily_history", refresh_daily_history)
+        _refresh_scores(ctx)
+        _refresh_forecasts(ctx)
+
+
 def _refresh_forecasts(ctx: JobContext) -> None:
     """Statistiques des signaux une fois par semaine, prédictions du jour à chaque passage."""
     if stats_are_stale(ctx):
@@ -90,6 +98,8 @@ def bootstrap_job(ctx: JobContext) -> None:
     with HEAVY_JOBS_LOCK:
         if not has_fundamentals or _older_than(fundamentals_at, now - _DAILY_MAX_AGE):
             run_job(ctx, "fundamentals", refresh_fundamentals)
+            # Sans fondamentaux, aucune action n'atteint le taux de données exigé pour le top 10
+            _refresh_scores(ctx)
 
 
 def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> BaseScheduler:
@@ -102,6 +112,8 @@ def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> 
                       args=[ctx], id="universe", **daily)
     scheduler.add_job(daily_job, CronTrigger(day_of_week="mon-fri", hour=7, minute=30, timezone=tz),
                       args=[ctx], id="daily", **daily)
+    scheduler.add_job(evening_job, CronTrigger(day_of_week="mon-fri", hour=18, minute=15, timezone=tz),
+                      args=[ctx], id="evening", **daily)
     intervals = {1: ctx.settings.quotes_t1_minutes, 2: ctx.settings.quotes_t2_minutes, 3: ctx.settings.quotes_t3_minutes}
     for tier, minutes in intervals.items():
         scheduler.add_job(quotes_job, IntervalTrigger(minutes=minutes, timezone=tz), args=[ctx, tier],

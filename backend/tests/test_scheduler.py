@@ -41,7 +41,7 @@ def test_quotes_job_skips_before_open(db, make_ctx):
 def test_build_scheduler_registers_jobs(make_ctx):
     scheduler = build_scheduler(make_ctx(), BackgroundScheduler(timezone="Europe/Paris"))
     assert {job.id for job in scheduler.get_jobs()} == {
-        "bootstrap", "universe", "daily", "quotes_t1", "quotes_t2", "quotes_t3",
+        "bootstrap", "universe", "daily", "evening", "quotes_t1", "quotes_t2", "quotes_t3",
     }
 
 
@@ -140,3 +140,60 @@ def test_bootstrap_computes_missing_forecasts(db, make_ctx):
     })
     bootstrap_job(ctx)
     assert db.get(DataStatus, "forecasts").last_success_at is not None
+
+
+def record_jobs(monkeypatch) -> list[str]:
+    import app.jobs.scheduler as scheduler
+
+    names: list[str] = []
+    real = scheduler.run_job
+
+    def spy(ctx, name, fn):
+        names.append(name)
+        return real(ctx, name, fn)
+
+    monkeypatch.setattr(scheduler, "run_job", spy)
+    return names
+
+
+def test_bootstrap_recomputes_scores_once_fundamentals_are_loaded(db, make_ctx, monkeypatch):
+    # Premier démarrage : sans fondamentaux, aucune action n'atteint 60 % du score → top 10 vide jusqu'au lendemain.
+    names = record_jobs(monkeypatch)
+    listing = FakeListing([ListedSecurity("FR0000121014", "MC", "LVMH", "Euronext Paris", "MC.PA")])
+    market = FakeMarket(
+        quotes={"MC.PA": Quote(612.0, 600.0, 2.0, 10, OPEN_MONDAY)},
+        history={"MC.PA": [DailyBar(date(2026, 9, 25), 600, 615, 598, 612.0, 10)]},
+    )
+    bootstrap_job(make_ctx(market=market, listing=listing, now=OPEN_MONDAY))
+    assert "fundamentals" in names
+    assert names[-1] == "scores"
+
+
+def test_bootstrap_does_not_rescore_when_fundamentals_are_fresh(db, make_ctx, monkeypatch):
+    names = record_jobs(monkeypatch)
+    tuesday = datetime(2026, 9, 29, 7, 0, tzinfo=UTC)
+    monday_evening = datetime(2026, 9, 28, 20, 0, tzinfo=UTC)
+    ctx, _, _ = seeded_ctx(db, make_ctx, tuesday, {
+        "universe": monday_evening, "daily_history": monday_evening, "fundamentals": monday_evening,
+        "forecasts": monday_evening,
+    })
+    bootstrap_job(ctx)
+    assert names.count("scores") == 1
+
+
+def test_evening_job_loads_closes_then_scores_and_forecasts(db, make_ctx, monkeypatch):
+    from app.jobs.scheduler import evening_job
+
+    names = record_jobs(monkeypatch)
+    ctx, market, listing = seeded_ctx(db, make_ctx, datetime(2026, 9, 28, 16, 15, tzinfo=UTC), {})  # lundi 18h15
+    evening_job(ctx)
+    assert names[:2] == ["daily_history", "scores"]
+    assert "forecasts" in names
+    assert "fundamentals" not in names and "universe" not in names
+    assert market.history_calls
+
+
+def test_evening_job_runs_after_the_close_on_weekdays(make_ctx):
+    scheduler = build_scheduler(make_ctx(), BackgroundScheduler(timezone="Europe/Paris"))
+    trigger = str(scheduler.get_job("evening").trigger)
+    assert "day_of_week='mon-fri'" in trigger and "hour='18'" in trigger and "minute='15'" in trigger

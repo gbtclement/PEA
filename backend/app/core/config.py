@@ -17,9 +17,9 @@ class Settings(BaseSettings):
     history_years: int = 5
 
     tier2_size: int = 150
-    quotes_t1_minutes: int = 2
+    quotes_t1_minutes: int = 1
     quotes_t2_minutes: int = 5
-    quotes_t3_minutes: int = 30
+    quotes_t3_minutes: int = 5
 
     min_turnover_eur: float = 500_000
     top_size: int = 10

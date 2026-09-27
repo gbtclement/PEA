@@ -27,8 +27,8 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
   - `models/` : SQLAlchemy 2 (API synchrone). Les migrations sont dans `backend/alembic/versions`.
   - `providers/` : `yahoo.py` (yfinance) et `euronext.py`, derrière les interfaces `providers/base.py`.
   - `jobs/` : tâches planifiées du worker :
-    - univers à 7 h et historique quotidien à 7 h 30, en semaine ;
-    - cours par paliers T1/T2/T3 (2, 5 et 30 min), en séance seulement ;
+    - univers à 7 h et historique quotidien à 7 h 30, en semaine ; passage du soir à 18 h 15 (clôtures officielles du jour, puis scores et prévisions) ;
+    - cours par paliers T1/T2/T3 (1, 5 et 5 min), en séance seulement ;
     - score après chaque passage T2.
   - `services/scoring/` : le score sur 100, avec 50 points techniques et 50 fondamentaux par défaut. Les maxima sont dans `scoring/config.py`, et les ETF n'ont que la partie technique.
   - `services/forecast/` : prévisions court terme sans API (pandas).
