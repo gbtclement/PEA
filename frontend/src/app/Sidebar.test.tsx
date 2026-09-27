@@ -15,6 +15,11 @@ test("met en évidence la page courante", () => {
   expect(screen.getByRole("link", { name: "Accueil" })).not.toHaveAttribute("aria-current");
 });
 
+test("renvoie vers la documentation, servie hors de l'application", () => {
+  render(<MemoryRouter><Sidebar /></MemoryRouter>);
+  expect(screen.getByRole("link", { name: "Documentation" })).toHaveAttribute("href", "/documentation/");
+});
+
 test("affiche le pied de barre fourni", () => {
   render(<MemoryRouter><Sidebar footer={<p>Bourse ouverte</p>} /></MemoryRouter>);
   expect(screen.getByText("Bourse ouverte")).toBeInTheDocument();

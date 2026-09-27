@@ -48,6 +48,13 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
   - `lib/api/schema.d.ts` est **généré** depuis l'OpenAPI de l'API (`npm run gen:api`, API de dev lancée). Ne pas l'éditer à la main.
   - `seo/usePageMeta.ts` : chaque page l'appelle pour son titre, sa description, sa canonical et son JSON-LD. Les pages privées passent `noindex: true`.
 
+### Documentation (`frontend/public/documentation`)
+
+- Site **Docsify** en Markdown (guide d'utilisation et documentation technique), servi par nginx sur `/documentation/`, **hors du routeur React**. La barre latérale y renvoie par un `<a>` classique, pas un `NavLink`.
+- Docsify et ses plugins sont copiés dans `vendor/` (pas de CDN, versions dans `vendor/VERSIONS.md`).
+- Liens entre pages toujours depuis la racine de la documentation (`technique/score.md`), menu dans `_sidebar.md`. Dans un tableau, écrire `&lt;` au lieu de `<` devant du gras.
+- Quand une fonctionnalité change, mettre à jour la page du guide et la page technique concernées dans la même branche. `e2e/documentation.spec.ts` vérifie que chaque page s'affiche et que les liens internes existent.
+
 ## Commandes
 
 Python et Node ne sont pas forcément installés sur l'hôte Windows : le backend se lance **toujours dans Docker**. Si Docker ne répond pas, Docker Desktop est peut-être arrêté.

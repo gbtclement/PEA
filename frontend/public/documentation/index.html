@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Documentation · PEA Radar</title>
+    <meta name="description" content="Guide d'utilisation et documentation technique de PEA Radar." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- Docsify et ses plugins sont copiés dans vendor/ (versions dans vendor/VERSIONS.md) : pas de CDN -->
+    <link rel="stylesheet" href="vendor/vue.css" />
+    <style>
+      :root {
+        --theme-color: #4f46e5;
+      }
+      body,
+      .sidebar,
+      .markdown-section {
+        font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+      }
+      .markdown-section code,
+      .markdown-section pre {
+        font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+      }
+      .app-name-link { font-weight: 600; }
+      .back-to-app { display: block; margin: 0 0 1rem 15px; font-size: 0.9em; }
+      .markdown-section table { display: table; width: 100%; }
+      .markdown-section td,
+      .markdown-section th { vertical-align: top; }
+    </style>
+  </head>
+  <body>
+    <div id="app">Chargement de la documentation…</div>
+    <script>
+      window.$docsify = {
+        name: "PEA Radar",
+        nameLink: "#/",
+        loadSidebar: true,
+        subMaxLevel: 2,
+        auto2top: true,
+        notFoundPage: true,
+        search: { placeholder: "Rechercher", noData: "Aucun résultat", depth: 3 },
+        pagination: { previousText: "Précédent", nextText: "Suivant", crossChapter: true, crossChapterText: true },
+        copyCode: { buttonText: "Copier", errorText: "Erreur", successText: "Copié" },
+        plugins: [
+          function (hook) {
+            // Lien de retour vers l'application, en haut de la barre latérale
+            hook.doneEach(function () {
+              var sidebar = document.querySelector(".sidebar-nav");
+              if (sidebar && !sidebar.querySelector(".back-to-app")) {
+                var link = document.createElement("a");
+                link.className = "back-to-app";
+                link.href = "/";
+                link.textContent = "← Retour à l'application";
+                sidebar.prepend(link);
+              }
+            });
+          },
+        ],
+      };
+    </script>
+    <script src="vendor/docsify.min.js"></script>
+    <script src="vendor/search.min.js"></script>
+    <script src="vendor/docsify-copy-code.min.js"></script>
+    <script src="vendor/docsify-pagination.min.js"></script>
+    <script src="vendor/prism-bash.min.js"></script>
+    <script src="vendor/prism-python.min.js"></script>
+    <script src="vendor/prism-json.min.js"></script>
+    <script src="vendor/prism-yaml.min.js"></script>
+    <script src="vendor/prism-nginx.min.js"></script>
+  </body>
+</html>

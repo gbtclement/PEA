@@ -1,0 +1,27 @@
+- [Accueil](README.md)
+
+- **Guide d'utilisation**
+  - [Démarrer](guide/demarrer.md)
+  - [Page d'accueil](guide/accueil.md)
+  - [Explorer et ETF](guide/explorer.md)
+  - [Fiche d'un titre](guide/fiche-titre.md)
+  - [Prévisions](guide/previsions.md)
+  - [Portefeuille](guide/portefeuille.md)
+  - [Assistant IA](guide/assistant.md)
+  - [Réglages](guide/reglages.md)
+  - [Lexique et questions fréquentes](guide/lexique.md)
+
+- **Documentation technique**
+  - [Architecture](technique/architecture.md)
+  - [Données et worker](technique/donnees.md)
+  - [Éligibilité PEA](technique/eligibilite.md)
+  - [Score mixte](technique/score.md)
+  - [Moteur de prévisions](technique/previsions.md)
+  - [Portefeuille et frais](technique/portefeuille.md)
+  - [Assistant IA](technique/assistant.md)
+  - [API REST](technique/api.md)
+  - [Base de données](technique/base-de-donnees.md)
+  - [Frontend](technique/frontend.md)
+  - [Développement et tests](technique/developpement.md)
+  - [SEO et mise en ligne](technique/seo.md)
+  - [Modifier cette documentation](technique/documentation.md)
