@@ -28,6 +28,8 @@ export function buildColumns(kind: "stock" | "etf"): ColumnSpec[] {
     { id: "favorite", header: "", width: "36px", enableSorting: false,
       cell: ({ row }) => <FavoriteButton securityId={row.original.id} isFavorite={row.original.is_favorite} /> },
     { id: "name", accessorKey: "name", header: "Nom", width: "minmax(150px, 2fr)",
+      // Tri « naturel » en français : 2CRSI avant A2A, 10X après 2CRSI, sans tenir compte des majuscules.
+      sortingFn: (a, b) => a.original.name.localeCompare(b.original.name, "fr", { numeric: true, sensitivity: "base" }),
       cell: ({ row }) => (
         <div className="min-w-0">
           <div className="truncate font-medium">{row.original.name}</div>
