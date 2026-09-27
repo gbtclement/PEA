@@ -62,4 +62,4 @@ cd frontend && npx playwright install chromium   # une fois
 npm run e2e                                        # l'application doit tourner sur http://localhost:8095 (parcours, mise en page de 1100 à 1440 px, SEO)
 ```
 
-Documentation de conception : `docs/superpowers/specs/`.
+Documentation de conception : `docs/superpowers/specs/`. Contexte pour Claude Code (architecture, commandes, conventions, points d'attention) : `CLAUDE.md`.
