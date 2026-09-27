@@ -20,7 +20,7 @@ export function NewsCard({ securityId }: { securityId: number }) {
           <ul className="space-y-3">
             {data.map((item) => (
               <li key={item.url}>
-                <a href={item.url} target="_blank" rel="noopener noreferrer" className="group flex items-start gap-1.5 text-sm font-medium hover:text-primary">
+                <a href={item.url} target="_blank" rel="noopener noreferrer" className="group flex items-start gap-1.5 text-sm font-medium [overflow-wrap:anywhere] hover:text-primary">
                   {item.title}<ExternalLink className="mt-0.5 size-3 shrink-0 opacity-50 group-hover:opacity-100" />
                 </a>
                 <p className="text-xs text-muted-foreground">{item.publisher ?? "Source inconnue"}{item.published_at && ` · ${formatDateTime(item.published_at)}`}</p>

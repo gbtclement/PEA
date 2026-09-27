@@ -38,9 +38,9 @@ export function SecurityPage() {
   const change = data.change_pct ?? 0;
   return (
     <section className="space-y-6">
-      <header className="flex items-start justify-between gap-6">
+      <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">{data.name}</h1>
             <FavoriteButton securityId={data.id} isFavorite={data.is_favorite} />
             {data.kind !== "index" && (
@@ -61,7 +61,7 @@ export function SecurityPage() {
         </div>
       </header>
       <PriceChartPanel securityId={data.id} />
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 [&>*]:min-w-0">
         <ScoreCard detail={data} />
         <FundamentalsCard detail={data} />
         <SimulatorCard securityId={data.id} />

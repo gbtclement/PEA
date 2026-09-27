@@ -35,11 +35,13 @@ export function ScreenerTable({ rows, columns, sorting, onSortingChange, onRowCl
     initialRect: { width: 1200, height: 800 },
   });
   const template = columns.map((c) => c.width).join(" ");
+  // Largeur minimale des colonnes + marges : en dessous, le tableau défile horizontalement au lieu d'être coupé.
+  const minWidth = columns.reduce((sum, c) => sum + Number(/(\d+)px/.exec(c.width)?.[1] ?? 0), 32);
 
   return (
-    <div role="table" aria-rowcount={tableRows.length + 1} className="text-sm">
+    <div role="table" aria-rowcount={tableRows.length + 1} className="overflow-x-auto text-sm">
       <div role="row" className="grid items-center border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground"
-           style={{ gridTemplateColumns: template }}>
+           style={{ gridTemplateColumns: template, minWidth }}>
         {table.getHeaderGroups()[0].headers.map((header) => {
           const spec = header.column.columnDef as ColumnSpec;
           const sorted = header.column.getIsSorted();
@@ -57,7 +59,7 @@ export function ScreenerTable({ rows, columns, sorting, onSortingChange, onRowCl
           );
         })}
       </div>
-      <div ref={scrollRef} className="h-[calc(100vh-270px)] min-h-[400px] overflow-y-auto">
+      <div ref={scrollRef} className="h-[calc(100vh-270px)] min-h-[400px] overflow-y-auto" style={{ minWidth }}>
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
           {virtualizer.getVirtualItems().map((item) => {
             const row = tableRows[item.index];

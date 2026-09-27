@@ -49,12 +49,25 @@ export function SimulatorCard({ securityId }: { securityId: number }) {
         {result && (result.message ? (
           <p className="text-amber-700">{result.message}</p>
         ) : (
-          <div className="rounded-lg bg-muted p-3">
-            <p>{result.shares} action{result.shares > 1 ? "s" : ""} achetée{result.shares > 1 ? "s" : ""} le {formatDate(result.start_date)} à {formatPrice(result.start_price)} € (frais {formatPrice(result.buy_fee)} €)</p>
-            <p>Valeur aujourd'hui : {formatPrice(result.current_value)} € (frais de revente {formatPrice(result.sell_fee)} €)</p>
-            <p className={cn("mt-1 text-base font-semibold", result.gain >= 0 ? "text-up" : "text-down")}>
-              {result.gain >= 0 ? "+" : ""}{formatPrice(result.gain)} € ({result.gain_pct != null ? `${result.gain_pct >= 0 ? "+" : ""}${formatPrice(result.gain_pct)} %` : "—"})
-            </p>
+          <div className="space-y-3 rounded-lg bg-muted p-4">
+            <dl className="space-y-1.5">
+              <div className="flex flex-wrap justify-between gap-x-4">
+                <dt className="text-muted-foreground">Achat le {formatDate(result.start_date)}</dt>
+                <dd className="tabular-nums">
+                  {result.shares} action{result.shares > 1 ? "s" : ""} × {formatPrice(result.start_price)} € · frais {formatPrice(result.buy_fee)} €
+                </dd>
+              </div>
+              <div className="flex flex-wrap justify-between gap-x-4">
+                <dt className="text-muted-foreground">Valeur aujourd'hui</dt>
+                <dd className="tabular-nums">{formatPrice(result.current_value)} € · frais de revente {formatPrice(result.sell_fee)} €</dd>
+              </div>
+            </dl>
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 border-t border-border pt-3">
+              <span className="text-muted-foreground">Résultat net, frais inclus</span>
+              <span className={cn("text-lg font-semibold tabular-nums", result.gain >= 0 ? "text-up" : "text-down")}>
+                {result.gain >= 0 ? "+" : ""}{formatPrice(result.gain)} € ({result.gain_pct != null ? `${result.gain_pct >= 0 ? "+" : ""}${formatPrice(result.gain_pct)} %` : "—"})
+              </span>
+            </div>
           </div>
         ))}
       </CardContent>

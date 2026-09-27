@@ -7,7 +7,7 @@ import { Sidebar } from "./Sidebar";
 export function Layout() {
   return (
     <AssistantPanelProvider>
-      <div className="min-h-screen min-w-[1280px] bg-background text-foreground">
+      <div className="min-h-screen min-w-[1024px] bg-background text-foreground">
         <Sidebar footer={<MarketStatus />} />
         <main className="ml-60 px-8 py-6">
           <div className="mx-auto max-w-[1400px]">
