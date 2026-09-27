@@ -10,6 +10,8 @@ afterEach(() => vi.unstubAllGlobals());
 function body(url: string): unknown {
   if (url.includes("/api/status")) return { market_open: false, jobs: [], indices: [] };
   if (url.startsWith("/api/rankings/movers")) return { gainers: [], losers: [] };
+  if (url === "/api/assistant/settings") return { configured: false, source: null, model: "claude-opus-5", models: [] };
+  if (url === "/api/assistant/conversations") return [];
   if (url.startsWith("/api/rankings/top") || url.startsWith("/api/market/heatmap") || url.startsWith("/api/screener")) return [];
   return { items: [], total: 0 };
 }
