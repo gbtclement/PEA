@@ -1,23 +1,28 @@
 import { useRef } from "react";
-import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type SortingState } from "@tanstack/react-table";
+import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type ColumnDef, type SortingState } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp } from "lucide-react";
-import type { ScreenerRow } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
-import type { ColumnSpec } from "./columns";
+/** Colonne de tableau : largeur CSS grid (ex. "80px" ou "minmax(150px, 2fr)") et alignement. */
+export type ColumnSpec<T> = ColumnDef<T> & { width: string; align?: "right" };
 
-type Props = {
-  rows: ScreenerRow[];
-  columns: ColumnSpec[];
+type Props<T> = {
+  rows: T[];
+  columns: ColumnSpec<T>[];
   sorting: SortingState;
   onSortingChange: (sorting: SortingState) => void;
-  onRowClick: (row: ScreenerRow) => void;
+  onRowClick: (row: T) => void;
+  getRowId?: (row: T) => string;
+  /** Hauteur de la zone qui défile (classes Tailwind). */
+  heightClass?: string;
 };
 
 const ROW_HEIGHT = 56;
 const COLUMN_GAP = 6;  // px, doit correspondre à gap-x-1.5
 
-export function ScreenerTable({ rows, columns, sorting, onSortingChange, onRowClick }: Props) {
+/** Tableau triable et virtualisé : l'en-tête colle en haut et partage le défilement des lignes (colonnes alignées). */
+export function DataTable<T>({ rows, columns, sorting, onSortingChange, onRowClick, getRowId,
+                              heightClass = "h-[calc(100vh-270px)] min-h-[400px]" }: Props<T>) {
   const table = useReactTable({
     data: rows,
     columns,
@@ -25,6 +30,7 @@ export function ScreenerTable({ rows, columns, sorting, onSortingChange, onRowCl
     onSortingChange: (updater) => onSortingChange(typeof updater === "function" ? updater(sorting) : updater),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getRowId,
   });
   const scrollRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -45,12 +51,12 @@ export function ScreenerTable({ rows, columns, sorting, onSortingChange, onRowCl
 
   return (
     <div role="table" aria-rowcount={tableRows.length + 1} ref={scrollRef}
-         className="h-[calc(100vh-270px)] min-h-[400px] overflow-auto text-sm tabular-nums">
+         className={cn(heightClass, "overflow-auto text-sm tabular-nums")}>
       <div style={{ minWidth }}>
       <div role="row" className="sticky top-0 z-10 grid items-center gap-x-1.5 border-b border-border bg-card px-4 py-2 text-xs font-medium text-muted-foreground"
            style={{ gridTemplateColumns: template }}>
         {table.getHeaderGroups()[0].headers.map((header) => {
-          const spec = header.column.columnDef as ColumnSpec;
+          const spec = header.column.columnDef as ColumnSpec<T>;
           const sorted = header.column.getIsSorted();
           return (
             <div role="columnheader" key={header.id} className={cn(spec.align === "right" && "text-right")}>
@@ -75,7 +81,7 @@ export function ScreenerTable({ rows, columns, sorting, onSortingChange, onRowCl
                    style={{ gridTemplateColumns: template, height: ROW_HEIGHT, transform: `translateY(${item.start - virtualizer.options.scrollMargin}px)` }}>
                 {row.getVisibleCells().map((cell) => (
                   <div role="cell" key={cell.id}
-                       className={cn("truncate", (cell.column.columnDef as ColumnSpec).align === "right" && "flex justify-end")}>
+                       className={cn("truncate", (cell.column.columnDef as ColumnSpec<T>).align === "right" && "flex justify-end")}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </div>
                 ))}

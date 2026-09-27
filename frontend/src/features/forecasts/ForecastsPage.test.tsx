@@ -1,0 +1,102 @@
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { mockFetch, renderWithProviders } from "@/test/utils";
+import { ForecastsPage } from "./ForecastsPage";
+
+afterEach(() => vi.unstubAllGlobals());
+
+const h = (expected: number, rank: number, reliability = "elevee") => ({ expected_return: expected, prob_up: 0.56, reliability, rank });
+const security = (id: number, name: string, eligibility = "eligible") => ({
+  id, name, symbol: name.slice(0, 3).toUpperCase(), market: "Euronext Paris", eligibility, price: 100, change_pct: 1.2,
+});
+const LIST = {
+  as_of: "2026-09-25",
+  round_trip_cost: 0.0096,
+  rows: [
+    { security: security(2, "Airbus"), signals: [{ key: "trend_strong", label: "Tendance haussière forte", bullish: true }],
+      horizons: { "1d": null, "1w": h(0.009, 1), "1m": h(0.004, 2, "moyenne") } },
+    { security: security(1, "LVMH"), signals: [{ key: "high_52w", label: "Plus haut sur 1 an", bullish: true }],
+      horizons: { "1d": h(0.002, 1), "1w": h(0.004, 2), "1m": h(0.02, 1) } },
+    { security: security(3, "Étranger", "non_eligible"), signals: [{ key: "surge_week", label: "Forte hausse sur 1 semaine", bullish: false }],
+      horizons: { "1d": null, "1w": h(-0.01, 3, "faible"), "1m": null } },
+  ],
+};
+const stat = (n: number, mean: number, hit: number) => ({ n, mean, median: mean, hit_rate: hit, mean_excess: mean, beat_index: 0.5, hit_after_fees: hit - 0.1, reliability: "moyenne" });
+const SIGNALS = {
+  as_of: "2026-09-25", computed_at: "2026-09-27T05:00:00Z", round_trip_cost: 0.0096,
+  baseline: { "1d": stat(700000, 0.0005, 0.49), "1w": stat(719055, 0.0012, 0.509), "1m": stat(650000, 0.009, 0.53) },
+  signals: [
+    { key: "surge_week", label: "Forte hausse sur 1 semaine", description: "Au moins +15 %…", bullish: false,
+      horizons: { "1d": stat(10000, -0.003, 0.46), "1w": stat(10548, -0.0118, 0.424), "1m": null } },
+    { key: "high_52w", label: "Plus haut sur 1 an", description: "Plus haut des 12 derniers mois.", bullish: true,
+      horizons: { "1d": stat(33000, 0.001, 0.51), "1w": stat(32616, 0.003, 0.52), "1m": stat(30000, 0.012, 0.55) } },
+  ],
+};
+const backtest = (mean: number, baseline: number) => ({ days: 231, picks: 2310, hit_rate: 0.589, hit_after_fees: 0.532, mean_return: mean,
+  mean_after_fees: mean - 0.0096, mean_excess: mean - 0.001, baseline_mean: baseline, edge: mean - baseline });
+const TRACK = {
+  cutoff: "2025-10-01", round_trip_cost: 0.0096,
+  simulated: { "1d": backtest(0.0015, 0.0005), "1w": backtest(0.006, 0.0025), "1m": backtest(0.0169, 0.0107) },
+  real: { "1d": null, "1w": null, "1m": null },
+};
+
+function renderPage(route = "/previsions", { empty = false } = {}) {
+  mockFetch((url) => {
+    if (url.startsWith("/api/forecasts/signals")) return { body: empty ? { ...SIGNALS, as_of: null, signals: [] } : SIGNALS };
+    if (url.startsWith("/api/forecasts/track-record")) return { body: TRACK };
+    return { body: empty ? { as_of: null, round_trip_cost: null, rows: [] } : LIST };
+  });
+  return renderWithProviders(<ForecastsPage />, { route });
+}
+
+const rowNames = () => screen.getAllByRole("row").slice(1).map((r) => within(r).getAllByRole("cell")[0].textContent);
+
+test("titre, avertissement et noindex", async () => {
+  renderPage();
+  expect(screen.getByRole("heading", { level: 1, name: "Prévisions court terme" })).toBeInTheDocument();
+  expect(screen.getByRole("note")).toHaveTextContent(/pas des certitudes ni des conseils/);
+  await waitFor(() => expect(document.head.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe("noindex, nofollow"));
+  expect(await screen.findByText(/Données du 25\/09\/2026/)).toBeInTheDocument();
+});
+
+test("premier calcul en cours", async () => {
+  renderPage("/previsions", { empty: true });
+  expect(await screen.findByText(/premier calcul en cours/i)).toBeInTheDocument();
+});
+
+test("prédictions triées par 1 semaine, puis par 1 mois, filtre des éligibles", async () => {
+  renderPage();
+  await screen.findByText("Airbus");
+  expect(rowNames()[0]).toMatch(/^Airbus/);
+  expect(rowNames()).toHaveLength(2);  // « Éligibles PEA uniquement » coché par défaut
+  expect(screen.getAllByText("+0,90 %").length).toBeGreaterThan(0);
+  expect(screen.getAllByText("56 % de hausse").length).toBeGreaterThan(0);
+
+  await userEvent.click(screen.getByRole("button", { name: /^1 mois/ }));
+  expect(rowNames()[0]).toMatch(/^LVMH/);
+
+  await userEvent.click(screen.getByRole("checkbox", { name: "Éligibles PEA uniquement" }));
+  expect(rowNames()).toHaveLength(3);
+  await userEvent.click(screen.getByRole("button", { name: /^1 semaine/ }));  // le sens s'applique à l'horizon trié
+  await userEvent.selectOptions(screen.getByRole("combobox", { name: "Sens" }), "baisse");
+  expect(rowNames()).toEqual([expect.stringMatching(/^Étranger/)]);
+});
+
+test("statistiques des signaux : référence en tête et choix de l'horizon", async () => {
+  renderPage("/previsions?vue=statistiques");
+  const table = await screen.findByRole("table", { name: "Statistiques des signaux" });
+  const rows = within(table).getAllByRole("row");
+  expect(rows[1]).toHaveTextContent("Toutes les actions (référence)");
+  expect(within(table).getByText("42 %")).toBeInTheDocument();  // surge_week à 1 semaine
+  await userEvent.click(screen.getByRole("button", { name: "1 jour" }));
+  expect(within(table).getByText("46 %")).toBeInTheDocument();
+  expect(within(table).queryByText("42 %")).not.toBeInTheDocument();
+});
+
+test("bulletin : test sur l'année écoulée et suivi réel encore vide", async () => {
+  renderPage("/previsions?vue=bulletin");
+  expect(await screen.findAllByRole("heading", { level: 3, name: "1 mois" })).toHaveLength(2);  // test passé + suivi réel
+  expect(screen.getAllByText(/a fait mieux que la moyenne des actions/)).toHaveLength(3);
+  expect(screen.getByText(/après frais, le gain moyen reste positif/)).toBeInTheDocument();  // seul l'horizon 1 mois
+  expect(screen.getAllByText(/Pas encore de prédiction vérifiée/).length).toBe(3);
+});

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const PRIVATE = ["/portefeuille", "/assistant", "/reglages"];
-const NOINDEX = [...PRIVATE, "/page-inconnue"];
+const NOINDEX = [...PRIVATE, "/previsions", "/page-inconnue"];
 
 async function headings(page: Page) {
   return page.evaluate(() => [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")].map((h) => ({ level: Number(h.tagName[1]), text: h.textContent?.trim() ?? "" })));

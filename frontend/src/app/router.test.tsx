@@ -12,6 +12,7 @@ function body(url: string): unknown {
   if (url.startsWith("/api/rankings/movers")) return { gainers: [], losers: [] };
   if (url === "/api/assistant/settings") return { configured: false, source: null, model: "claude-opus-5", models: [] };
   if (url === "/api/assistant/conversations") return [];
+  if (url === "/api/forecasts") return { as_of: null, round_trip_cost: null, rows: [] };
   if (url === "/api/settings") return { min_orders_per_year: 12, penalty_fee: 96, fee_grid: [{ up_to: null, rate: 0.0012 }] };
   if (url.startsWith("/api/rankings/top") || url.startsWith("/api/market/heatmap") || url.startsWith("/api/screener")) return [];
   return { items: [], total: 0 };
@@ -20,6 +21,7 @@ function body(url: string): unknown {
 test.each([
   ["/", "Accueil"],
   ["/explorer", "Explorer"],
+  ["/previsions", "Prévisions court terme"],
   ["/portefeuille", "Portefeuille"],
   ["/assistant", "Assistant IA"],
 ])("la route %s affiche le titre %s", async (path, title) => {

@@ -1,4 +1,4 @@
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnSpec as DataTableColumn } from "@/components/DataTable";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { Sparkline } from "@/components/Sparkline";
@@ -21,7 +21,7 @@ const numeric = (key: keyof ScreenerRow) => ({
   sortUndefined: "last" as const,
 });
 
-export type ColumnSpec = ColumnDef<ScreenerRow> & { width: string; align?: "right" };
+export type ColumnSpec = DataTableColumn<ScreenerRow>;
 
 export function buildColumns(kind: "stock" | "etf"): ColumnSpec[] {
   const columns: ColumnSpec[] = [
@@ -33,8 +33,8 @@ export function buildColumns(kind: "stock" | "etf"): ColumnSpec[] {
       cell: ({ row }) => (
         <div className="min-w-0">
           <div className="truncate font-medium">{row.original.name}</div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {row.original.symbol} · {row.original.market}
+          <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+            <span className="truncate">{row.original.symbol} · {row.original.market}</span>
             {row.original.eligibility !== "eligible" && <EligibilityBadge status={row.original.eligibility} />}
           </div>
         </div>

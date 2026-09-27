@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
-import { House, Layers, Radar, Search, Settings, Sparkles, Wallet } from "lucide-react";
+import { House, Layers, Radar, Search, Settings, Sparkles, Telescope, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const NAV_ITEMS = [
   { to: "/", label: "Accueil", icon: House, end: true },
   { to: "/explorer", label: "Explorer", icon: Search, end: false },
   { to: "/etf", label: "ETF", icon: Layers, end: false },
+  { to: "/previsions", label: "Prévisions", icon: Telescope, end: false },
   { to: "/portefeuille", label: "Portefeuille", icon: Wallet, end: false },
   { to: "/assistant", label: "Assistant IA", icon: Sparkles, end: false },
   { to: "/reglages", label: "Réglages", icon: Settings, end: false },

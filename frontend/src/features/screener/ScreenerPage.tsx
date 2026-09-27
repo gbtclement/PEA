@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { buildColumns } from "./columns";
 import { filterRows, filtersFromParams, SORT_KEYS } from "./filters";
 import { ScreenerFilters } from "./ScreenerFilters";
-import { ScreenerTable } from "./ScreenerTable";
+import { DataTable } from "@/components/DataTable";
 import { useScreener } from "./useScreener";
 
 type Props = { kind: "stock" | "etf"; title: string; description: string };
@@ -63,7 +63,7 @@ export function ScreenerPage({ kind, title, description }: Props) {
             {data.length === 0 ? "Les titres sont en cours de chargement (premier démarrage)." : "Aucun titre ne correspond à ces filtres."}
           </p>
         ) : (
-          <ScreenerTable rows={rows} columns={columns} sorting={sorting} onSortingChange={onSortingChange}
+          <DataTable rows={rows} columns={columns} sorting={sorting} onSortingChange={onSortingChange}
                          onRowClick={(row) => navigate(`/titres/${row.id}`)} />
         )}
       </Card>

@@ -47,6 +47,16 @@ export type AssistantSettingsOut = components["schemas"]["AssistantSettingsOut"]
 export type ConversationOut = components["schemas"]["ConversationOut"];
 export type ConversationDetail = components["schemas"]["ConversationDetail"];
 export type MessageOut = components["schemas"]["MessageOut"];
+export type ForecastList = components["schemas"]["ForecastListOut"];
+export type ForecastRow = components["schemas"]["ForecastRowOut"];
+export type HorizonForecast = components["schemas"]["HorizonForecastOut"];
+export type SignalStats = components["schemas"]["SignalStatsOut"];
+export type SignalStatsRow = components["schemas"]["SignalStatsRowOut"];
+export type SignalStat = components["schemas"]["SignalStatOut"];
+export type TrackRecord = components["schemas"]["TrackRecordOut"];
+export type Backtest = components["schemas"]["BacktestOut"];
+export type RealTrack = components["schemas"]["RealTrackOut"];
+export type SecurityForecast = components["schemas"]["SecurityForecastOut"];
 
 async function errorFrom(response: Response, path: string): Promise<ApiError> {
   let message = `Erreur ${response.status} sur ${path}`;

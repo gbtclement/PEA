@@ -30,7 +30,8 @@ for (const width of WIDTHS) {
   test(`mise en page sans coupure à ${width} px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     const security = await firstSecurityPath(page);
-    for (const path of ["/", "/explorer", "/etf", "/portefeuille", "/assistant", "/reglages", security]) {
+    for (const path of ["/", "/explorer", "/etf", "/previsions", "/previsions?vue=statistiques", "/previsions?vue=bulletin",
+                        "/portefeuille", "/assistant", "/reglages", security]) {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await page.waitForLoadState("networkidle");

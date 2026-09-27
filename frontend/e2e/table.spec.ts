@@ -5,7 +5,7 @@ test.use({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
 
 // Les titres de colonnes doivent tomber exactement au-dessus des valeurs, barre de défilement comprise.
 for (const width of [1100, 1440]) {
-  for (const path of ["/explorer", "/etf"]) {
+  for (const path of ["/explorer", "/etf", "/previsions"]) {
     test(`${path} : titres de colonnes alignés sur les valeurs à ${width} px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(path);
@@ -31,10 +31,13 @@ for (const width of [1280, 1440]) {
     await page.goto("/explorer");
     await expect(page.getByRole("row").nth(1)).toBeVisible();
     const tooClose = await page.evaluate(() => {
+      // Partie visible du contenu : ce qui dépasse d'une colonne est masqué, seul l'écart visible compte.
       const contentBox = (el: Element) => {
         const range = document.createRange();
         range.selectNodeContents(el);
-        return range.getBoundingClientRect();
+        const content = range.getBoundingClientRect();
+        const cell = el.getBoundingClientRect();
+        return { left: Math.max(content.left, cell.left), right: Math.min(content.right, cell.right) };
       };
       const problems: string[] = [];
       for (const row of [...document.querySelectorAll("[role=row]")].slice(0, 30)) {
