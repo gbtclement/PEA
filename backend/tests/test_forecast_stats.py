@@ -102,3 +102,19 @@ def test_no_signal_or_unknown_signal_gives_none(stats):
     assert predict([], "1w", stats) is None
     assert predict(["unknown"], "1w", stats) is None
     assert predict(["breakout_20"], "1d", stats) is None  # pas de statistiques pour cet horizon
+
+
+def test_reliability_is_measured_against_the_average_stock_not_the_index():
+    # Toutes les actions ont battu le CAC 40 de 1 % ; un signal qui fait pareil n'apporte aucune information.
+    rng = np.random.default_rng(3)
+    acc = StatsAccumulator(cost=0.0)
+    everyone = rng.normal(0.01, 0.05, 50_000)
+    acc.add(BASELINE, "1d", everyone, everyone)
+    same = rng.normal(0.01, 0.05, 5_000)
+    acc.add("noise", "1d", same, same)
+    better = rng.normal(0.02, 0.05, 5_000)
+    acc.add("useful", "1d", better, better)
+    stats = {s.signal: s for s in acc.result()}
+    assert stats["noise"].reliability == "faible"
+    assert stats["useful"].reliability == "elevee"
+    assert stats["useful"].t_stat > 3

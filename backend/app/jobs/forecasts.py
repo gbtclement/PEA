@@ -1,18 +1,20 @@
 """Prévisions court terme : statistiques des signaux (chaque semaine) et prédictions du jour (chaque matin)."""
-from datetime import timedelta
+from datetime import date, timedelta
+
+import pandas as pd
 
 from app.core.current_user import ensure_default_user
 from app.jobs.context import JobContext
 from app.models import ForecastRun
 from app.repositories.forecasts import (
-    closes_after, index_closes, latest_run, pending_forecasts, stock_series, upsert_forecasts,
+    closes_between, index_closes, latest_run, pending_forecasts, replace_forecasts, stock_series,
 )
 from app.repositories.user_settings import user_fee_grid
 from app.services.fees import broker_fee
 from app.services.forecast.engine import SeriesInput, active_signals, run_analysis
 from app.services.forecast.predict import predict
 from app.services.forecast.stats import HORIZONS, SignalStat
-from app.services.market_calendar import PARIS
+from app.services.market_calendar import PARIS, last_session_close
 
 REFERENCE_ORDER_EUR = 500.0
 STATS_MAX_AGE = timedelta(days=7)
@@ -20,7 +22,12 @@ RECENT_WINDOW = timedelta(days=420)  # ≈ 290 séances : assez pour la moyenne 
 
 
 def _inputs(frames) -> list[SeriesInput]:
-    return [SeriesInput(sid, f["close"], f["volume"]) for sid, f in frames.items()]
+    return [SeriesInput(sid, f["close"], f["volume"]) for sid, f in frames.items() if len(f)]
+
+
+def _closed_until(ctx: JobContext) -> date:
+    """Dernière séance clôturée : une barre du jour prise en pleine séance n'est pas encore un cours de clôture."""
+    return last_session_close(ctx.now()).astimezone(PARIS).date()
 
 
 def refresh_forecast_stats(ctx: JobContext) -> int:
@@ -30,8 +37,9 @@ def refresh_forecast_stats(ctx: JobContext) -> int:
         user = ensure_default_user(session)
         _, rate = broker_fee(REFERENCE_ORDER_EUR, user_fee_grid(session, user.id))
         cost = 2 * rate
-        series = _inputs(stock_series(session, since))
-        index = index_closes(session, since)
+        closed = pd.Timestamp(_closed_until(ctx))
+        series = _inputs({sid: f.loc[:closed] for sid, f in stock_series(session, since, include_inactive=True).items()})
+        index = index_closes(session, since).loc[:closed]
         analysis = run_analysis(series, index, ctx.settings.min_turnover_eur, cost)
         session.add(ForecastRun(
             computed_at=ctx.now(), data_until=analysis.data_until, cutoff=analysis.cutoff, round_trip_cost=cost,
@@ -54,11 +62,12 @@ def refresh_forecasts(ctx: JobContext) -> int:
         missing = latest_run(session) is None
     if missing:
         refresh_forecast_stats(ctx)
-    today = ctx.now().astimezone(PARIS).date()
+    closed = _closed_until(ctx)
     with ctx.session_factory() as session:
         run = latest_run(session)
         stats = {(s["signal"], s["horizon"]): SignalStat(**s) for s in run.stats}
-        frames = stock_series(session, today - RECENT_WINDOW)
+        frames = {sid: f.loc[: pd.Timestamp(closed)] for sid, f in stock_series(session, closed - RECENT_WINDOW).items()}
+        frames = {sid: f for sid, f in frames.items() if len(f)}
         as_of = max((f.index[-1].date() for f in frames.values()), default=None)
         rows: list[dict] = []
         for s in _inputs(frames):
@@ -75,22 +84,33 @@ def refresh_forecasts(ctx: JobContext) -> int:
             ranked = sorted((r for r in rows if r["horizon"] == horizon), key=lambda r: -r["expected_return"])
             for position, row in enumerate(ranked, start=1):
                 row["rank"] = position
-        written = upsert_forecasts(session, rows)
-        resolved = _resolve(session)
+        written = replace_forecasts(session, as_of, rows) if as_of else 0
+        resolved = _resolve(session, closed)
         session.commit()
         return written + resolved
 
 
-def _resolve(session) -> int:
+def _resolve(session, closed: date) -> int:
+    """Vérifie les prédictions dont l'horizon (en séances du titre) est atteint, séances clôturées seulement.
+
+    Départ et arrivée sont relus dans l'historique stocké : après une division d'action, tout l'historique est
+    rechargé à la nouvelle échelle et le rapport reste juste.
+    """
+    pending = pending_forecasts(session)
+    if not pending:
+        return 0
+    start = min(f.as_of for items in pending.values() for f in items)
+    closes = closes_between(session, list(pending), start, closed)
     resolved = 0
-    for security_id, pending in pending_forecasts(session).items():
-        closes = closes_after(session, security_id, min(f.as_of for f in pending))
-        for f in pending:
-            later = [(day, close) for day, close in closes if day > f.as_of]
+    for security_id, items in pending.items():
+        history = closes.get(security_id, [])
+        by_day = dict(history)
+        for f in items:
+            later = [(day, close) for day, close in history if day > f.as_of]
             h = HORIZONS[f.horizon]
             if len(later) >= h:
                 day, close = later[h - 1]
-                f.actual_return = close / f.base_close - 1
+                f.actual_return = close / by_day.get(f.as_of, f.base_close) - 1
                 f.resolved_on = day
                 resolved += 1
     return resolved

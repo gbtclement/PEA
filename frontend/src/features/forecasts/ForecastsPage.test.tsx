@@ -97,6 +97,20 @@ test("bulletin : test sur l'année écoulée et suivi réel encore vide", async 
   renderPage("/previsions?vue=bulletin");
   expect(await screen.findAllByRole("heading", { level: 3, name: "1 mois" })).toHaveLength(2);  // test passé + suivi réel
   expect(screen.getAllByText(/a fait mieux que la moyenne des actions/)).toHaveLength(3);
-  expect(screen.getByText(/après frais, le gain moyen reste positif/)).toBeInTheDocument();  // seul l'horizon 1 mois
+  expect(screen.getByText(/Après frais, le gain moyen reste positif/)).toBeInTheDocument();  // seul l'horizon 1 mois
   expect(screen.getAllByText(/Pas encore de prédiction vérifiée/).length).toBe(3);
+});
+
+test("bulletin : verdict quand le gain est déjà négatif avant frais, et comparaison du suivi réel", async () => {
+  const real = { picks: 40, hit_rate: 0.45, hit_after_fees: 0.3, mean_return: -0.004, mean_after_fees: -0.0136,
+                 baseline_mean: -0.001, edge: -0.003, first_day: "2026-09-28" };
+  mockFetch((url) => {
+    if (url.startsWith("/api/forecasts/track-record")) return { body: { ...TRACK, real: { "1d": null, "1w": real, "1m": null } } };
+    return { body: LIST };
+  });
+  renderWithProviders(<ForecastsPage />, { route: "/previsions?vue=bulletin" });
+  expect(await screen.findByText(/n'a pas fait mieux que la moyenne des titres suivis/)).toBeInTheDocument();
+  expect(screen.getByText(/gain moyen était déjà négatif avant frais/)).toBeInTheDocument();
+  expect(screen.getByText("Moyenne des titres suivis")).toBeInTheDocument();
+  expect(screen.getByText(/entreprises disparues/)).toBeInTheDocument();
 });

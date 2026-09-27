@@ -2,9 +2,8 @@
 from collections import defaultdict
 from typing import Annotated
 
-import numpy as np
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -84,19 +83,26 @@ def signal_statistics(db: DbDep) -> SignalStatsOut:
 
 
 def _real_track(db: Session, horizon: str, cost: float) -> RealTrackOut | None:
-    """Prédictions réellement enregistrées puis vérifiées : les 10 meilleures prédictions de hausse de chaque jour."""
-    resolved = db.scalars(select(Forecast).where(Forecast.horizon == horizon, Forecast.actual_return.is_not(None))).all()
-    picks = [f for f in resolved if f.rank <= TOP_PICKS and f.expected_return > 0]
+    """Prédictions réellement enregistrées puis vérifiées : les 10 meilleures prédictions de hausse de chaque jour.
+
+    La comparaison porte sur la moyenne de tous les titres suivis (avec un signal) les mêmes jours. Calcul en SQL :
+    le nombre de prédictions vérifiées grandit chaque jour.
+    """
+    resolved = (Forecast.horizon == horizon, Forecast.actual_return.is_not(None))
+    day = (select(Forecast.as_of.label("day"), func.avg(Forecast.actual_return).label("mean"))
+           .where(*resolved).group_by(Forecast.as_of).subquery())
+    picks, mean, hit, hit_fees, baseline, first_day = db.execute(
+        select(func.count(), func.avg(Forecast.actual_return),
+               func.avg(case((Forecast.actual_return > 0, 1.0), else_=0.0)),
+               func.avg(case((Forecast.actual_return > cost, 1.0), else_=0.0)),
+               func.avg(day.c.mean), func.min(Forecast.as_of))
+        .join(day, day.c.day == Forecast.as_of)
+        .where(*resolved, Forecast.rank <= TOP_PICKS, Forecast.expected_return > 0)
+    ).one()
     if not picks:
         return None
-    by_day: dict = defaultdict(list)
-    for f in resolved:
-        by_day[f.as_of].append(f.actual_return)
-    r = np.array([f.actual_return for f in picks])
-    baseline = float(np.mean([np.mean(by_day[f.as_of]) for f in picks]))
-    return RealTrackOut(picks=len(picks), hit_rate=float((r > 0).mean()), hit_after_fees=float((r > cost).mean()),
-                        mean_return=float(r.mean()), mean_after_fees=float(r.mean() - cost), baseline_mean=baseline,
-                        edge=float(r.mean() - baseline), first_day=min(f.as_of for f in picks))
+    return RealTrackOut(picks=picks, hit_rate=hit, hit_after_fees=hit_fees, mean_return=mean, mean_after_fees=mean - cost,
+                        baseline_mean=baseline, edge=mean - baseline, first_day=first_day)
 
 
 @router.get("/forecasts/track-record", response_model=TrackRecordOut)

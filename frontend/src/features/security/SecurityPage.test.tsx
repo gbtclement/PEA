@@ -123,3 +123,8 @@ test("carte des prévisions : aucun signal aujourd'hui", async () => {
   renderPage(200, DETAIL, { as_of: "2026-09-25", signals: [], horizons: { "1d": null, "1w": null, "1m": null } });
   expect(await screen.findByText("Aucun signal actif aujourd'hui.")).toBeInTheDocument();
 });
+
+test("carte des prévisions : avertissement", async () => {
+  renderPage();
+  expect(await screen.findByText(/Estimation statistique, pas une certitude ni un conseil/)).toBeInTheDocument();
+});

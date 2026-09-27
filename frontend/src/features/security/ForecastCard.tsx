@@ -14,7 +14,9 @@ export function ForecastCard({ securityId }: { securityId: number }) {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Prévisions court terme</CardTitle>
-        <p className="text-sm text-muted-foreground">Estimations tirées de ce qui a suivi les mêmes signaux sur 5 ans, avant frais.</p>
+        <p className="text-sm text-muted-foreground">
+          Estimation statistique, pas une certitude ni un conseil : ce qui a suivi les mêmes signaux sur 5 ans, avant frais.
+        </p>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         {isPending ? <p className="text-muted-foreground">Chargement…</p> : !data?.as_of ? (

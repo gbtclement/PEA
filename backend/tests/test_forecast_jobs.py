@@ -87,3 +87,49 @@ def test_forecasts_are_checked_once_the_horizon_is_reached(db, make_ctx, market)
 def test_illiquid_stocks_get_no_forecast(db, make_ctx, market):
     refresh_forecasts(make_ctx(now=NOW, min_turnover_eur=10_000_000))  # plus aucun titre assez échangé
     assert db.scalar(select(func.count()).select_from(Forecast)) == 0
+
+
+def test_an_unfinished_session_is_ignored(db, make_ctx, market):
+    # Lundi 11 h à Paris, séance en cours : Yahoo a renvoyé une barre du jour encore incomplète.
+    refresh_forecasts(make_ctx(now=NOW, min_turnover_eur=0))
+    add_prices(db, market["rising"], [70.0], days=pd.bdate_range(start="2026-09-28", periods=1))
+    refresh_forecasts(make_ctx(now=datetime(2026, 9, 28, 9, 0, tzinfo=UTC), min_turnover_eur=0))
+    assert db.scalar(select(func.max(Forecast.as_of))) == date(2026, 9, 25)
+    pending = db.scalars(select(Forecast).where(Forecast.security_id == market["rising"].id, Forecast.horizon == "1d")).one()
+    assert pending.actual_return is None  # la vérification attend la clôture
+
+
+def test_resolution_survives_a_split_reload(db, make_ctx, market):
+    refresh_forecasts(make_ctx(now=NOW, min_turnover_eur=0))
+    # Division par 2 détectée : tout l'historique est rechargé à moitié prix, puis 5 nouvelles séances.
+    for price in db.scalars(select(DailyPrice).where(DailyPrice.security_id == market["rising"].id)):
+        price.close /= 2
+    add_prices(db, market["rising"], [30, 30.5, 31, 31.5, 33], days=pd.bdate_range(start="2026-09-28", periods=5))
+    refresh_forecasts(make_ctx(now=datetime(2026, 10, 5, 5, 0, tzinfo=UTC), min_turnover_eur=0))
+    week = db.scalars(select(Forecast).where(Forecast.security_id == market["rising"].id, Forecast.as_of == date(2026, 9, 25),
+                                              Forecast.horizon == "1w")).one()
+    assert week.actual_return == pytest.approx(0.10)
+
+
+def test_rerun_removes_forecasts_that_no_longer_apply(db, make_ctx, market):
+    ctx = make_ctx(now=NOW, min_turnover_eur=0)
+    refresh_forecasts(ctx)
+    ghost = make_security(db, "GHOST.PA", name="Fantôme")
+    db.add(Forecast(security_id=ghost.id, as_of=date(2026, 9, 25), horizon="1w", expected_return=0.5, prob_up=0.9,
+                    reliability="elevee", signals=["breakout_20"], rank=1, base_close=10.0))
+    db.flush()
+    refresh_forecasts(ctx)
+    assert db.scalar(select(func.count()).select_from(Forecast).where(Forecast.security_id == ghost.id)) == 0
+    ranks = sorted(db.scalars(select(Forecast.rank).where(Forecast.horizon == "1w", Forecast.as_of == date(2026, 9, 25))))
+    assert ranks == list(range(1, len(ranks) + 1))
+
+
+def test_delisted_stocks_still_count_in_the_statistics(db, make_ctx, market):
+    refresh_forecast_stats(make_ctx(now=NOW, min_turnover_eur=0))
+    before = next(s for s in db.scalars(select(ForecastRun)).one().stats if s["signal"] == "__all__" and s["horizon"] == "1d")["n"]
+    gone = make_security(db, "GONE.PA", name="Radiée", active=False)
+    add_prices(db, gone, np.linspace(30, 10, 320))
+    refresh_forecast_stats(make_ctx(now=NOW, min_turnover_eur=0))
+    runs = db.scalars(select(ForecastRun).order_by(ForecastRun.id)).all()
+    after = next(s for s in runs[-1].stats if s["signal"] == "__all__" and s["horizon"] == "1d")["n"]
+    assert after > before

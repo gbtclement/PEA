@@ -63,6 +63,9 @@ class StatsAccumulator:
             self._excess[(signal, horizon)].append(np.asarray(excess, dtype=float))
 
     def result(self) -> list[SignalStat]:
+        # La fiabilité mesure l'écart avec l'action moyenne (la référence), pas avec le CAC 40 : si toutes les actions
+        # ont battu l'indice sur la période, un signal qui fait pareil n'apporte aucune information.
+        base_excess = {h: float(np.concatenate(self._excess[(s, h)]).mean()) for (s, h) in self._excess if s == BASELINE}
         out = []
         for (signal, horizon), chunks in self._returns.items():
             r = np.concatenate(chunks)
@@ -70,10 +73,11 @@ class StatsAccumulator:
             h = HORIZONS.get(horizon, 1)
             mean_x = float(x.mean())
             std_x = float(x.std(ddof=1)) if len(x) > 1 else 0.0
+            relative = mean_x - (0.0 if signal == BASELINE else base_excess.get(horizon, 0.0))
             out.append(SignalStat(
                 signal=signal, horizon=horizon, n=len(r), mean=float(r.mean()), median=float(np.median(r)),
                 hit_rate=float((r > 0).mean()), mean_excess=mean_x, beat_index=float((x > 0).mean()),
                 hit_after_fees=float((r > self.cost).mean()), std_excess=std_x,
-                reliability=reliability(mean_x, std_x, len(r), h), t_stat=_t_stat(mean_x, std_x, len(r), h),
+                reliability=reliability(relative, std_x, len(r), h), t_stat=_t_stat(relative, std_x, len(r), h),
             ))
         return out
