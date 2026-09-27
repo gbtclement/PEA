@@ -25,9 +25,9 @@ export type ColumnSpec = ColumnDef<ScreenerRow> & { width: string; align?: "righ
 
 export function buildColumns(kind: "stock" | "etf"): ColumnSpec[] {
   const columns: ColumnSpec[] = [
-    { id: "favorite", header: "", width: "40px", enableSorting: false,
+    { id: "favorite", header: "", width: "36px", enableSorting: false,
       cell: ({ row }) => <FavoriteButton securityId={row.original.id} isFavorite={row.original.is_favorite} /> },
-    { id: "name", accessorKey: "name", header: "Nom", width: "minmax(180px, 2fr)",
+    { id: "name", accessorKey: "name", header: "Nom", width: "minmax(150px, 2fr)",
       cell: ({ row }) => (
         <div className="min-w-0">
           <div className="truncate font-medium">{row.original.name}</div>
@@ -39,26 +39,26 @@ export function buildColumns(kind: "stock" | "etf"): ColumnSpec[] {
       ) },
     { id: "price", header: "Cours", width: "80px", align: "right", ...numeric("price"),
       cell: ({ row }) => <span className="font-medium">{formatPrice(row.original.price)}</span> },
-    { id: "change_pct", header: "1 j", width: "72px", align: "right", ...numeric("change_pct"),
+    { id: "change_pct", header: "1 j", width: "80px", align: "right", ...numeric("change_pct"),
       cell: ({ row }) => <Change value={row.original.change_pct} /> },
-    { id: "perf_1w", header: "1 sem", width: "72px", align: "right", ...numeric("perf_1w"),
+    { id: "perf_1w", header: "1 sem", width: "80px", align: "right", ...numeric("perf_1w"),
       cell: ({ row }) => <Change value={row.original.perf_1w} /> },
-    { id: "perf_1m", header: "1 mois", width: "72px", align: "right", ...numeric("perf_1m"),
+    { id: "perf_1m", header: "1 mois", width: "80px", align: "right", ...numeric("perf_1m"),
       cell: ({ row }) => <Change value={row.original.perf_1m} /> },
-    { id: "perf_1y", header: "1 an", width: "72px", align: "right", ...numeric("perf_1y"),
+    { id: "perf_1y", header: "1 an", width: "80px", align: "right", ...numeric("perf_1y"),
       cell: ({ row }) => <Change value={row.original.perf_1y} /> },
-    { id: "score", header: "Score", width: "60px", align: "right", ...numeric("score"),
+    { id: "score", header: "Score", width: "56px", align: "right", ...numeric("score"),
       cell: ({ row }) => <ScoreGauge score={row.original.score} size={36} /> },
   ];
   if (kind === "stock") {
     columns.push(
       { id: "pe", header: "PER", width: "60px", align: "right", ...numeric("pe"),
         cell: ({ row }) => formatNumber(row.original.pe, 1) },
-      { id: "dividend_yield", header: "Rendement", width: "88px", align: "right", ...numeric("dividend_yield"),
+      { id: "dividend_yield", header: "Rendement", width: "92px", align: "right", ...numeric("dividend_yield"),
         cell: ({ row }) => formatRatioPct(row.original.dividend_yield) },
     );
   }
-  columns.push({ id: "trend", header: "3 mois", width: "90px", enableSorting: false,
+  columns.push({ id: "trend", header: "3 mois", width: "88px", enableSorting: false,
     cell: ({ row }) => <Sparkline values={row.original.sparkline} /> });
   return columns;
 }

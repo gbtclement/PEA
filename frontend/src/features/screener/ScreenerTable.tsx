@@ -15,6 +15,7 @@ type Props = {
 };
 
 const ROW_HEIGHT = 56;
+const COLUMN_GAP = 6;  // px, doit correspondre à gap-x-1.5
 
 export function ScreenerTable({ rows, columns, sorting, onSortingChange, onRowClick }: Props) {
   const table = useReactTable({
@@ -26,6 +27,7 @@ export function ScreenerTable({ rows, columns, sorting, onSortingChange, onRowCl
     getSortedRowModel: getSortedRowModel(),
   });
   const scrollRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const tableRows = table.getRowModel().rows;
   const virtualizer = useVirtualizer({
     count: tableRows.length,
@@ -33,15 +35,20 @@ export function ScreenerTable({ rows, columns, sorting, onSortingChange, onRowCl
     estimateSize: () => ROW_HEIGHT,
     overscan: 12,
     initialRect: { width: 1200, height: 800 },
+    scrollMargin: bodyRef.current?.offsetTop ?? 0,  // les lignes commencent sous l'en-tête collant
   });
   const template = columns.map((c) => c.width).join(" ");
   // Largeur minimale des colonnes + marges : en dessous, le tableau défile horizontalement au lieu d'être coupé.
-  const minWidth = columns.reduce((sum, c) => sum + Number(/(\d+)px/.exec(c.width)?.[1] ?? 0), 32);
+  // En-tête et lignes partagent le même conteneur de défilement : la barre verticale réduit leur largeur à tous
+  // les deux, les colonnes restent donc alignées.
+  const minWidth = columns.reduce((sum, c) => sum + Number(/(\d+)px/.exec(c.width)?.[1] ?? 0), 32 + COLUMN_GAP * (columns.length - 1));
 
   return (
-    <div role="table" aria-rowcount={tableRows.length + 1} className="overflow-x-auto text-sm">
-      <div role="row" className="grid items-center border-b border-border px-4 py-2 text-xs font-medium text-muted-foreground"
-           style={{ gridTemplateColumns: template, minWidth }}>
+    <div role="table" aria-rowcount={tableRows.length + 1} ref={scrollRef}
+         className="h-[calc(100vh-270px)] min-h-[400px] overflow-auto text-sm tabular-nums">
+      <div style={{ minWidth }}>
+      <div role="row" className="sticky top-0 z-10 grid items-center gap-x-1.5 border-b border-border bg-card px-4 py-2 text-xs font-medium text-muted-foreground"
+           style={{ gridTemplateColumns: template }}>
         {table.getHeaderGroups()[0].headers.map((header) => {
           const spec = header.column.columnDef as ColumnSpec;
           const sorted = header.column.getIsSorted();
@@ -59,14 +66,13 @@ export function ScreenerTable({ rows, columns, sorting, onSortingChange, onRowCl
           );
         })}
       </div>
-      <div ref={scrollRef} className="h-[calc(100vh-270px)] min-h-[400px] overflow-y-auto" style={{ minWidth }}>
-        <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+        <div ref={bodyRef} style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
           {virtualizer.getVirtualItems().map((item) => {
             const row = tableRows[item.index];
             return (
               <div role="row" key={row.id} onClick={() => onRowClick(row.original)}
-                   className="absolute inset-x-0 grid cursor-pointer items-center border-b border-border px-4 hover:bg-muted/60"
-                   style={{ gridTemplateColumns: template, height: ROW_HEIGHT, transform: `translateY(${item.start}px)` }}>
+                   className="absolute inset-x-0 grid cursor-pointer items-center gap-x-1.5 border-b border-border px-4 hover:bg-muted/60"
+                   style={{ gridTemplateColumns: template, height: ROW_HEIGHT, transform: `translateY(${item.start - virtualizer.options.scrollMargin}px)` }}>
                 {row.getVisibleCells().map((cell) => (
                   <div role="cell" key={cell.id}
                        className={cn("truncate", (cell.column.columnDef as ColumnSpec).align === "right" && "flex justify-end")}>
