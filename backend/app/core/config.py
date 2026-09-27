@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     min_history_days: int = 200
     min_available_ratio: float = 0.6
 
+    app_secret: str = ""
+    anthropic_api_key: str = ""
+    assistant_model: str = "claude-opus-5"
+    assistant_max_tokens: int = 16000
+    assistant_max_rounds: int = 8
+
 
 @lru_cache
 def get_settings() -> Settings:
