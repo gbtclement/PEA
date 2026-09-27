@@ -1,6 +1,6 @@
 import logging
 import math
-from datetime import timedelta
+from datetime import date, timedelta
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -134,7 +134,14 @@ def simulate(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> SimulationOut:
-    row = _row_or_404(db, user.id, security_id)
+    prices = all_daily_prices(db, security_id)
+    last = prices[-1].date if prices else date.today()
+    return simulate_since(db, user.id, security_id, amount, last - timedelta(days=SIMULATION_WINDOW[period]))
+
+
+def simulate_since(db: Session, user_id: int, security_id: int, amount: float, first_day: date) -> SimulationOut:
+    """Achat simulé à la première clôture à partir de `first_day`, revendu au dernier cours, frais inclus."""
+    row = _row_or_404(db, user_id, security_id)
     security, quote = row[0], row[1]
     rate = to_eur(1.0, currency_for_market(security.market)) or 1.0  # le PEA se paie en euros
     prices = all_daily_prices(db, security_id)
@@ -142,8 +149,7 @@ def simulate(
     if not prices:
         return SimulationOut(start_date=None, start_price=None, current_price=None,
                              message="Pas assez d'historique pour simuler cet achat.", **empty)
-    first_day = prices[-1].date - timedelta(days=SIMULATION_WINDOW[period])
-    start = next((p for p in prices if p.date >= first_day), prices[0])
+    start = next((p for p in prices if p.date >= first_day), prices[-1])
     start_price = round(start.close * rate, 4)
     current_price = round((quote.price if quote else prices[-1].close) * rate, 4)
     shares = math.floor(amount / start_price) if start_price > 0 else 0
@@ -153,7 +159,7 @@ def simulate(
             message=f"Le montant ne permet pas d'acheter une action (cours de {start_price:.2f} €).".replace(".", ",", 1),
             **empty,
         )
-    grid = user_fee_grid(db, user.id)
+    grid = user_fee_grid(db, user_id)
     invested = round(shares * start_price, 2)
     buy_fee, _ = broker_fee(invested, grid)
     current_value = round(shares * current_price, 2)
