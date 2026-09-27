@@ -419,6 +419,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/forecasts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Forecasts */
+        get: operations["list_forecasts_api_forecasts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forecasts/signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Signal Statistics */
+        get: operations["signal_statistics_api_forecasts_signals_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/forecasts/track-record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Track Record */
+        get: operations["track_record_api_forecasts_track_record_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/securities/{security_id}/forecast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Security Forecast */
+        get: operations["security_forecast_api_securities__security_id__forecast_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/seo/robots.txt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Robots */
+        get: operations["robots_api_seo_robots_txt_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/seo/sitemap.xml": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sitemap */
+        get: operations["sitemap_api_seo_sitemap_xml_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/seo/llms.txt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Llms */
+        get: operations["llms_api_seo_llms_txt_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -445,6 +564,27 @@ export interface components {
             remove_key: boolean;
             /** Model */
             model: string;
+        };
+        /** BacktestOut */
+        BacktestOut: {
+            /** Days */
+            days: number;
+            /** Picks */
+            picks: number;
+            /** Hit Rate */
+            hit_rate: number;
+            /** Hit After Fees */
+            hit_after_fees: number;
+            /** Mean Return */
+            mean_return: number;
+            /** Mean After Fees */
+            mean_after_fees: number;
+            /** Mean Excess */
+            mean_excess: number;
+            /** Baseline Mean */
+            baseline_mean: number;
+            /** Edge */
+            edge: number;
         };
         /** Bar */
         Bar: {
@@ -579,6 +719,42 @@ export interface components {
             /** Rate */
             rate: number;
         };
+        /** ForecastListOut */
+        ForecastListOut: {
+            /** As Of */
+            as_of: string | null;
+            /** Round Trip Cost */
+            round_trip_cost: number | null;
+            /** Rows */
+            rows: components["schemas"]["ForecastRowOut"][];
+        };
+        /** ForecastRowOut */
+        ForecastRowOut: {
+            security: components["schemas"]["ForecastSecurityOut"];
+            /** Signals */
+            signals: components["schemas"]["SignalOut"][];
+            /** Horizons */
+            horizons: {
+                [key: string]: components["schemas"]["HorizonForecastOut"] | null;
+            };
+        };
+        /** ForecastSecurityOut */
+        ForecastSecurityOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Symbol */
+            symbol: string;
+            /** Market */
+            market: string;
+            /** Eligibility */
+            eligibility: string;
+            /** Price */
+            price: number | null;
+            /** Change Pct */
+            change_pct: number | null;
+        };
         /** FundamentalsOut */
         FundamentalsOut: {
             /** Pe */
@@ -650,6 +826,17 @@ export interface components {
             value: number;
             /** Invested */
             invested: number;
+        };
+        /** HorizonForecastOut */
+        HorizonForecastOut: {
+            /** Expected Return */
+            expected_return: number;
+            /** Prob Up */
+            prob_up: number;
+            /** Reliability */
+            reliability: string;
+            /** Rank */
+            rank: number;
         };
         /** IndexQuote */
         IndexQuote: {
@@ -854,6 +1041,28 @@ export interface components {
             /** Weight */
             weight: number;
         };
+        /** RealTrackOut */
+        RealTrackOut: {
+            /** Picks */
+            picks: number;
+            /** Hit Rate */
+            hit_rate: number;
+            /** Hit After Fees */
+            hit_after_fees: number;
+            /** Mean Return */
+            mean_return: number;
+            /** Mean After Fees */
+            mean_after_fees: number;
+            /** Baseline Mean */
+            baseline_mean: number;
+            /** Edge */
+            edge: number;
+            /**
+             * First Day
+             * Format: date
+             */
+            first_day: string;
+        };
         /** ScoreOut */
         ScoreOut: {
             /** Total */
@@ -991,6 +1200,17 @@ export interface components {
             fundamentals: components["schemas"]["FundamentalsOut"] | null;
             score_detail: components["schemas"]["ScoreOut"] | null;
         };
+        /** SecurityForecastOut */
+        SecurityForecastOut: {
+            /** As Of */
+            as_of: string | null;
+            /** Signals */
+            signals: components["schemas"]["SignalOut"][];
+            /** Horizons */
+            horizons: {
+                [key: string]: components["schemas"]["HorizonForecastOut"] | null;
+            };
+        };
         /** SecurityItem */
         SecurityItem: {
             /** Id */
@@ -1046,6 +1266,64 @@ export interface components {
             penalty_fee: number;
             /** Fee Grid */
             fee_grid: components["schemas"]["FeeTierIn"][];
+        };
+        /** SignalOut */
+        SignalOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Bullish */
+            bullish: boolean;
+        };
+        /** SignalStatOut */
+        SignalStatOut: {
+            /** N */
+            n: number;
+            /** Mean */
+            mean: number;
+            /** Median */
+            median: number;
+            /** Hit Rate */
+            hit_rate: number;
+            /** Mean Excess */
+            mean_excess: number;
+            /** Beat Index */
+            beat_index: number;
+            /** Hit After Fees */
+            hit_after_fees: number;
+            /** Reliability */
+            reliability: string;
+        };
+        /** SignalStatsOut */
+        SignalStatsOut: {
+            /** As Of */
+            as_of: string | null;
+            /** Computed At */
+            computed_at: string | null;
+            /** Round Trip Cost */
+            round_trip_cost: number | null;
+            /** Signals */
+            signals: components["schemas"]["SignalStatsRowOut"][];
+            /** Baseline */
+            baseline: {
+                [key: string]: components["schemas"]["SignalStatOut"] | null;
+            };
+        };
+        /** SignalStatsRowOut */
+        SignalStatsRowOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description: string;
+            /** Bullish */
+            bullish: boolean;
+            /** Horizons */
+            horizons: {
+                [key: string]: components["schemas"]["SignalStatOut"] | null;
+            };
         };
         /** SimulationOut */
         SimulationOut: {
@@ -1133,6 +1411,21 @@ export interface components {
             fundamental: number | null;
             /** Reasons */
             reasons: string[];
+        };
+        /** TrackRecordOut */
+        TrackRecordOut: {
+            /** Cutoff */
+            cutoff: string | null;
+            /** Round Trip Cost */
+            round_trip_cost: number | null;
+            /** Simulated */
+            simulated: {
+                [key: string]: components["schemas"]["BacktestOut"] | null;
+            };
+            /** Real */
+            real: {
+                [key: string]: components["schemas"]["RealTrackOut"] | null;
+            };
         };
         /** ValidationError */
         ValidationError: {
@@ -2027,6 +2320,157 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_forecasts_api_forecasts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForecastListOut"];
+                };
+            };
+        };
+    };
+    signal_statistics_api_forecasts_signals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignalStatsOut"];
+                };
+            };
+        };
+    };
+    track_record_api_forecasts_track_record_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackRecordOut"];
+                };
+            };
+        };
+    };
+    security_forecast_api_securities__security_id__forecast_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                security_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecurityForecastOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    robots_api_seo_robots_txt_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    sitemap_api_seo_sitemap_xml_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    llms_api_seo_llms_txt_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
