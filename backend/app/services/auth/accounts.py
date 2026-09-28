@@ -7,8 +7,10 @@ from app.core.config import get_settings
 from app.core.security import hash_password, needs_rehash, normalize_email, verify_password
 from app.models import User
 from app.services.auth.codes import (
-    NOT_ME_TTL, RESEND_AFTER, CodeCheck, check_code, issue_code, issue_link_token, last_code_at,
+    NOT_ME_TTL, RESEND_AFTER, RESET_TTL, CodeCheck, check_code, consume_link_token, issue_code, issue_link_token,
+    last_code_at,
 )
+from app.services.auth.sessions import revoke_user_sessions
 from app.services.mail.outbox import enqueue
 
 TERMS_VERSION = "2026-09-28"  # à changer quand les CGU changent (étape 4)
@@ -83,3 +85,35 @@ def alert_new_device(db: Session, user: User, device: str, now: datetime) -> Non
     token = issue_link_token(db, user, "not_me", now, NOT_ME_TTL)
     enqueue(db, "new_device", to=user.email, user_id=user.id,
             context={"first_name": user.first_name, "device": device, "when": now, "token": token})
+
+
+def request_password_reset(db: Session, email: str, now: datetime) -> None:
+    user = find_user(db, email)
+    if user is None or user.email_verified_at is None:
+        return
+    token = issue_link_token(db, user, "reset_password", now, RESET_TTL)
+    enqueue(db, "reset_password", to=user.email, user_id=user.id,
+            context={"first_name": user.first_name, "token": token, "valid_minutes": int(RESET_TTL.total_seconds() // 60)})
+
+
+def reset_password(db: Session, token: str, password: str, now: datetime) -> User | None:
+    user = consume_link_token(db, token, "reset_password", now)
+    if user is None:
+        return None
+    user.password_hash = hash_password(password)
+    user.failed_logins, user.locked_until = 0, None
+    revoke_user_sessions(db, user.id)
+    enqueue(db, "security_alert", to=user.email, user_id=user.id,
+            context={"first_name": user.first_name, "event": "password_reset"})
+    return user
+
+
+def not_me(db: Session, token: str, now: datetime) -> User | None:
+    """« Ce n'était pas moi » : tout le monde est déconnecté et l'ancien mot de passe ne marche plus."""
+    user = consume_link_token(db, token, "not_me", now)
+    if user is None:
+        return None
+    user.password_hash = None
+    revoke_user_sessions(db, user.id)
+    request_password_reset(db, user.email, now)
+    return user

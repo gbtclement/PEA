@@ -3,17 +3,19 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
-from app.api.cookies import set_auth_cookies, set_device_cookie
+from app.api.cookies import clear_auth_cookies, set_auth_cookies, set_device_cookie
 from app.core.config import get_settings
-from app.core.current_user import get_now
+from app.core.current_user import get_auth_session, get_now
 from app.core.db import get_db
 from app.core.security import password_problem
-from app.models import User
-from app.schemas.auth import EmailIn, MeOut, MessageOut, RegisterIn, VerifyEmailIn
+from app.models import AuthSession, User
+from app.schemas.auth import (
+    EmailIn, LoginIn, MeOut, MessageOut, RegisterIn, ResetPasswordIn, TokenIn, VerifyEmailIn,
+)
 from app.services.auth import accounts
 from app.services.auth.codes import CodeCheck
 from app.services.auth.devices import remember_device
-from app.services.auth.sessions import DEVICE_COOKIE, open_session
+from app.services.auth.sessions import DEVICE_COOKIE, SESSION_COOKIE, open_session, resolve_session, revoke_session
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -23,6 +25,8 @@ CODE_ERRORS = {
     CodeCheck.EXPIRED: ("code_expired", "Ce code a expiré : demandez-en un nouveau."),
     CodeCheck.TOO_MANY: ("too_many_attempts", "Trop d'essais : demandez un nouveau code."),
 }
+INVALID_TOKEN = ("invalid_token", "Ce lien n'est plus valable : refaites une demande.")
+RESET_SENT = MessageOut(message="Si un compte utilise cette adresse, un lien vient d'y être envoyé.")
 
 
 def fail(status: int, code: str, message: str) -> HTTPException:
@@ -82,3 +86,55 @@ def resend_code(payload: EmailIn, db: Session = Depends(get_db), now: datetime =
     accounts.resend_code(db, payload.email, now)
     db.commit()
     return CODE_SENT
+
+
+@router.post("/login", response_model=MeOut)
+def login(payload: LoginIn, request: Request, response: Response, db: Session = Depends(get_db),
+          now: datetime = Depends(get_now)) -> MeOut:
+    user = accounts.authenticate(db, payload.email, payload.password)
+    if user is None:
+        raise fail(401, "invalid_credentials", "Adresse mail ou mot de passe incorrect.")
+    if user.email_verified_at is None:
+        accounts.resend_code(db, user.email, now)
+        db.commit()
+        raise fail(403, "email_not_verified", "Validez d'abord votre adresse : un code vient de vous être envoyé.")
+    previous = resolve_session(db, request.cookies.get(SESSION_COOKIE), now=now, settings=get_settings())
+    if previous is not None:
+        revoke_session(db, previous.id)  # jamais deux sessions pour le même cookie
+    start_session(db, user, request, response, persistent=payload.remember, now=now, alert_new_device=True)
+    return MeOut.model_validate(user)
+
+
+@router.post("/logout", status_code=204)
+def logout(response: Response, auth: AuthSession | None = Depends(get_auth_session), db: Session = Depends(get_db)) -> Response:
+    if auth is not None:
+        revoke_session(db, auth.id)
+        db.commit()
+    clear_auth_cookies(response, get_settings())
+    response.status_code = 204
+    return response
+
+
+@router.post("/forgot-password", response_model=MessageOut, status_code=202)
+def forgot_password(payload: EmailIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> MessageOut:
+    accounts.request_password_reset(db, payload.email, now)
+    db.commit()
+    return RESET_SENT
+
+
+@router.post("/reset-password", response_model=MessageOut)
+def reset_password(payload: ResetPasswordIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> MessageOut:
+    check_password_rules(payload.password)
+    if accounts.reset_password(db, payload.token, payload.password, now) is None:
+        raise fail(400, *INVALID_TOKEN)
+    db.commit()
+    return MessageOut(message="Mot de passe modifié : vous pouvez vous connecter.")
+
+
+@router.post("/not-me", response_model=MessageOut)
+def not_me(payload: TokenIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> MessageOut:
+    if accounts.not_me(db, payload.token, now) is None:
+        raise fail(400, *INVALID_TOKEN)
+    db.commit()
+    return MessageOut(message="Tous vos appareils ont été déconnectés. Un lien pour choisir un nouveau mot de passe "
+                              "vient de vous être envoyé.")

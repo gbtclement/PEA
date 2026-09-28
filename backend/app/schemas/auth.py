@@ -48,3 +48,18 @@ class VerifyEmailIn(BaseModel):
 
 class EmailIn(BaseModel):
     email: EmailStr
+
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str = Field(max_length=200)
+    remember: bool = False
+
+
+class ResetPasswordIn(BaseModel):
+    token: str = Field(max_length=100)
+    password: str = Field(max_length=200)
+
+
+class TokenIn(BaseModel):
+    token: str = Field(max_length=100)
