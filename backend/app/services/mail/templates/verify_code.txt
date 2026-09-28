@@ -1,0 +1,7 @@
+Bonjour {{ first_name }},
+
+Voici votre code pour valider votre adresse : {{ code }}
+
+Il est valable 15 minutes. Si vous n'avez pas demandé de compte PEA Radar, ignorez ce mail.
+
+{% include "_footer.txt" %}

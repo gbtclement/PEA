@@ -1,0 +1,10 @@
+Bonjour {{ first_name }},
+
+Une connexion à votre compte a eu lieu depuis un nouvel appareil : {{ device }}, le {{ when | paris }} (heure de Paris).
+
+Si c'était vous, il n'y a rien à faire.
+
+Ce n'était pas moi : {{ base_url }}/ce-n-etait-pas-moi?jeton={{ token }}
+Ce lien déconnecte tous vos appareils et vous demande un nouveau mot de passe.
+
+{% include "_footer.txt" %}

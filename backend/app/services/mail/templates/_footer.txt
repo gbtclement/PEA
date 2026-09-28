@@ -1,0 +1,3 @@
+--
+PEA Radar — {{ base_url }}
+Vous recevez ce mail car un compte PEA Radar utilise cette adresse.
