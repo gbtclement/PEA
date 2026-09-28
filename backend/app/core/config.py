@@ -35,6 +35,20 @@ class Settings(BaseSettings):
     public_base_url: str = "http://localhost:8095"
     seo_indexing: bool = False
 
+    # Comptes : ADMIN_EMAIL désigne le compte administrateur (reprend les données de « Moi »)
+    admin_email: str = ""
+    cookie_secure: bool = True  # false seulement en local sans HTTPS
+    session_days: int = 30
+    session_short_hours: int = 12
+
+    # Envoi des mails (SMTP) ; SMTP_HOST vide = les mails restent en file d'attente
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_tls: str = "starttls"  # starttls | ssl | none
+    mail_from: str = "PEA Radar <no-reply@localhost>"
+
 
 @lru_cache
 def get_settings() -> Settings:
