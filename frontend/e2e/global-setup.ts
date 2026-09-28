@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import { request, type FullConfig } from "@playwright/test";
 
-export const E2E_EMAIL = "e2e@pea-radar.test";
+export const E2E_EMAIL = "e2e@example.com";
 export const E2E_PASSWORD = "motdepasse-e2e-123";
 export const STATE = "e2e/.auth/user.json";
 

@@ -48,7 +48,7 @@ npx playwright install chromium   # une seule fois
 npm run e2e                       # contre http://localhost:8095 : reconstruisez web et api avant
 ```
 
-Avant les tests, `e2e/global-setup.ts` crée le compte `e2e@pea-radar.test` (commande `app.cli ensure-user` dans le conteneur api) et le connecte une fois : toutes les pages sont testées connectées, sauf `e2e/auth.spec.ts` qui repart en visiteur.
+Avant les tests, `e2e/global-setup.ts` crée le compte `e2e@example.com` (commande `app.cli ensure-user` dans le conteneur api) et le connecte une fois : toutes les pages sont testées connectées, sauf `e2e/auth.spec.ts` qui repart en visiteur.
 
 !> Les tests de bout en bout demandent `COOKIE_SECURE=false` dans `.env` (le site local est en HTTP) et **Mailpit** lancé : l'inscription y lit le code reçu.
 

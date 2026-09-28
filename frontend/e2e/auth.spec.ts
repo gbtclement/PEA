@@ -14,7 +14,7 @@ async function lastCode(request: import("@playwright/test").APIRequestContext, t
 }
 
 test("inscription, code reçu par mail, déconnexion puis connexion", async ({ page, request }) => {
-  const email = `e2e-${Date.now()}@pea-radar.test`;
+  const email = `e2e-${Date.now()}@example.com`;
   await page.goto("/inscription");
   await page.getByLabel("Prénom").fill("Élodie");
   await page.getByLabel("Nom").fill("Test");
