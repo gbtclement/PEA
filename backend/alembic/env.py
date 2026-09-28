@@ -21,7 +21,8 @@ if config.config_file_name is not None:
 from app.core.config import get_settings
 from app.models import Base
 
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+# Un test peut viser une base jetable via config.attributes["database_url"].
+config.set_main_option("sqlalchemy.url", config.attributes.get("database_url") or get_settings().database_url)
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
