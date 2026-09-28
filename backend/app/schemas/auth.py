@@ -24,6 +24,7 @@ class RegisterIn(BaseModel):
     email: EmailStr
     password: str = Field(max_length=200)  # la règle 12–128 est vérifiée ensuite, avec un message clair
     accept_terms: bool
+    captcha: str | None = Field(default=None, max_length=4096)  # jeton Turnstile
 
     @field_validator("first_name", "last_name")
     @classmethod
@@ -48,6 +49,7 @@ class VerifyEmailIn(BaseModel):
 
 class EmailIn(BaseModel):
     email: EmailStr
+    captcha: str | None = Field(default=None, max_length=4096)  # jeton Turnstile (mot de passe oublié)
 
 
 class LoginIn(BaseModel):

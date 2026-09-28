@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.api.cookies import clear_auth_cookies, set_auth_cookies, set_device_cookie
 from app.api.deps import get_captcha
+from app.api.origin import check_origin
 from app.core.config import get_settings
 from app.core.current_user import get_auth_session, get_now
 from app.core.db import get_db
@@ -68,34 +69,58 @@ def start_session(db: Session, user: User, request: Request, response: Response,
     set_device_cookie(response, device_token, settings)
 
 
-@router.post("/register", response_model=NoticeOut, status_code=202)
-def register(payload: RegisterIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> NoticeOut:
+def _mail_allowed(db: Session, email: str, ip: str, now: datetime) -> bool:
+    """Compte une demande de code ou de lien. 429 si l'IP abuse ; False (sans rien dire) si l'adresse a assez reçu."""
+    if ratelimit.over(db, "mail_ip", ip, now):
+        raise fail(429, *TOO_MANY)
+    ratelimit.record(db, "mail_ip", ip, now)
+    if ratelimit.over(db, "mail_account", email, now):
+        return False
+    ratelimit.record(db, "mail_account", email, now)
+    return True
+
+
+@router.post("/register", response_model=NoticeOut, status_code=202, dependencies=[Depends(check_origin)])
+def register(payload: RegisterIn, request: Request, db: Session = Depends(get_db), now: datetime = Depends(get_now),
+             captcha: CaptchaVerifier = Depends(get_captcha)) -> NoticeOut:
+    ip = client_ip(request) or "inconnue"
+    if not captcha.verify(payload.captcha, ip):
+        raise fail(400, *CAPTCHA)
     check_password_rules(payload.password)
-    accounts.register(db, first_name=payload.first_name, last_name=payload.last_name, email=payload.email,
-                      password=payload.password, now=now)
+    if ratelimit.over(db, "signup_ip", ip, now):
+        raise fail(429, *TOO_MANY)
+    ratelimit.record(db, "signup_ip", ip, now)
+    user = accounts.register(db, first_name=payload.first_name, last_name=payload.last_name, email=payload.email,
+                             password=payload.password, now=now)
+    if user is not None:
+        log_event(db, "signup", now=now, user_id=user.id, ip=ip)
     db.commit()
     return CODE_SENT
 
 
-@router.post("/verify-email", response_model=MeOut)
+@router.post("/verify-email", response_model=MeOut, dependencies=[Depends(check_origin)])
 def verify_email(payload: VerifyEmailIn, request: Request, response: Response, db: Session = Depends(get_db),
                  now: datetime = Depends(get_now)) -> MeOut:
     user, result = accounts.verify_email(db, payload.email, payload.code, now)
     if user is None:
         db.commit()  # enregistre l'essai raté
         raise fail(400, *CODE_ERRORS[result])
+    log_event(db, "email_verified", now=now, user_id=user.id, ip=client_ip(request))
     start_session(db, user, request, response, persistent=True, now=now, alert_new_device=False)
     return MeOut.model_validate(user)
 
 
-@router.post("/resend-code", response_model=NoticeOut, status_code=202)
-def resend_code(payload: EmailIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> NoticeOut:
-    accounts.resend_code(db, payload.email, now)
+@router.post("/resend-code", response_model=NoticeOut, status_code=202, dependencies=[Depends(check_origin)])
+def resend_code(payload: EmailIn, request: Request, db: Session = Depends(get_db),
+                now: datetime = Depends(get_now)) -> NoticeOut:
+    email = normalize_email(payload.email)
+    if _mail_allowed(db, email, client_ip(request) or "inconnue", now):
+        accounts.resend_code(db, email, now)
     db.commit()
     return CODE_SENT
 
 
-@router.post("/login", response_model=MeOut)
+@router.post("/login", response_model=MeOut, dependencies=[Depends(check_origin)])
 def login(payload: LoginIn, request: Request, response: Response, db: Session = Depends(get_db),
           now: datetime = Depends(get_now), captcha: CaptchaVerifier = Depends(get_captcha)) -> MeOut:
     ip, email = client_ip(request) or "inconnue", normalize_email(payload.email)
@@ -132,9 +157,11 @@ def login(payload: LoginIn, request: Request, response: Response, db: Session = 
     return MeOut.model_validate(user)
 
 
-@router.post("/logout", status_code=204)
-def logout(response: Response, auth: AuthSession | None = Depends(get_auth_session), db: Session = Depends(get_db)) -> Response:
+@router.post("/logout", status_code=204, dependencies=[Depends(check_origin)])
+def logout(request: Request, response: Response, auth: AuthSession | None = Depends(get_auth_session),
+           db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> Response:
     if auth is not None:
+        log_event(db, "logout", now=now, user_id=auth.user_id, ip=client_ip(request))
         revoke_session(db, auth.id)
         db.commit()
     clear_auth_cookies(response, get_settings())
@@ -142,26 +169,37 @@ def logout(response: Response, auth: AuthSession | None = Depends(get_auth_sessi
     return response
 
 
-@router.post("/forgot-password", response_model=NoticeOut, status_code=202)
-def forgot_password(payload: EmailIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> NoticeOut:
-    accounts.request_password_reset(db, payload.email, now)
+@router.post("/forgot-password", response_model=NoticeOut, status_code=202, dependencies=[Depends(check_origin)])
+def forgot_password(payload: EmailIn, request: Request, db: Session = Depends(get_db), now: datetime = Depends(get_now),
+                    captcha: CaptchaVerifier = Depends(get_captcha)) -> NoticeOut:
+    ip, email = client_ip(request) or "inconnue", normalize_email(payload.email)
+    if not captcha.verify(payload.captcha, ip):
+        raise fail(400, *CAPTCHA)
+    if _mail_allowed(db, email, ip, now):
+        accounts.request_password_reset(db, email, now)
     db.commit()
     return RESET_SENT
 
 
-@router.post("/reset-password", response_model=NoticeOut)
-def reset_password(payload: ResetPasswordIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> NoticeOut:
+@router.post("/reset-password", response_model=NoticeOut, dependencies=[Depends(check_origin)])
+def reset_password(payload: ResetPasswordIn, request: Request, db: Session = Depends(get_db),
+                   now: datetime = Depends(get_now)) -> NoticeOut:
     check_password_rules(payload.password)
-    if accounts.reset_password(db, payload.token, payload.password, now) is None:
+    user = accounts.reset_password(db, payload.token, payload.password, now)
+    if user is None:
         raise fail(400, *INVALID_TOKEN)
+    log_event(db, "password_reset", now=now, user_id=user.id, ip=client_ip(request))
     db.commit()
     return NoticeOut(message="Mot de passe modifié : vous pouvez vous connecter.")
 
 
-@router.post("/not-me", response_model=NoticeOut)
-def not_me(payload: TokenIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> NoticeOut:
-    if accounts.not_me(db, payload.token, now) is None:
+@router.post("/not-me", response_model=NoticeOut, dependencies=[Depends(check_origin)])
+def not_me(payload: TokenIn, request: Request, db: Session = Depends(get_db),
+           now: datetime = Depends(get_now)) -> NoticeOut:
+    user = accounts.not_me(db, payload.token, now)
+    if user is None:
         raise fail(400, *INVALID_TOKEN)
+    log_event(db, "not_me", now=now, user_id=user.id, ip=client_ip(request))
     db.commit()
     return NoticeOut(message="Tous vos appareils ont été déconnectés. Un lien pour choisir un nouveau mot de passe "
                               "vient de vous être envoyé.")

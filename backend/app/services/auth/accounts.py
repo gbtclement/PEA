@@ -25,7 +25,7 @@ def send_verification_code(db: Session, user: User, now: datetime) -> None:
     enqueue(db, "verify_code", to=user.email, user_id=user.id, context={"first_name": user.first_name, "code": code})
 
 
-def register(db: Session, *, first_name: str, last_name: str, email: str, password: str, now: datetime) -> None:
+def register(db: Session, *, first_name: str, last_name: str, email: str, password: str, now: datetime) -> User | None:
     """Crée (ou remplace, s'il n'a jamais été validé) un compte et envoie le code.
 
     Si l'adresse appartient déjà à un compte validé, rien ne change : son propriétaire reçoit une alerte,
@@ -37,7 +37,7 @@ def register(db: Session, *, first_name: str, last_name: str, email: str, passwo
         enqueue(db, "security_alert", to=user.email, user_id=user.id,
                 context={"first_name": user.first_name, "event": "signup_attempt"},
                 dedupe_key=f"signup_attempt:{user.id}:{now:%Y-%m-%d}")  # au plus une alerte par jour
-        return
+        return None
     if user is None:
         user = User(email=normalize_email(email), first_name=first_name, last_name=last_name)
         db.add(user)
@@ -46,6 +46,7 @@ def register(db: Session, *, first_name: str, last_name: str, email: str, passwo
     user.terms_accepted_at, user.terms_version = now, TERMS_VERSION
     db.flush()
     send_verification_code(db, user, now)
+    return user
 
 
 def verify_email(db: Session, email: str, code: str, now: datetime) -> tuple[User | None, CodeCheck]:
