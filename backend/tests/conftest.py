@@ -52,7 +52,9 @@ def fake_captcha():
 
 @pytest.fixture
 def fake_breach():
-    return None  # remplacé à la Task 4
+    from tests.fake_breach import FakeBreach
+
+    return FakeBreach()
 
 
 @pytest.fixture
@@ -80,9 +82,10 @@ def _build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google
     app.dependency_overrides[get_llm_factory] = llm_factory
     app.dependency_overrides[get_session_maker] = lambda: (lambda: nullcontext(db))
 
-    from app.api.deps import get_captcha
+    from app.api.deps import get_breach_checker, get_captcha
 
     app.dependency_overrides[get_captcha] = lambda: fake_captcha
+    app.dependency_overrides[get_breach_checker] = lambda: fake_breach
     return app
 
 

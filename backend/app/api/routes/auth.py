@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
 from app.api.cookies import clear_auth_cookies, set_auth_cookies, set_device_cookie
-from app.api.deps import get_captcha
+from app.api.deps import get_breach_checker, get_captcha
 from app.api.origin import check_origin
 from app.core.config import get_settings
 from app.core.current_user import get_auth_session, get_now
@@ -16,6 +16,7 @@ from app.schemas.auth import (
 )
 from app.services import ratelimit
 from app.services.auth import accounts
+from app.services.auth.breach import BreachChecker
 from app.services.auth.captcha import CaptchaVerifier
 from app.services.auth.codes import CodeCheck
 from app.services.auth.devices import remember_device
@@ -41,10 +42,15 @@ def fail(status: int, code: str, message: str) -> HTTPException:
     return HTTPException(status, detail={"code": code, "message": message})
 
 
-def check_password_rules(password: str) -> None:
+PWNED = ("pwned_password", "Ce mot de passe apparaît dans des fuites de données connues : choisissez-en un autre.")
+
+
+def check_password_rules(password: str, breach: BreachChecker) -> None:
     problem = password_problem(password)
     if problem:
         raise fail(400, "weak_password", problem)
+    if breach.is_pwned(password):
+        raise fail(400, *PWNED)
 
 
 def client_ip(request: Request) -> str | None:
@@ -82,11 +88,12 @@ def _mail_allowed(db: Session, email: str, ip: str, now: datetime) -> bool:
 
 @router.post("/register", response_model=NoticeOut, status_code=202, dependencies=[Depends(check_origin)])
 def register(payload: RegisterIn, request: Request, db: Session = Depends(get_db), now: datetime = Depends(get_now),
-             captcha: CaptchaVerifier = Depends(get_captcha)) -> NoticeOut:
+             captcha: CaptchaVerifier = Depends(get_captcha),
+             breach: BreachChecker = Depends(get_breach_checker)) -> NoticeOut:
     ip = client_ip(request) or "inconnue"
     if not captcha.verify(payload.captcha, ip):
         raise fail(400, *CAPTCHA)
-    check_password_rules(payload.password)
+    check_password_rules(payload.password, breach)
     if ratelimit.over(db, "signup_ip", ip, now):
         raise fail(429, *TOO_MANY)
     ratelimit.record(db, "signup_ip", ip, now)
@@ -183,8 +190,8 @@ def forgot_password(payload: EmailIn, request: Request, db: Session = Depends(ge
 
 @router.post("/reset-password", response_model=NoticeOut, dependencies=[Depends(check_origin)])
 def reset_password(payload: ResetPasswordIn, request: Request, db: Session = Depends(get_db),
-                   now: datetime = Depends(get_now)) -> NoticeOut:
-    check_password_rules(payload.password)
+                   now: datetime = Depends(get_now), breach: BreachChecker = Depends(get_breach_checker)) -> NoticeOut:
+    check_password_rules(payload.password, breach)
     user = accounts.reset_password(db, payload.token, payload.password, now)
     if user is None:
         raise fail(400, *INVALID_TOKEN)

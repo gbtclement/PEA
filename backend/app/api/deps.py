@@ -39,3 +39,10 @@ def get_captcha():
 
     secret = get_settings().turnstile_secret_key
     return TurnstileVerifier(secret) if secret else DisabledCaptcha()
+
+
+def get_breach_checker():
+    """Have I Been Pwned (désactivable par HIBP_ENABLED=false) ; remplacé en test."""
+    from app.services.auth.breach import HibpChecker, NoBreachCheck
+
+    return HibpChecker() if get_settings().hibp_enabled else NoBreachCheck()
