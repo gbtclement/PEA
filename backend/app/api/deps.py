@@ -31,3 +31,11 @@ def get_session_maker():
     from app.core.db import get_session_factory
 
     return get_session_factory()
+
+
+def get_captcha():
+    """Turnstile si la clé secrète est configurée, sinon captcha désactivé ; remplacé en test."""
+    from app.services.auth.captcha import DisabledCaptcha, TurnstileVerifier
+
+    secret = get_settings().turnstile_secret_key
+    return TurnstileVerifier(secret) if secret else DisabledCaptcha()

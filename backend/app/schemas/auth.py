@@ -54,6 +54,7 @@ class LoginIn(BaseModel):
     email: EmailStr
     password: str = Field(max_length=200)
     remember: bool = False
+    captcha: str | None = Field(default=None, max_length=4096)  # jeton Turnstile, demandé après 3 échecs
 
 
 class ResetPasswordIn(BaseModel):

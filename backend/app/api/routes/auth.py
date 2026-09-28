@@ -4,18 +4,22 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
 from app.api.cookies import clear_auth_cookies, set_auth_cookies, set_device_cookie
+from app.api.deps import get_captcha
 from app.core.config import get_settings
 from app.core.current_user import get_auth_session, get_now
 from app.core.db import get_db
-from app.core.security import password_problem
+from app.core.security import normalize_email, password_problem
 from app.models import AuthSession, User
 from app.schemas.auth import (
     EmailIn, LoginIn, MeOut, NoticeOut, RegisterIn, ResetPasswordIn, TokenIn, VerifyEmailIn,
 )
+from app.services import ratelimit
 from app.services.auth import accounts
+from app.services.auth.captcha import CaptchaVerifier
 from app.services.auth.codes import CodeCheck
 from app.services.auth.devices import remember_device
 from app.services.auth.sessions import DEVICE_COOKIE, SESSION_COOKIE, open_session, resolve_session, revoke_session
+from app.services.security_log import log_event
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -26,6 +30,9 @@ CODE_ERRORS = {
     CodeCheck.TOO_MANY: ("too_many_attempts", "Trop d'essais : demandez un nouveau code."),
 }
 INVALID_TOKEN = ("invalid_token", "Ce lien n'est plus valable : refaites une demande.")
+LOCKED = ("account_locked", "Trop d'essais pour ce compte : réessayez dans 15 minutes.")
+TOO_MANY = ("too_many_requests", "Trop de tentatives depuis votre connexion : réessayez plus tard.")
+CAPTCHA = ("captcha_required", "Confirmez que vous n'êtes pas un robot, puis réessayez.")
 RESET_SENT = NoticeOut(message="Si un compte utilise cette adresse, un lien vient d'y être envoyé.")
 
 
@@ -90,14 +97,34 @@ def resend_code(payload: EmailIn, db: Session = Depends(get_db), now: datetime =
 
 @router.post("/login", response_model=MeOut)
 def login(payload: LoginIn, request: Request, response: Response, db: Session = Depends(get_db),
-          now: datetime = Depends(get_now)) -> MeOut:
-    user = accounts.authenticate(db, payload.email, payload.password)
+          now: datetime = Depends(get_now), captcha: CaptchaVerifier = Depends(get_captcha)) -> MeOut:
+    ip, email = client_ip(request) or "inconnue", normalize_email(payload.email)
+    if ratelimit.over(db, "login_ip", ip, now):
+        raise fail(429, *TOO_MANY)
+    if ratelimit.over(db, "login_account", email, now):  # même réponse que le compte existe ou non
+        raise fail(429, *LOCKED)
+    failures = max(ratelimit.count(db, "login_account", email, now), ratelimit.count(db, "login_ip", ip, now))
+    if failures >= ratelimit.CAPTCHA_AFTER and not captcha.verify(payload.captcha, ip):
+        raise fail(400, *CAPTCHA)
+    user = accounts.authenticate(db, email, payload.password)
     if user is None:
+        known = accounts.find_user(db, email)
+        ratelimit.record(db, "login_account", email, now)
+        ratelimit.record(db, "login_ip", ip, now)
+        log_event(db, "login_failed", now=now, user_id=known.id if known else None, ip=ip)
+        if ratelimit.over(db, "login_account", email, now):
+            log_event(db, "locked", now=now, user_id=known.id if known else None, ip=ip)
+            if known is not None:
+                known.locked_until = now + ratelimit.FIFTEEN_MINUTES
+        db.commit()
         raise fail(401, "invalid_credentials", "Adresse mail ou mot de passe incorrect.")
     if user.email_verified_at is None:
         accounts.resend_code(db, user.email, now)
         db.commit()
         raise fail(403, "email_not_verified", "Validez d'abord votre adresse : un code vient de vous être envoyé.")
+    ratelimit.clear(db, "login_account", email)
+    user.failed_logins, user.locked_until = 0, None
+    log_event(db, "login_ok", now=now, user_id=user.id, ip=ip, details={"method": "password"})
     previous = resolve_session(db, request.cookies.get(SESSION_COOKIE), now=now, settings=get_settings())
     if previous is not None:
         revoke_session(db, previous.id)  # jamais deux sessions pour le même cookie
