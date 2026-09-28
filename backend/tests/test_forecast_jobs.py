@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import func, select
 
 from app.jobs.forecasts import refresh_forecast_stats, refresh_forecasts
-from app.models import DailyPrice, Forecast, ForecastRun
+from app.models import DailyPrice, Forecast, ForecastRun, User
 from tests.factories import make_security
 
 NOW = datetime(2026, 9, 28, 5, 0, tzinfo=UTC)  # lundi 7 h à Paris, avant l'ouverture
@@ -143,3 +143,9 @@ def test_oslo_turnover_is_converted_to_euros(db, make_ctx, market):
     ids = set(db.scalars(select(Forecast.security_id)))
     assert market["rising"].id in ids
     assert oslo.id not in ids
+
+
+def test_stats_use_the_standard_grid_without_creating_a_user(db, make_ctx, market):
+    # Les prévisions sont communes à tous : elles ne dépendent pas de la grille d'un compte.
+    refresh_forecast_stats(make_ctx(now=NOW, min_turnover_eur=0))
+    assert db.scalar(select(func.count()).select_from(User)) == 0

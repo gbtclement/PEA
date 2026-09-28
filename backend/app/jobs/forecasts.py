@@ -3,14 +3,12 @@ from datetime import date, timedelta
 
 import pandas as pd
 
-from app.core.current_user import ensure_default_user
 from app.jobs.context import JobContext
 from app.models import ForecastRun
 from app.repositories.forecasts import (
     closes_between, index_closes, latest_run, pending_forecasts, replace_forecasts, stock_markets, stock_series,
 )
-from app.repositories.user_settings import user_fee_grid
-from app.services.fees import broker_fee
+from app.services.fees import DEFAULT_GRID_JSON, broker_fee, grid_from_json
 from app.services.forecast.engine import SeriesInput, active_signals, run_analysis
 from app.services.forecast.predict import predict
 from app.services.forecast.stats import HORIZONS, SignalStat
@@ -39,8 +37,8 @@ def refresh_forecast_stats(ctx: JobContext) -> int:
     today = ctx.now().astimezone(PARIS).date()
     since = today - timedelta(days=365 * ctx.settings.history_years + 30)
     with ctx.session_factory() as session:
-        user = ensure_default_user(session)
-        _, rate = broker_fee(REFERENCE_ORDER_EUR, user_fee_grid(session, user.id))
+        # Prévisions communes à tous les comptes : coût d'un aller-retour avec la grille standard.
+        _, rate = broker_fee(REFERENCE_ORDER_EUR, grid_from_json(DEFAULT_GRID_JSON))
         cost = 2 * rate
         closed = pd.Timestamp(_closed_until(ctx))
         frames = {sid: f.loc[:closed] for sid, f in stock_series(session, since, include_inactive=True).items()}

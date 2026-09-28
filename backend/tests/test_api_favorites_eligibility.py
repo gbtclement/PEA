@@ -1,11 +1,9 @@
-from app.core.current_user import ensure_default_user
 from app.models import Favorite
 from tests.factories import make_security
 
 
-def test_add_and_remove_favorite(client, db):
+def test_add_and_remove_favorite(client, db, user):
     security = make_security(db, "MC.PA")
-    user = ensure_default_user(db)
     assert client.put(f"/api/favorites/{security.id}").status_code == 204
     assert client.put(f"/api/favorites/{security.id}").status_code == 204  # idempotent
     assert db.get(Favorite, (user.id, security.id)) is not None

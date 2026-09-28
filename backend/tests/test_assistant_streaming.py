@@ -4,7 +4,6 @@ import threading
 from contextlib import nullcontext
 from types import SimpleNamespace
 
-from app.core.current_user import ensure_default_user
 from app.models import ChatMessage, Conversation
 from app.services.assistant.catalog import get_model
 from app.services.assistant.chat import ChatRun
@@ -32,8 +31,7 @@ class _BlockingStream:
         yield SimpleNamespace(type="text", text=" suite jamais affichée")
 
 
-def test_disconnect_stops_claude_and_saves_partial_with_totals(db):
-    user = ensure_default_user(db)
+def test_disconnect_stops_claude_and_saves_partial_with_totals(db, user):
     conv = Conversation(user_id=user.id, title="Test")
     db.add(conv)
     db.commit()

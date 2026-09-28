@@ -1,6 +1,5 @@
 from datetime import UTC, date, datetime, timedelta
 
-from app.core.current_user import ensure_default_user
 from app.jobs.scoring import refresh_scores
 from app.models import DailyPrice, SecurityFundamentals, SecurityQuote, SecurityScore
 from app.repositories.market_data import daily_series
@@ -44,8 +43,7 @@ def test_daily_series_returns_light_rows(db):
     assert (rows[-1].date, rows[-1].close, rows[-1].volume) == (LAST, 102.0, 10_000)
 
 
-def test_screener_rows_by_id_includes_indices(db):
-    user = ensure_default_user(db)
+def test_screener_rows_by_id_includes_indices(db, user):
     index = make_security(db, "^FCHI", kind="index", eligibility="non_eligible", country=None)
     make_security(db, "MC.PA")
     rows = screener_rows(db, user.id, security_id=index.id)

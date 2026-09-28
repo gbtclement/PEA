@@ -1,6 +1,5 @@
 from datetime import UTC, date, datetime, timedelta
 
-from app.core.current_user import ensure_default_user
 from app.jobs.scheduler import quotes_job
 from app.jobs.scoring import refresh_scores
 from app.jobs.tiers import tier_tickers
@@ -107,8 +106,7 @@ def test_no_dividend_counts_as_zero_when_fundamentals_known(db, make_ctx):
     assert dividend["points"] == 0
 
 
-def test_tier1_includes_favorites_and_top(db):
-    user = ensure_default_user(db)
+def test_tier1_includes_favorites_and_top(db, user):
     make_security(db, "^FCHI", kind="index", eligibility="non_eligible", country=None)
     fav = make_security(db, "FAV.PA")
     top = make_security(db, "TOP.PA")

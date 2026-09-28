@@ -1,6 +1,5 @@
 from datetime import UTC, datetime
 
-from app.core.current_user import ensure_default_user
 from app.models import Favorite, SecurityFundamentals, SecurityQuote
 from tests.factories import make_score, make_security
 
@@ -11,8 +10,7 @@ def quote(db, security, price, change):
     db.add(SecurityQuote(security_id=security.id, price=price, previous_close=price, change_pct=change, volume=1, as_of=AS_OF))
 
 
-def seed(db):
-    user = ensure_default_user(db)
+def seed(db, user):
     lvmh = make_security(db, "MC.PA", name="LVMH")
     total = make_security(db, "TTE.PA", name="TotalEnergies")
     small = make_security(db, "SMA.PA", name="Petite")
@@ -37,8 +35,8 @@ def seed(db):
     return lvmh, total, small, etf
 
 
-def test_screener_stocks(client, db):
-    seed(db)
+def test_screener_stocks(client, db, user):
+    seed(db, user)
     rows = client.get("/api/screener", params={"kind": "stock"}).json()
     assert [r["symbol"] for r in rows] == ["MC", "SMA", "TTE"]
     lvmh = rows[0]
@@ -47,14 +45,14 @@ def test_screener_stocks(client, db):
     assert rows[2]["is_favorite"] is True
 
 
-def test_screener_default_excludes_indices(client, db):
-    seed(db)
+def test_screener_default_excludes_indices(client, db, user):
+    seed(db, user)
     symbols = {r["symbol"] for r in client.get("/api/screener").json()}
     assert "CW8" in symbols and "^FCHI" not in symbols
 
 
-def test_top_ranking_order_and_reasons(client, db):
-    seed(db)
+def test_top_ranking_order_and_reasons(client, db, user):
+    seed(db, user)
     top = client.get("/api/rankings/top").json()
     assert [t["symbol"] for t in top] == ["MC", "TTE"]
     assert top[0]["reasons"] == ["✅ Tendance", "✅ Valo", "⚠️ RSI"]
@@ -64,22 +62,22 @@ def test_top_ranking_limit_validation(client):
     assert client.get("/api/rankings/top", params={"limit": 0}).status_code == 422
 
 
-def test_movers_only_liquid_eligible_stocks(client, db):
-    seed(db)
+def test_movers_only_liquid_eligible_stocks(client, db, user):
+    seed(db, user)
     movers = client.get("/api/rankings/movers").json()
     assert [m["symbol"] for m in movers["gainers"]] == ["MC", "TTE"]
     assert [m["symbol"] for m in movers["losers"]] == ["TTE", "MC"]
 
 
-def test_heatmap(client, db):
-    seed(db)
+def test_heatmap(client, db, user):
+    seed(db, user)
     items = client.get("/api/market/heatmap").json()
     assert [i["symbol"] for i in items] == ["MC", "TTE"]
     assert items[0]["sector"] == "Autres"
     assert items[0]["market_cap_eur"] == 3e11
 
 
-def test_status_indices_have_id(client, db):
-    seed(db)
+def test_status_indices_have_id(client, db, user):
+    seed(db, user)
     index = client.get("/api/status").json()["indices"][0]
     assert isinstance(index["id"], int)
