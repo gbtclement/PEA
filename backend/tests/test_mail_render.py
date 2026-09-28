@@ -42,3 +42,9 @@ def test_html_escapes_user_input():
 def test_unknown_security_event_fails():
     with pytest.raises(KeyError):
         render("security_alert", {"first_name": "Jean", "event": "inconnu"}, base_url=BASE)
+
+
+def test_long_reset_validity_is_shown_in_hours():
+    mail = render("reset_password", {**CONTEXTS["reset_password"], "valid_minutes": 1440}, base_url=BASE)
+    assert "24 heures" in mail.text and "24 heures" in mail.html
+    assert "30 minutes" in render("reset_password", CONTEXTS["reset_password"], base_url=BASE).text
