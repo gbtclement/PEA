@@ -10,7 +10,7 @@ from app.core.db import get_db
 from app.core.security import password_problem
 from app.models import AuthSession, User
 from app.schemas.auth import (
-    EmailIn, LoginIn, MeOut, MessageOut, RegisterIn, ResetPasswordIn, TokenIn, VerifyEmailIn,
+    EmailIn, LoginIn, MeOut, NoticeOut, RegisterIn, ResetPasswordIn, TokenIn, VerifyEmailIn,
 )
 from app.services.auth import accounts
 from app.services.auth.codes import CodeCheck
@@ -19,14 +19,14 @@ from app.services.auth.sessions import DEVICE_COOKIE, SESSION_COOKIE, open_sessi
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-CODE_SENT = MessageOut(message="Si cette adresse peut recevoir un code, il vient d'y être envoyé.")
+CODE_SENT = NoticeOut(message="Si cette adresse peut recevoir un code, il vient d'y être envoyé.")
 CODE_ERRORS = {
     CodeCheck.INVALID: ("invalid_code", "Code incorrect."),
     CodeCheck.EXPIRED: ("code_expired", "Ce code a expiré : demandez-en un nouveau."),
     CodeCheck.TOO_MANY: ("too_many_attempts", "Trop d'essais : demandez un nouveau code."),
 }
 INVALID_TOKEN = ("invalid_token", "Ce lien n'est plus valable : refaites une demande.")
-RESET_SENT = MessageOut(message="Si un compte utilise cette adresse, un lien vient d'y être envoyé.")
+RESET_SENT = NoticeOut(message="Si un compte utilise cette adresse, un lien vient d'y être envoyé.")
 
 
 def fail(status: int, code: str, message: str) -> HTTPException:
@@ -61,8 +61,8 @@ def start_session(db: Session, user: User, request: Request, response: Response,
     set_device_cookie(response, device_token, settings)
 
 
-@router.post("/register", response_model=MessageOut, status_code=202)
-def register(payload: RegisterIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> MessageOut:
+@router.post("/register", response_model=NoticeOut, status_code=202)
+def register(payload: RegisterIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> NoticeOut:
     check_password_rules(payload.password)
     accounts.register(db, first_name=payload.first_name, last_name=payload.last_name, email=payload.email,
                       password=payload.password, now=now)
@@ -81,8 +81,8 @@ def verify_email(payload: VerifyEmailIn, request: Request, response: Response, d
     return MeOut.model_validate(user)
 
 
-@router.post("/resend-code", response_model=MessageOut, status_code=202)
-def resend_code(payload: EmailIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> MessageOut:
+@router.post("/resend-code", response_model=NoticeOut, status_code=202)
+def resend_code(payload: EmailIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> NoticeOut:
     accounts.resend_code(db, payload.email, now)
     db.commit()
     return CODE_SENT
@@ -115,26 +115,26 @@ def logout(response: Response, auth: AuthSession | None = Depends(get_auth_sessi
     return response
 
 
-@router.post("/forgot-password", response_model=MessageOut, status_code=202)
-def forgot_password(payload: EmailIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> MessageOut:
+@router.post("/forgot-password", response_model=NoticeOut, status_code=202)
+def forgot_password(payload: EmailIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> NoticeOut:
     accounts.request_password_reset(db, payload.email, now)
     db.commit()
     return RESET_SENT
 
 
-@router.post("/reset-password", response_model=MessageOut)
-def reset_password(payload: ResetPasswordIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> MessageOut:
+@router.post("/reset-password", response_model=NoticeOut)
+def reset_password(payload: ResetPasswordIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> NoticeOut:
     check_password_rules(payload.password)
     if accounts.reset_password(db, payload.token, payload.password, now) is None:
         raise fail(400, *INVALID_TOKEN)
     db.commit()
-    return MessageOut(message="Mot de passe modifié : vous pouvez vous connecter.")
+    return NoticeOut(message="Mot de passe modifié : vous pouvez vous connecter.")
 
 
-@router.post("/not-me", response_model=MessageOut)
-def not_me(payload: TokenIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> MessageOut:
+@router.post("/not-me", response_model=NoticeOut)
+def not_me(payload: TokenIn, db: Session = Depends(get_db), now: datetime = Depends(get_now)) -> NoticeOut:
     if accounts.not_me(db, payload.token, now) is None:
         raise fail(400, *INVALID_TOKEN)
     db.commit()
-    return MessageOut(message="Tous vos appareils ont été déconnectés. Un lien pour choisir un nouveau mot de passe "
+    return NoticeOut(message="Tous vos appareils ont été déconnectés. Un lien pour choisir un nouveau mot de passe "
                               "vient de vous être envoyé.")

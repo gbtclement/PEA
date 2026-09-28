@@ -14,7 +14,7 @@ class MeOut(BaseModel):
     is_premium: bool
 
 
-class MessageOut(BaseModel):
+class NoticeOut(BaseModel):
     message: str
 
 

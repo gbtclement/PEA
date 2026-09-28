@@ -5,13 +5,28 @@ export type SecurityList = components["schemas"]["SecurityList"];
 export type StatusResponse = components["schemas"]["StatusResponse"];
 export type JobStatus = components["schemas"]["JobStatus"];
 
+export type Me = components["schemas"]["MeOut"];
+
 export class ApiError extends Error {
   readonly status: number;
+  readonly code: string | null;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code: string | null = null) {
     super(message);
     this.status = status;
+    this.code = code;
   }
+}
+
+/** Jeton anti-CSRF posé par l'API à la connexion (cookie lisible), renvoyé dans un en-tête à chaque modification. */
+export function csrfToken(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)pea_csrf=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function writeHeaders(accept: string, json: boolean): Record<string, string> {
+  const token = csrfToken();
+  return { Accept: accept, ...(json ? { "Content-Type": "application/json" } : {}), ...(token ? { "X-CSRF-Token": token } : {}) };
 }
 
 export async function apiGet<T>(path: string, params: Record<string, string | number | undefined> = {}): Promise<T> {
@@ -21,7 +36,7 @@ export async function apiGet<T>(path: string, params: Record<string, string | nu
   }
   const query = search.toString();
   const response = await fetch(query ? `${path}?${query}` : path, { headers: { Accept: "application/json" } });
-  if (!response.ok) throw new ApiError(response.status, `Erreur ${response.status} sur ${path}`);
+  if (!response.ok) throw await errorFrom(response, path);
   return (await response.json()) as T;
 }
 
@@ -63,6 +78,10 @@ async function errorFrom(response: Response, path: string): Promise<ApiError> {
   try {
     const body = (await response.json()) as { detail?: unknown };
     if (typeof body.detail === "string") message = body.detail;
+    else if (body.detail && typeof body.detail === "object" && "message" in body.detail) {
+      const detail = body.detail as { code?: string; message: string };
+      return new ApiError(response.status, detail.message, detail.code ?? null);
+    }
   } catch {
     // corps absent ou non JSON : message générique
   }
@@ -72,7 +91,7 @@ async function errorFrom(response: Response, path: string): Promise<ApiError> {
 export async function apiSend(method: "POST" | "PUT" | "DELETE" | "PATCH", path: string, body?: unknown): Promise<unknown> {
   const response = await fetch(path, {
     method,
-    headers: { Accept: "application/json", ...(body !== undefined ? { "Content-Type": "application/json" } : {}) },
+    headers: writeHeaders("application/json", body !== undefined),
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) throw await errorFrom(response, path);
@@ -90,7 +109,7 @@ export type ChatEvent =
 export async function streamSSE(path: string, body: unknown, onEvent: (event: ChatEvent) => void, signal?: AbortSignal): Promise<void> {
   const response = await fetch(path, {
     method: "POST",
-    headers: { Accept: "text/event-stream", "Content-Type": "application/json" },
+    headers: writeHeaders("text/event-stream", true),
     body: JSON.stringify(body),
     signal,
   });
