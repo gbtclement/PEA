@@ -54,3 +54,16 @@ def test_ensure_user_creates_then_updates(db):
                         last_name="E2E", admin=True, now=NOW)
     assert again.id == user.id and again.role == "admin" and again.email_verified_at == NOW
     assert len(db.scalars(select(User)).all()) == 1
+
+
+def test_unverified_signup_with_admin_address_is_not_promoted(db):
+    """Quelqu'un s'inscrit avec l'adresse de l'admin sans valider le code : il ne doit pas devenir admin."""
+    moi = _legacy(db)
+    squatter = make_user(db, "clement@example.com", password="mot-de-passe-du-squatteur", verified=False)
+    squatter_id = squatter.id
+    bootstrap_admin(db, "clement@example.com", NOW)
+    db.flush()
+    admin = db.scalars(select(User).where(User.email == "clement@example.com")).one()
+    assert admin.id == moi.id and admin.role == "admin" and admin.password_hash is None
+    assert db.get(User, squatter_id) is None
+    assert [m.kind for m in db.scalars(select(EmailLog)).all()] == ["reset_password"]

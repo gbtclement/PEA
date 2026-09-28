@@ -79,3 +79,13 @@ def test_admin_email_becomes_admin_on_validation(anon_client, db, monkeypatch):
     anon_client.post("/api/auth/register", json=FORM)
     anon_client.post("/api/auth/verify-email", json={"email": "jean@example.com", "code": _last_code(db)})
     assert anon_client.get("/api/me").json()["role"] == "admin"
+
+
+def test_existing_account_costs_the_same_hashing_time(anon_client, db, monkeypatch):
+    """Sans hachage pour une adresse déjà prise, la réponse serait plus rapide et trahirait le compte."""
+    from app.services.auth import accounts
+    calls = []
+    monkeypatch.setattr(accounts, "hash_password", lambda password: calls.append(password) or "haché")
+    make_user(db, "jean@example.com")
+    anon_client.post("/api/auth/register", json=FORM)
+    assert calls == [FORM["password"]]

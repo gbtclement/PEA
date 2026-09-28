@@ -32,6 +32,7 @@ def register(db: Session, *, first_name: str, last_name: str, email: str, passwo
     et la réponse de l'API reste identique pour ne pas révéler que le compte existe.
     """
     user = find_user(db, email)
+    password_hash = hash_password(password)  # toujours calculé : même durée de réponse, compte existant ou non
     if user is not None and user.email_verified_at is not None:
         enqueue(db, "security_alert", to=user.email, user_id=user.id,
                 context={"first_name": user.first_name, "event": "signup_attempt"},
@@ -41,7 +42,7 @@ def register(db: Session, *, first_name: str, last_name: str, email: str, passwo
         user = User(email=normalize_email(email), first_name=first_name, last_name=last_name)
         db.add(user)
     user.first_name, user.last_name = first_name, last_name
-    user.password_hash = hash_password(password)
+    user.password_hash = password_hash
     user.terms_accepted_at, user.terms_version = now, TERMS_VERSION
     db.flush()
     send_verification_code(db, user, now)

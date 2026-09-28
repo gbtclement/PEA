@@ -22,6 +22,11 @@ def bootstrap_admin(db: Session, admin_email: str, now: datetime) -> str:
         return "ADMIN_EMAIL vide : aucun compte administrateur configuré."
     email = normalize_email(admin_email)
     user = find_user(db, email)
+    if user is not None and user.email_verified_at is None:
+        # Inscription jamais validée avec l'adresse de l'admin : rien ne prouve qu'elle vient de lui.
+        db.delete(user)
+        db.flush()
+        user = None
     if user is None:
         user = db.scalar(select(User).where(User.email == LEGACY_EMAIL))
         if user is None:
