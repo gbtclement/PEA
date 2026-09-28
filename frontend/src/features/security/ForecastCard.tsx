@@ -1,14 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HORIZONS, ReliabilityBadge, SignalChip, roundPct, signedPct, tone } from "@/features/forecasts/shared";
+import { loginPath } from "@/features/auth/redirect";
+import { useMe } from "@/features/auth/useMe";
 import { apiGet, type SecurityForecast } from "@/lib/api/client";
 
 export function ForecastCard({ securityId }: { securityId: number }) {
+  const { me } = useMe();
+  const location = useLocation();
   const { data, isPending } = useQuery({
     queryKey: ["forecast", securityId],
     queryFn: () => apiGet<SecurityForecast>(`/api/securities/${securityId}/forecast`),
     staleTime: 300_000,
+    enabled: !!me,
   });
   return (
     <Card>
@@ -19,7 +24,12 @@ export function ForecastCard({ securityId }: { securityId: number }) {
         </p>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
-        {isPending ? <p className="text-muted-foreground">Chargement…</p> : !data?.as_of ? (
+        {me === null ? (
+          <p className="text-muted-foreground">
+            Les prévisions sont réservées aux membres connectés.{" "}
+            <Link to={loginPath(location)} className="font-medium text-primary">Connectez-vous</Link>
+          </p>
+        ) : isPending ? <p className="text-muted-foreground">Chargement…</p> : !data?.as_of ? (
           <p className="text-muted-foreground">Premier calcul en cours.</p>
         ) : data.signals.length === 0 ? (
           <p className="text-muted-foreground">Aucun signal actif aujourd'hui.</p>

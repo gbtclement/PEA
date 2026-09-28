@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { AskAiButton } from "@/features/assistant/AskAiButton";
+import { loginPath } from "@/features/auth/redirect";
+import { useMe } from "@/features/auth/useMe";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EligibilityBadge } from "@/features/explorer/EligibilityBadge";
@@ -42,6 +44,9 @@ function securityMeta(data: SecurityDetail | undefined, error: Error | null): Pa
 export function SecurityPage() {
   const id = Number(useParams().id);
   const [ordering, setOrdering] = useState(false);
+  const { me } = useMe();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { data, isPending, error } = useQuery({
     queryKey: ["security", id],
     queryFn: () => apiGet<SecurityDetail>(`/api/securities/${id}`),
@@ -69,7 +74,7 @@ export function SecurityPage() {
             <FavoriteButton securityId={data.id} isFavorite={data.is_favorite} />
             {data.kind !== "index" && (
               <>
-                <Button variant="outline" size="sm" className="ml-2" onClick={() => setOrdering(true)}>+ J'ai acheté</Button>
+                <Button variant="outline" size="sm" className="ml-2" onClick={() => (me === null ? navigate(loginPath(location)) : setOrdering(true))}>+ J'ai acheté</Button>
                 <AskAiButton security={{ id: data.id, name: data.name }} label />
               </>
             )}
