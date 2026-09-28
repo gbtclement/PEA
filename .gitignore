@@ -6,3 +6,5 @@ node_modules/
 dist/
 .env
 .superpowers/
+
+frontend/e2e/.auth/

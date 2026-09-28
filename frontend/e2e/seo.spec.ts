@@ -1,7 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const PRIVATE = ["/portefeuille", "/assistant", "/reglages"];
-const NOINDEX = [...PRIVATE, "/previsions", "/page-inconnue"];
+const NOINDEX = [...PRIVATE, "/previsions", "/page-inconnue", "/verifier-email?adresse=a%40b.fr", "/mot-de-passe-oublie"];
+const AUTH = ["/connexion", "/inscription"];
 
 async function headings(page: Page) {
   return page.evaluate(() => [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")].map((h) => ({ level: Number(h.tagName[1]), text: h.textContent?.trim() ?? "" })));
@@ -14,7 +15,7 @@ test("structure et métadonnées de chaque page", async ({ page }) => {
   await expect(page.getByText("Score mixte")).toBeVisible();
   const security = new URL(page.url()).pathname;
 
-  for (const path of ["/", "/explorer", "/etf", ...NOINDEX, security]) {
+  for (const path of ["/", "/explorer", "/etf", ...AUTH, ...NOINDEX, security]) {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await page.waitForLoadState("networkidle");
@@ -27,7 +28,7 @@ test("structure et métadonnées de chaque page", async ({ page }) => {
 
     expect(await page.title()).toMatch(/PEA Radar$/);
     expect(await page.locator('meta[name="description"]').getAttribute("content")).toBeTruthy();
-    expect(await page.locator('link[rel="canonical"]').getAttribute("href")).toMatch(new RegExp(`${path === "/" ? "/$" : path}$`));
+    expect(await page.locator('link[rel="canonical"]').getAttribute("href")).toMatch(new RegExp(`${path === "/" ? "/$" : path.split("?")[0]}$`));
     const robots = await page.evaluate(() => document.querySelector('meta[name="robots"]')?.getAttribute("content") ?? null);
     expect(robots, `${path} : indexation`).toBe(NOINDEX.includes(path) ? "noindex, nofollow" : null);
     for (const selector of ["main", "nav", "footer"]) await expect(page.locator(selector)).toHaveCount(1);
