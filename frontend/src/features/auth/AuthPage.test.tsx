@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryRouter } from "react-router";
 import { mockFetch } from "@/test/utils";
 import { AuthPage } from "./AuthPage";
+import { RequireAuth } from "./RequireAuth";
 import { passwordStrength } from "./PasswordField";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -71,4 +72,28 @@ test("jauge de solidité", () => {
   expect(passwordStrength("douzelettres")).toBe(1);
   expect(passwordStrength("Douze-lettres-7")).toBe(2);
   expect(passwordStrength("une phrase de passe très longue")).toBe(3);
+});
+
+test("une seule navigation par écran (le pied de page n'en ajoute pas)", () => {
+  mockFetch(() => ({ body: {} }));
+  renderAuth("/connexion");
+  expect(screen.getAllByRole("navigation")).toHaveLength(1);
+  expect(screen.getByRole("link", { name: "CGU" })).toBeInTheDocument();
+});
+
+test("après une déconnexion, la connexion ouvre bien la page privée demandée", async () => {
+  mockFetch((url) => (url === "/api/auth/login"
+    ? { body: { id: "u1", email: "jean@example.com", first_name: "Jean", last_name: "Dupont", role: "user", is_premium: false } }
+    : { status: 401, body: { detail: { code: "not_authenticated", message: "…" } } }));
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(["me"], null); // « visiteur » en cache, comme après une déconnexion
+  const router = createMemoryRouter([
+    { path: "/connexion", element: <AuthPage mode="connexion" /> },
+    { element: <RequireAuth />, children: [{ path: "/portefeuille", element: <h1>Portefeuille</h1> }] },
+  ], { initialEntries: ["/connexion?suite=%2Fportefeuille"] });
+  render(<QueryClientProvider client={queryClient}><RouterProvider router={router} /></QueryClientProvider>);
+  await userEvent.type(screen.getByLabelText("Adresse mail"), "jean@example.com");
+  await userEvent.type(screen.getByLabelText("Mot de passe"), "motdepasse-solide");
+  await userEvent.click(screen.getByRole("button", { name: "Me connecter" }));
+  expect(await screen.findByRole("heading", { level: 1, name: "Portefeuille" })).toBeInTheDocument();
 });

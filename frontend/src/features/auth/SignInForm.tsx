@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ApiError, apiSend } from "@/lib/api/client";
+import { ApiError, apiSend, type Me } from "@/lib/api/client";
 import { PasswordField } from "./PasswordField";
 import { safeNext } from "./redirect";
 
@@ -16,9 +16,10 @@ export function SignInForm() {
   const [remember, setRemember] = useState(false);
 
   const login = useMutation({
-    mutationFn: () => apiSend("POST", "/api/auth/login", { email, password, remember }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["me"] });
+    mutationFn: () => apiSend("POST", "/api/auth/login", { email, password, remember }) as Promise<Me>,
+    onSuccess: (me) => {
+      // Le compte renvoyé remplace tout de suite le « visiteur » en cache : RequireAuth ne doit pas le relire
+      queryClient.setQueryData(["me"], me);
       navigate(safeNext(params.get("suite")), { replace: true });
     },
     onError: (error) => {

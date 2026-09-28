@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { apiSend } from "@/lib/api/client";
+import { apiSend, type Me } from "@/lib/api/client";
 import { usePageMeta } from "@/seo/usePageMeta";
 import { AuthCard } from "./AuthCard";
 
@@ -32,9 +32,9 @@ function VerifyEmailForm({ email }: { email: string }) {
   }, [wait > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const verify = useMutation({
-    mutationFn: () => apiSend("POST", "/api/auth/verify-email", { email, code }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["me"] });
+    mutationFn: () => apiSend("POST", "/api/auth/verify-email", { email, code }) as Promise<Me>,
+    onSuccess: (me) => {
+      queryClient.setQueryData(["me"], me);
       navigate("/", { replace: true });
     },
   });

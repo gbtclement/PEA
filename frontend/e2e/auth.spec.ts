@@ -17,7 +17,7 @@ test("inscription, code reçu par mail, déconnexion puis connexion", async ({ p
   const email = `e2e-${Date.now()}@example.com`;
   await page.goto("/inscription");
   await page.getByLabel("Prénom").fill("Élodie");
-  await page.getByLabel("Nom").fill("Test");
+  await page.getByLabel("Nom", { exact: true }).fill("Test");
   await page.getByLabel("Adresse mail").fill(email);
   await page.getByLabel("Mot de passe", { exact: true }).fill("motdepasse-solide-e2e");
   await page.getByRole("checkbox").check();
