@@ -1,3 +1,4 @@
+import uuid
 from typing import Literal
 
 from fastapi import HTTPException
@@ -25,7 +26,7 @@ def resolve_api_key(settings_row: UserSettings) -> tuple[str | None, KeySource |
     return None, None
 
 
-def owned_conversation(db: Session, user_id: int, conversation_id: int) -> Conversation:
+def owned_conversation(db: Session, user_id: uuid.UUID, conversation_id: int) -> Conversation:
     conv = db.get(Conversation, conversation_id)
     if conv is None or conv.user_id != user_id:
         raise HTTPException(status_code=404, detail="Conversation introuvable")

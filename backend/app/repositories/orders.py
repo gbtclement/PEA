@@ -1,3 +1,4 @@
+import uuid
 from datetime import date
 
 from sqlalchemy import case, func, select
@@ -7,7 +8,7 @@ from app.models import DailyPrice, Order, Security
 from app.services.portfolio import OrderLine
 
 
-def list_orders(session: Session, user_id: int) -> list[tuple[Order, Security]]:
+def list_orders(session: Session, user_id: uuid.UUID) -> list[tuple[Order, Security]]:
     stmt = (select(Order, Security).join(Security, Security.id == Order.security_id)
             .where(Order.user_id == user_id).order_by(Order.trade_date.desc(), Order.id.desc()))
     return [(o, s) for o, s in session.execute(stmt)]
@@ -18,7 +19,7 @@ def to_line(order: Order) -> OrderLine:
                      quantity=order.quantity, unit_price=order.unit_price, fee=order.fee)
 
 
-def order_lines(session: Session, user_id: int) -> list[OrderLine]:
+def order_lines(session: Session, user_id: uuid.UUID) -> list[OrderLine]:
     return [to_line(o) for o in session.scalars(select(Order).where(Order.user_id == user_id))]
 
 

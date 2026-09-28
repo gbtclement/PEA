@@ -1,17 +1,19 @@
+from datetime import UTC, datetime
+
 from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.models import User
-
-DEFAULT_USER_NAME = "Moi"
+from app.models.user import LEGACY_EMAIL
 
 
 def ensure_default_user(session: Session) -> User:
-    user = session.scalars(select(User).order_by(User.id).limit(1)).first()
+    user = session.scalars(select(User).where(User.email == LEGACY_EMAIL)).first()
     if user is None:
-        user = User(name=DEFAULT_USER_NAME)
+        user = User(email=LEGACY_EMAIL, first_name="Moi", last_name="", role="admin", is_premium=True,
+                    email_verified_at=datetime.now(UTC))
         session.add(user)
         session.commit()
     return user

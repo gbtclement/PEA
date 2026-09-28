@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
@@ -13,7 +15,7 @@ router = APIRouter(tags=["rankings"])
 HEATMAP_SIZE = 200
 
 
-def _liquid_eligible_stocks(db: Session, user_id: int) -> list:
+def _liquid_eligible_stocks(db: Session, user_id: uuid.UUID) -> list:
     return [
         row for row in screener_rows(db, user_id, kind="stock")
         if row[0].eligibility == "eligible" and row[2] is not None and row[2].liquid

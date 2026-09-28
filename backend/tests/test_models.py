@@ -12,7 +12,7 @@ def test_ensure_default_user_is_idempotent(db):
     second = ensure_default_user(db)
     assert first.id == second.id
     assert db.scalar(select(func.count(User.id))) == 1
-    assert first.name == "Moi"
+    assert first.first_name == "Moi"
 
 
 def test_security_with_quote_and_prices(db):

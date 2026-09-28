@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import Row, select
 from sqlalchemy.orm import Session
 
@@ -5,7 +7,7 @@ from app.models import Favorite, Security, SecurityFundamentals, SecurityQuote, 
 
 
 def screener_rows(
-    session: Session, user_id: int, *, kind: str | None = None, only_top: bool = False, limit: int | None = None,
+    session: Session, user_id: uuid.UUID, *, kind: str | None = None, only_top: bool = False, limit: int | None = None,
     security_id: int | None = None,
 ) -> list[Row]:
     is_favorite = (

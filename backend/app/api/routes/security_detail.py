@@ -1,5 +1,6 @@
 import logging
 import math
+import uuid
 from datetime import date, timedelta
 from typing import Literal
 
@@ -31,7 +32,7 @@ DAILY_WINDOW = {"1M": 31, "6M": 183, "1Y": 365, "5Y": None}
 SIMULATION_WINDOW = {"1W": 7, "1M": 31, "6M": 183, "1Y": 365}
 
 
-def _row_or_404(db: Session, user_id: int, security_id: int):
+def _row_or_404(db: Session, user_id: uuid.UUID, security_id: int):
     rows = screener_rows(db, user_id, security_id=security_id)
     if not rows:
         raise HTTPException(status_code=404, detail="Titre introuvable")
@@ -139,7 +140,7 @@ def simulate(
     return simulate_since(db, user.id, security_id, amount, last - timedelta(days=SIMULATION_WINDOW[period]))
 
 
-def simulate_since(db: Session, user_id: int, security_id: int, amount: float, first_day: date) -> SimulationOut:
+def simulate_since(db: Session, user_id: uuid.UUID, security_id: int, amount: float, first_day: date) -> SimulationOut:
     """Achat simulé à la première clôture à partir de `first_day`, revendu au dernier cours, frais inclus."""
     row = _row_or_404(db, user_id, security_id)
     security, quote = row[0], row[1]

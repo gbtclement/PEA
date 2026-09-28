@@ -8,6 +8,7 @@ import json
 import logging
 import queue
 import threading
+import uuid
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
@@ -69,7 +70,7 @@ class ChatStream:
     thread: threading.Thread
 
 
-def start_chat(run: ChatRun, session_maker: SessionMaker, conversation_id: int, user_id: int,
+def start_chat(run: ChatRun, session_maker: SessionMaker, conversation_id: int, user_id: uuid.UUID,
                model: AssistantModel) -> ChatStream:
     events: queue.Queue = queue.Queue()
 

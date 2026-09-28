@@ -1,6 +1,7 @@
+import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, func, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,7 +16,7 @@ class Order(Base):
     __table_args__ = (Index("ix_orders_user_date", "user_id", "trade_date"),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id", ondelete="CASCADE"))
     security_id: Mapped[int] = mapped_column(ForeignKey("securities.id", ondelete="RESTRICT"), index=True)
     trade_date: Mapped[date] = mapped_column(Date)
     side: Mapped[str] = mapped_column(String(4))  # buy | sell
@@ -29,7 +30,7 @@ class Order(Base):
 class UserSettings(Base):
     __tablename__ = "user_settings"
 
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     min_orders_per_year: Mapped[int] = mapped_column(Integer, default=12)
     penalty_fee: Mapped[float] = mapped_column(Float, default=96.0)
     fee_grid: Mapped[list] = mapped_column(JSONB, default=lambda: list(DEFAULT_GRID_JSON))

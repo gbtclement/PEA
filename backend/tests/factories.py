@@ -2,7 +2,8 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from app.models import Security, SecurityScore
+from app.core.security import hash_password
+from app.models import Security, SecurityScore, User
 
 
 def make_security(
@@ -45,3 +46,22 @@ def make_score(db: Session, security: Security, **fields) -> SecurityScore:
     db.add(score)
     db.flush()
     return score
+
+
+_HASHES: dict[str, str] = {}  # Argon2 est volontairement lent : un hachage par mot de passe pour toute la session
+
+
+def make_user(
+    db: Session, email: str = "moi@example.com", *, first_name: str = "Jean", last_name: str = "Dupont",
+    password: str | None = "motdepasse-solide", verified: bool = True, role: str = "user", is_premium: bool = False,
+) -> User:
+    if password is not None and password not in _HASHES:
+        _HASHES[password] = hash_password(password)
+    user = User(
+        email=email, first_name=first_name, last_name=last_name,
+        password_hash=_HASHES[password] if password is not None else None,
+        email_verified_at=datetime(2026, 9, 1, tzinfo=UTC) if verified else None, role=role, is_premium=is_premium,
+    )
+    db.add(user)
+    db.flush()
+    return user
