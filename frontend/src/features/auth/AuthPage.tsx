@@ -1,8 +1,8 @@
-import { Radar } from "lucide-react";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { usePageMeta } from "@/seo/usePageMeta";
+import { AuthBrand } from "./AuthCard";
 import { AuthFooter } from "./AuthFooter";
 import { SignInForm } from "./SignInForm";
 import { SignUpForm } from "./SignUpForm";
@@ -27,12 +27,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-background to-primary/10 text-foreground">
-      <nav aria-label="Navigation principale" className="px-4 py-4 sm:px-8">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Radar className="size-4" aria-hidden /></span>
-          PEA Radar
-        </Link>
-      </nav>
+      <AuthBrand />
       <main className="flex flex-1 items-center justify-center px-4 py-6">
         <div className="relative w-full max-w-[960px] overflow-hidden rounded-2xl bg-white shadow-xl md:h-[600px]">
           {/* Panneau indigo : bandeau en haut sur mobile, moitié qui glisse sur grand écran */}
