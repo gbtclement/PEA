@@ -6,7 +6,11 @@ PostgreSQL 16, conteneur `db`, données dans le volume Docker `pgdata`. Modèles
 
 | Table | Contenu | Personnelle (`user_id`) |
 |---|---|---|
-| `users` | Utilisateurs. Un utilisateur par défaut est créé au démarrage | — |
+| `users` | Comptes : identifiant **UUID**, adresse mail, prénom, nom, empreinte du mot de passe (Argon2), rôle `user`/`admin`, `is_premium`, date de validation de l'adresse, version des CGU acceptée | — |
+| `sessions` | Sessions ouvertes : empreinte du jeton, jeton CSRF, « rester connecté », expiration, dernière activité, appareil | **oui** |
+| `known_devices` | Appareils déjà utilisés par chaque compte, pour le mail « nouvelle connexion » | **oui** |
+| `email_codes` | Codes à 6 chiffres et liens (nouveau mot de passe, « Ce n'était pas moi ») : empreinte, usage, expiration, essais | **oui** |
+| `email_log` | File d'envoi et historique des mails : type, destinataire, contenu, statut `pending`/`sent`/`failed`, essais, erreur | **oui** (peut être vide) |
 | `securities` | Univers : ISIN, ticker Yahoo, nom, type `stock`/`etf`/`index`, place, pays, secteur, éligibilité automatique et correction, actif | non |
 | `quotes` | Dernier cours connu de chaque titre : prix, variation du jour, volume, horodatage | non |
 | `daily_prices` | Historique journalier OHLCV sur 5 ans | non |
@@ -20,6 +24,12 @@ PostgreSQL 16, conteneur `db`, données dans le volume Docker `pgdata`. Modèles
 | `forecast_runs` | Calculs complets des prévisions : statistiques, test, coupure, frais (JSON) | non |
 | `forecasts` | Prédictions (titre, jour, horizon) puis leur résultat réel | non |
 | `data_status` | Dernière réussite, dernière erreur et nombre d'éléments par tâche du worker | non |
+
+## Migration des comptes (UUID)
+
+La migration `a7c3e9f1b2d4_user_accounts` transforme les identifiants entiers des utilisateurs en **UUID** dans `users` et dans toutes les tables personnelles, et crée les tables des comptes. L'ancien utilisateur par défaut devient le compte « Moi » (`moi@pea-radar.invalid`), repris ensuite par `ADMIN_EMAIL` (voir [Comptes utilisateurs](comptes.md)).
+
+!> Cette migration est **à sens unique** : il n'y a pas de retour arrière. **Sauvegardez la base avant** la première reconstruction qui l'applique (voir plus bas).
 
 ## Migrations
 
@@ -51,4 +61,4 @@ docker compose exec -T db pg_dump -U pea pea_radar > sauvegarde.sql
 docker compose exec -T db psql -U pea -d pea_radar < sauvegarde.sql
 ```
 
-?> Les données personnelles tiennent en peu de lignes : ordres, favoris, réglages, conversations. Tout le reste (cours, scores, prévisions) se reconstruit automatiquement depuis Yahoo. Pensez à sauvegarder au moins la table `orders`.
+?> Les données personnelles tiennent en peu de lignes : ordres, favoris, réglages, conversations. Tout le reste (cours, scores, prévisions) se reconstruit automatiquement depuis Yahoo. Pensez à sauvegarder au moins les tables `users` et `orders`.

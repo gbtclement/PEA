@@ -4,7 +4,35 @@ Toutes les routes sont préfixées par `/api` (`backend/app/main.py`) et passent
 
 ?> En mode développement, la documentation interactive générée par FastAPI (Swagger) est sur **http://localhost:8000/docs**, et le schéma OpenAPI sur `/openapi.json`. Le frontend en génère ses types TypeScript avec `npm run gen:api`.
 
-Les erreurs sont renvoyées en JSON, avec un message en français lisible par l'utilisateur. Toutes les entrées sont validées par Pydantic.
+Les erreurs sont renvoyées en JSON, avec un message en français lisible par l'utilisateur. Toutes les entrées sont validées par Pydantic. `detail` est soit un texte, soit, pour les erreurs que le frontend doit reconnaître, un objet :
+
+```json
+{"detail": {"code": "invalid_credentials", "message": "Adresse mail ou mot de passe incorrect."}}
+```
+
+Le client du frontend en fait une `ApiError(status, message, code)`.
+
+## Accès
+
+- Les routes personnelles (ordres, portefeuille, favoris, réglages, assistant, prévisions) demandent une session : `401` avec le code `not_authenticated` sinon.
+- Les requêtes qui modifient quelque chose (`POST`, `PUT`, `PATCH`, `DELETE`) avec une session doivent porter l'en-tête `X-CSRF-Token` : `403` avec le code `csrf` sinon.
+- Les routes marquées **admin** renvoient `403` aux autres comptes.
+
+Détails dans [Comptes utilisateurs](comptes.md).
+
+## Comptes
+
+| Méthode | Route | Rôle |
+|---|---|---|
+| POST | `/auth/register` | Inscription `{first_name, last_name, email, password, accept_terms}`. Envoie le code. Toujours `202`, même si l'adresse existe |
+| POST | `/auth/verify-email` | `{email, code}` : valide l'adresse et ouvre une session |
+| POST | `/auth/resend-code` | `{email}` : nouveau code, au plus toutes les 60 s |
+| POST | `/auth/login` | `{email, password, remember}`. `403 email_not_verified` si l'adresse n'est pas validée |
+| POST | `/auth/logout` | Ferme la session courante |
+| POST | `/auth/forgot-password` | `{email}` : envoie un lien. Toujours `202` |
+| POST | `/auth/reset-password` | `{token, password}` : nouveau mot de passe, toutes les sessions sont fermées |
+| POST | `/auth/not-me` | `{token}` : « Ce n'était pas moi » |
+| GET | `/me` | Le compte connecté (`id`, `email`, `first_name`, `last_name`, `role`, `is_premium`), ou `401` |
 
 ## État
 
@@ -20,7 +48,7 @@ Les erreurs sont renvoyées en JSON, avec un message en français lisible par l'
 | GET | `/securities?q=&kind=&eligibility=&overridden=&limit=&offset=` | Recherche paginée (nom, ticker, ISIN) |
 | GET | `/securities/{id}` | Fiche : cours, score détaillé, fondamentaux, éligibilité, favori |
 | GET | `/securities/{id}/history?period=1D\|1W\|1M\|6M\|1Y\|5Y` | Barres OHLCV, MM50/MM200, RSI, MACD. `1D` (barres de 5 min) et `1W` (30 min) sont en intraday, chargés depuis Yahoo et mis en cache |
-| PATCH | `/securities/{id}/eligibility` | Correction manuelle : `{"override": "eligible" \| "non_eligible" \| null}` |
+| PATCH | `/securities/{id}/eligibility` | **Admin.** Correction manuelle : `{"override": "eligible" \| "non_eligible" \| null}` |
 | GET | `/securities/{id}/news` | Actualités Yahoo, mises en cache |
 | GET | `/securities/{id}/simulate?amount=&period=1W\|1M\|6M\|1Y` | « Si j'avais investi », frais inclus |
 | GET | `/screener?kind=stock\|etf` | Toutes les lignes de l'Explorer ou des ETF. Le filtrage et le tri se font côté navigateur |

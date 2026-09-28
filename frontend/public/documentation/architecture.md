@@ -15,16 +15,19 @@ Navigateur ────────► │ web  (nginx)                         
             Claude API ◄──────────── api (FastAPI, :8000) ─────────► db (PostgreSQL 16)
                                                                           ▲
    Yahoo Finance / Euronext ◄──── worker (APScheduler, même image) ───────┘
+                                     │
+                                     └─ SMTP ──► mailpit (:8025, en local) ou Brevo (en ligne)
 ```
 
-Quatre conteneurs Docker Compose :
+Cinq conteneurs Docker Compose :
 
 | Service | Rôle | Technologies |
 |---|---|---|
 | `web` | Sert l'interface compilée, le guide et la documentation admin, relaie `/api` | nginx 1.27, build Vite |
 | `api` | API REST et flux SSE de l'assistant. **Ne contacte pas Yahoo pendant une requête**, sauf pour l'intraday (graphique 1J) et les actualités, mis en cache | Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Pydantic v2 |
-| `worker` | Liste des titres, cours, historique, fondamentaux, scores, prévisions | Même image que `api`, APScheduler |
+| `worker` | Liste des titres, cours, historique, fondamentaux, scores, prévisions, **envoi des mails** (file `email_log`) | Même image que `api`, APScheduler |
 | `db` | Stockage persistant (volume `pgdata`) | PostgreSQL 16 |
+| `mailpit` | Capture les mails envoyés en local et les affiche sur http://localhost:8025 | Mailpit |
 
 `api` et `worker` partagent le paquet Python `backend/app`, mais sont deux processus distincts.
 
@@ -32,7 +35,7 @@ Quatre conteneurs Docker Compose :
 
 ```text
 PEA/
-├── docker-compose.yml          # les 4 services
+├── docker-compose.yml          # les 5 services
 ├── docker-compose.dev.yml      # surcharge de dev : code monté, --reload, port 8000 exposé
 ├── .env.example                # modèle de configuration (.env n'est pas versionné)
 ├── CLAUDE.md                   # contexte pour Claude Code
@@ -41,13 +44,14 @@ PEA/
 │   ├── alembic/versions/       # migrations de la base
 │   ├── app/
 │   │   ├── api/routes/         # un fichier par domaine
-│   │   ├── core/               # config, base, utilisateur courant
+│   │   ├── core/               # config, base, sécurité (mots de passe, jetons), utilisateur courant
 │   │   ├── models/             # tables SQLAlchemy
 │   │   ├── schemas/            # entrées/sorties Pydantic
 │   │   ├── repositories/       # requêtes SQL
 │   │   ├── services/           # logique métier (score, prévisions, frais, portefeuille, assistant…)
 │   │   ├── providers/          # Yahoo (yfinance) et Euronext
-│   │   ├── jobs/               # tâches du worker
+│   │   ├── jobs/               # tâches du worker, dont l'envoi des mails
+│   │   ├── cli.py              # python -m app.cli bootstrap-admin | ensure-user
 │   │   └── seeds/              # CSV de départ et de secours
 │   └── tests/
 └── frontend/
@@ -75,10 +79,13 @@ api/routes  ──►  services  ──►  repositories (SQL)
 - Les **calculs** (indicateurs, score, frais, positions, éligibilité, signaux) sont des **fonctions pures**, testées sans base ni réseau.
 - Les pages ne lisent que la base : les appels externes lents se font dans le worker.
 
-## Prêt pour plusieurs utilisateurs
+## Plusieurs utilisateurs
 
-- Toute donnée personnelle (ordres, favoris, conversations, réglages) porte un `user_id`.
-- Les routes obtiennent l'utilisateur **uniquement** par la dépendance `get_current_user()` (`core/current_user.py`). Elle renvoie aujourd'hui l'utilisateur par défaut. Demain, elle pourra vérifier une session sans modifier les routes.
+- Toute donnée personnelle (ordres, favoris, conversations, réglages) porte un `user_id` (UUID).
+- Les routes obtiennent l'utilisateur **uniquement** par les dépendances de `core/current_user.py` : `get_current_user()` pour une route privée (`401` sans session), `get_optional_user()` pour une route publique, `require_admin()` pour une route d'administration. Elles vérifient la session et le jeton CSRF.
+- L'API ne fait jamais partir un mail : elle l'ajoute à la file (`enqueue()`), le worker l'envoie.
+
+Voir [Comptes utilisateurs](comptes.md).
 
 ## Configuration
 
@@ -99,7 +106,13 @@ Toutes les valeurs sont dans `backend/app/core/config.py` (`Settings`, pydantic-
 | `MIN_HISTORY_DAYS` | `200` | Séances minimum pour entrer dans le top 10 |
 | `MIN_AVAILABLE_RATIO` | `0.6` | Part minimum des points du score calculables pour le top 10 |
 | `SEO_INDEXING` | `false` | Voir [SEO et mise en ligne](seo.md) |
-| `PUBLIC_BASE_URL` | `http://localhost:8095` | Adresse publique du site |
+| `PUBLIC_BASE_URL` | `http://localhost:8095` | Adresse publique du site, utilisée aussi pour les liens des mails |
+| `ADMIN_EMAIL` | *(vide)* | Compte administrateur, qui reprend les données d'avant les comptes |
+| `COOKIE_SECURE` | `true` | `false` seulement en local sans HTTPS |
+| `SESSION_DAYS` / `SESSION_SHORT_HOURS` | `30` / `12` | Durée d'une session avec et sans « Rester connecté » |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` | *(vide)* / `587` / *(vide)* / *(vide)* | Serveur d'envoi des mails |
+| `SMTP_TLS` | `starttls` | `starttls`, `ssl` ou `none` (Mailpit) |
+| `MAIL_FROM` | `PEA Radar <no-reply@localhost>` | Expéditeur des mails |
 
 ## Ports
 
@@ -108,5 +121,6 @@ Toutes les valeurs sont dans `backend/app/core/config.py` (`Settings`, pydantic-
 | **8095** | Application complète (nginx) |
 | **8000** | API en mode développement (`docker-compose.dev.yml`), avec la doc interactive de l'API sur `/docs` |
 | **5180** | Serveur Vite en développement |
+| **8025** | Mailpit : les mails envoyés en local |
 
 ?> 8080, 8081 et 5173 sont volontairement évités : ils sont déjà utilisés par d'autres projets sur le PC de développement.

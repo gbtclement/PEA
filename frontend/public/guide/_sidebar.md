@@ -2,6 +2,7 @@
 - [Premiers pas](premiers-pas.md)
 
 - **Utiliser l'application**
+  - [Votre compte](app/compte.md)
   - [Page d'accueil](app/accueil.md)
   - [Explorer et ETF](app/explorer.md)
   - [Fiche d'un titre](app/fiche-titre.md)

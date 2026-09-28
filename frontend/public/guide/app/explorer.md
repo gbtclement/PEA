@@ -47,4 +47,4 @@ Les ETF n'ont pas de bilan ni de bénéfices : leur score est **uniquement techn
 | **À vérifier** | Cas douteux, par exemple une foncière cotée (en principe exclue du PEA) ou un pays inconnu |
 | **Non éligible** | Siège hors de l'UE et de l'EEE, par exemple une société américaine ou suisse |
 
-!> Il n'existe pas de liste officielle complète des titres éligibles au PEA : l'application **déduit** l'éligibilité du pays du siège. Avant un achat important, vérifiez que votre banque accepte le titre dans votre PEA. Vous pouvez corriger un badge faux dans les [Réglages](app/reglages.md).
+!> Il n'existe pas de liste officielle complète des titres éligibles au PEA : l'application **déduit** l'éligibilité du pays du siège. Avant un achat important, vérifiez que votre banque accepte le titre dans votre PEA. Un badge faux se signale à l'administrateur du site, qui peut le corriger (voir [Réglages](app/reglages.md)).

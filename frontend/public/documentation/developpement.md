@@ -22,10 +22,11 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db api work
 docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api pytest -q
 ```
 
-- Environ 380 tests, sur une base séparée `pea_radar_test`.
+- Environ 470 tests, sur une base séparée `pea_radar_test`.
 - Les tests marqués `network` (qui appellent le vrai Yahoo) sont exclus par défaut.
 - Fixtures : le client de test est dans `tests/conftest.py`, les fabriques de données dans `tests/factories.py`.
-- Faux fournisseurs : `tests/fakes.py` (marché) et `tests/fake_llm.py` (Claude). **Aucun test ne doit appeler Yahoo ni Anthropic.**
+- Faux fournisseurs : `tests/fakes.py` (marché), `tests/fake_llm.py` (Claude) et `tests/fake_mailer.py` (`FakeMailer`, SMTP). **Aucun test ne doit appeler Yahoo, Anthropic ni un vrai serveur de mail.**
+- Comptes : `user` est un compte validé, `client` est connecté avec ce compte, `anon_client` est un visiteur et `admin_client` un administrateur. `sign_in(client, db, user)` (`tests/auth_helpers.py`) ouvre une session et pose les cookies et l'en-tête CSRF. Les clients visent `https://testserver` pour que les cookies `Secure` soient renvoyés.
 
 ## Frontend
 
@@ -47,12 +48,18 @@ npx playwright install chromium   # une seule fois
 npm run e2e                       # contre http://localhost:8095 : reconstruisez web et api avant
 ```
 
+Avant les tests, `e2e/global-setup.ts` crée le compte `e2e@pea-radar.test` (commande `app.cli ensure-user` dans le conteneur api) et le connecte une fois : toutes les pages sont testées connectées, sauf `e2e/auth.spec.ts` qui repart en visiteur.
+
+!> Les tests de bout en bout demandent `COOKIE_SECURE=false` dans `.env` (le site local est en HTTP) et **Mailpit** lancé : l'inscription y lit le code reçu.
+
 | Fichier | Vérifie |
 |---|---|
 | `e2e/smoke.spec.ts` | Les pages principales s'affichent |
-| `e2e/layout.spec.ts` | Aucune page n'est coupée entre 1100 et 1440 px |
+| `e2e/layout.spec.ts` | Aucune page n'est coupée entre 1100 et 1440 px, écrans de compte sans défilement horizontal à 390 px |
 | `e2e/table.spec.ts` | Alignement des colonnes des tableaux |
 | `e2e/seo.spec.ts` | Un seul `h1`, métadonnées, `noindex` sur les pages privées |
+| `e2e/auth.spec.ts` | Inscription avec le code lu dans Mailpit, déconnexion, connexion, panneau glissant, vitrine visiteur |
+| `e2e/documentation.spec.ts` | Chaque page du guide et de la documentation s'affiche, sans lien cassé |
 
 ## Méthode de travail
 
@@ -62,7 +69,7 @@ npm run e2e                       # contre http://localhost:8095 : reconstruisez
   - une branche par lot ou par sujet ;
   - une fois terminée, la branche est fusionnée dans `master` par une pull request sur https://github.com/gbtclement/PEA ;
   - `.env` n'est jamais versionné.
-- **Données personnelles** : toute nouvelle table personnelle porte un `user_id`, et les routes passent par `get_current_user()`.
+- **Données personnelles** : toute nouvelle table personnelle porte un `user_id` (UUID), et les routes passent par `get_current_user()` (privée), `get_optional_user()` (publique) ou `require_admin()`.
 
 ## Historique du projet
 
@@ -79,6 +86,7 @@ Le projet a été construit par lots. Chaque lot a sa spécification et son plan
 | Prévisions | Signaux, statistiques, prédictions, bulletin de notes |
 | Documentation | Guide utilisateur (`/guide/`) et documentation admin (`/documentation/`), en Docsify |
 | Fraîcheur des données | Top 10 dès le premier démarrage, passage du soir à 18 h 15, cours toutes les 1 à 5 min |
+| Comptes : socle | Inscription avec code par mail, connexion, mot de passe oublié, alerte nouvel appareil, pages privées, admin |
 
 ## Dépannage
 
@@ -89,3 +97,6 @@ Le projet a été construit par lots. Chaque lot a sa spécification et son plan
 | Bandeau « données anciennes » | Yahoo ne répond plus ou limite les requêtes. Le worker réessaiera tout seul |
 | L'assistant dit que la clé est invalide après une réinstallation | `APP_SECRET` a changé : ressaisissez la clé dans les Réglages |
 | `npm run gen:api` échoue | L'API de dev (port 8000) n'est pas lancée |
+| Connexion impossible en local, sans erreur | `COOKIE_SECURE` n'est pas à `false` : le navigateur refuse les cookies en HTTP |
+| Aucun mail reçu | Regardez http://localhost:8025 (Mailpit), puis `docker compose logs worker` et la table `email_log` |
+| `403` « Jeton de sécurité manquant » | La requête ne porte pas `X-CSRF-Token` : passez par `apiSend` / `streamSSE` |

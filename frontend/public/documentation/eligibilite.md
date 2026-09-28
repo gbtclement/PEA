@@ -21,7 +21,7 @@ country_from_isin("FR0000121014")  # → "FR"
 
 ## La correction manuelle
 
-`securities.eligibility_override` peut valoir `eligible` ou `non_eligible`. Elle se règle depuis les Réglages, ou avec `PATCH /api/securities/{id}/eligibility`.
+`securities.eligibility_override` peut valoir `eligible` ou `non_eligible`. Elle est commune à tous les comptes, donc réservée à l'**administrateur** : elle se règle depuis ses Réglages (la carte n'apparaît que pour le rôle `admin`), ou avec `PATCH /api/securities/{id}/eligibility`.
 
 `effective_eligibility()` renvoie le statut final et sa source :
 
