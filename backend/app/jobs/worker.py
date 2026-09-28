@@ -6,6 +6,7 @@ from app.jobs.context import JobContext
 from app.jobs.scheduler import build_scheduler
 from app.providers.euronext import EuronextListingProvider
 from app.providers.yahoo import YahooProvider
+from app.services.mail.smtp import mailer_from_settings
 
 
 def build_context() -> JobContext:
@@ -19,6 +20,7 @@ def build_context() -> JobContext:
         ),
         listing=EuronextListingProvider(settings.euronext_list_url),
         settings=settings,
+        mailer=mailer_from_settings(settings),
     )
 
 

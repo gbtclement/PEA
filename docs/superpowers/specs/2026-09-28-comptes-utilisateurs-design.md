@@ -239,7 +239,7 @@ Les alertes de prix N2 se créent depuis la fiche d'un titre (bouton « Créer u
 - **Le worker** envoie la file toutes les **5 secondes** ; en cas d'échec, nouvel essai à 1 min, 5 min puis 30 min, puis `failed`. L'API n'envoie jamais directement.
 - En-têtes des notifications : `List-Unsubscribe` (URL et `mailto` facultatif) et `List-Unsubscribe-Post: List-Unsubscribe=One-Click`. Le lien `GET /desinscription?jeton=…` affiche une page de confirmation ; `POST` désactive la notification (ou toutes).
 - `.env` : `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_TLS` (`starttls` \| `ssl` \| `none`), `MAIL_FROM`, `PUBLIC_BASE_URL` (déjà présente, pour les liens).
-- **Développement** : service **Mailpit** dans `docker-compose.dev.yml` (SMTP sur 1025, interface sur http://localhost:8025).
+- **En local** : service **Mailpit** dans `docker-compose.yml` (l'app tourne en local avec ce fichier), SMTP sur 1025, interface sur http://localhost:8025. À la mise en ligne, `SMTP_*` vise Brevo.
 
 ## 6. RGPD et pages légales
 

@@ -86,13 +86,14 @@ def session_factory(db):
 
 @pytest.fixture
 def make_ctx(session_factory):
-    def _make(market=None, listing=None, now: datetime | None = None, **settings_overrides) -> JobContext:
+    def _make(market=None, listing=None, now: datetime | None = None, mailer=None, **settings_overrides) -> JobContext:
         return JobContext(
             session_factory=session_factory,
             market=market or FakeMarket(),
             listing=listing or FakeListing(),
             settings=Settings(**settings_overrides),
             now=(lambda: now) if now else (lambda: datetime.now(UTC)),
+            mailer=mailer,
         )
 
     return _make
