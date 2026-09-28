@@ -49,6 +49,17 @@ class Settings(BaseSettings):
     smtp_tls: str = "starttls"  # starttls | ssl | none
     mail_from: str = "PEA Radar <no-reply@localhost>"
 
+    # Connexion Google (OpenID Connect) ; vide = bouton masqué
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    # Cloudflare Turnstile ; clé secrète vide = captcha désactivé (local, tests)
+    turnstile_site_key: str = ""
+    turnstile_secret_key: str = ""
+    # Refus des mots de passe connus dans les fuites (Have I Been Pwned, k-anonymat)
+    hibp_enabled: bool = True
+    # Origines acceptées en plus de PUBLIC_BASE_URL (serveur Vite de développement), séparées par des virgules
+    dev_origins: str = "http://localhost:5180"
+
 
 @lru_cache
 def get_settings() -> Settings:
