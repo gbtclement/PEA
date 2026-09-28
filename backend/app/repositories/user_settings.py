@@ -19,5 +19,7 @@ def get_user_settings(session: Session, user_id: uuid.UUID) -> UserSettings:
     return settings
 
 
-def user_fee_grid(session: Session, user_id: uuid.UUID) -> tuple[FeeTier, ...]:
+def user_fee_grid(session: Session, user_id: uuid.UUID | None) -> tuple[FeeTier, ...]:
+    if user_id is None:  # visiteur : grille par défaut (Invest Store Intégral)
+        return grid_from_json(DEFAULT_GRID_JSON)
     return grid_from_json(get_user_settings(session, user_id).fee_grid)

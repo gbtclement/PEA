@@ -84,6 +84,6 @@ def test_empty_fundamentals_row_is_not_no_dividend(db, make_ctx):
     assert "dividend" not in keys
 
 
-def test_eligibility_update_uses_current_user(client, db):
+def test_eligibility_update_uses_current_user(admin_client, db):
     security = make_security(db, "MC.PA")
-    assert client.patch(f"/api/securities/{security.id}/eligibility", json={"override": "eligible"}).status_code == 200
+    assert admin_client.patch(f"/api/securities/{security.id}/eligibility", json={"override": "eligible"}).status_code == 200

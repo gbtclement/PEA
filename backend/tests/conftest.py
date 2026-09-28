@@ -89,6 +89,17 @@ def client(db, fake_market, fake_llm, user):
         yield test_client
 
 
+@pytest.fixture
+def admin_client(db, fake_market, fake_llm):
+    """Client connecté avec un compte administrateur."""
+    from tests.auth_helpers import sign_in
+    from tests.factories import make_user
+
+    with TestClient(_build_app(db, fake_market, fake_llm), base_url="https://testserver") as test_client:
+        sign_in(test_client, db, make_user(db, "admin@example.com", first_name="Admin", role="admin"))
+        yield test_client
+
+
 from contextlib import contextmanager
 from datetime import UTC, datetime
 

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import INTRADAY_CACHE, NEWS_CACHE, get_market_provider
-from app.core.current_user import get_current_user
+from app.core.current_user import get_optional_user
 from app.core.db import get_db
 from app.models import User
 from app.providers.base import MarketDataProvider
@@ -32,7 +32,7 @@ DAILY_WINDOW = {"1M": 31, "6M": 183, "1Y": 365, "5Y": None}
 SIMULATION_WINDOW = {"1W": 7, "1M": 31, "6M": 183, "1Y": 365}
 
 
-def _row_or_404(db: Session, user_id: uuid.UUID, security_id: int):
+def _row_or_404(db: Session, user_id: uuid.UUID | None, security_id: int):
     rows = screener_rows(db, user_id, security_id=security_id)
     if not rows:
         raise HTTPException(status_code=404, detail="Titre introuvable")
@@ -40,8 +40,8 @@ def _row_or_404(db: Session, user_id: uuid.UUID, security_id: int):
 
 
 @router.get("/securities/{security_id}", response_model=SecurityDetail)
-def get_security(security_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> SecurityDetail:
-    row = _row_or_404(db, user.id, security_id)
+def get_security(security_id: int, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)) -> SecurityDetail:
+    row = _row_or_404(db, user.id if user else None, security_id)
     security, quote, score, fundamentals, _ = row
     score_detail = None
     if score is not None:
@@ -80,10 +80,10 @@ def get_history(
     security_id: int,
     period: Period = "6M",
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User | None = Depends(get_optional_user),
     provider: MarketDataProvider = Depends(get_market_provider),
 ) -> HistoryOut:
-    security = _row_or_404(db, user.id, security_id)[0]
+    security = _row_or_404(db, user.id if user else None, security_id)[0]
     if period in INTRADAY:
         return HistoryOut(period=period, intraday=True, bars=_intraday(provider, security.yahoo_ticker, period),
                           sma50=[], sma200=[], rsi=[], macd=[])
@@ -115,10 +115,10 @@ def get_history(
 def get_news(
     security_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User | None = Depends(get_optional_user),
     provider: MarketDataProvider = Depends(get_market_provider),
 ) -> list[NewsOut]:
-    ticker = _row_or_404(db, user.id, security_id)[0].yahoo_ticker
+    ticker = _row_or_404(db, user.id if user else None, security_id)[0].yahoo_ticker
     try:
         items = NEWS_CACHE.get_or_set(ticker, lambda: provider.get_news(ticker))
     except Exception:
@@ -133,14 +133,14 @@ def simulate(
     amount: float = Query(..., gt=0, le=1_000_000),
     period: Literal["1W", "1M", "6M", "1Y"] = "1M",
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User | None = Depends(get_optional_user),
 ) -> SimulationOut:
     prices = all_daily_prices(db, security_id)
     last = prices[-1].date if prices else date.today()
-    return simulate_since(db, user.id, security_id, amount, last - timedelta(days=SIMULATION_WINDOW[period]))
+    return simulate_since(db, user.id if user else None, security_id, amount, last - timedelta(days=SIMULATION_WINDOW[period]))
 
 
-def simulate_since(db: Session, user_id: uuid.UUID, security_id: int, amount: float, first_day: date) -> SimulationOut:
+def simulate_since(db: Session, user_id: uuid.UUID | None, security_id: int, amount: float, first_day: date) -> SimulationOut:
     """Achat simulé à la première clôture à partir de `first_day`, revendu au dernier cours, frais inclus."""
     row = _row_or_404(db, user_id, security_id)
     security, quote = row[0], row[1]
