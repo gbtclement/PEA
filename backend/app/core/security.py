@@ -1,8 +1,11 @@
 """Primitives de sécurité : mots de passe, jetons, codes. Fonctions pures, sans base ni réseau."""
+import base64
 import hashlib
 import hmac
 import ipaddress
+import json
 import secrets
+from datetime import datetime, timedelta
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
@@ -84,3 +87,39 @@ def device_label(user_agent: str | None) -> str:
 
 def normalize_email(email: str) -> str:
     return email.strip().lower()
+
+
+def _b64(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).rstrip(b"=").decode()
+
+
+def _unb64(text: str) -> bytes:
+    return base64.urlsafe_b64decode(text + "=" * (-len(text) % 4))
+
+
+def sign(data: dict, secret: str, now: datetime) -> str:
+    """Valeur de cookie signée (HMAC-SHA256), horodatée. Lisible par le navigateur : n'y mettre rien de secret."""
+    payload = _b64(json.dumps({"d": data, "t": int(now.timestamp())}, separators=(",", ":")).encode())
+    mac = _b64(hmac.new(secret.encode(), payload.encode(), hashlib.sha256).digest())
+    return f"{payload}.{mac}"
+
+
+def unsign(value: str | None, secret: str, now: datetime, max_age: timedelta) -> dict | None:
+    """Le contenu si la signature est bonne et la valeur assez récente, sinon None."""
+    if not value or "." not in value:
+        return None
+    payload, _, mac = value.rpartition(".")
+    expected = _b64(hmac.new(secret.encode(), payload.encode(), hashlib.sha256).digest())
+    if not hmac.compare_digest(mac, expected):
+        return None
+    try:
+        content = json.loads(_unb64(payload))
+    except ValueError:
+        return None
+    if now.timestamp() - content["t"] > max_age.total_seconds():
+        return None
+    return content["d"]
+
+
+def pkce_challenge(verifier: str) -> str:
+    return _b64(hashlib.sha256(verifier.encode()).digest())

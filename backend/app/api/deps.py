@@ -46,3 +46,13 @@ def get_breach_checker():
     from app.services.auth.breach import HibpChecker, NoBreachCheck
 
     return HibpChecker() if get_settings().hibp_enabled else NoBreachCheck()
+
+
+def get_google_client():
+    """Client Google, ou None si GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET ou APP_SECRET manque ; remplacé en test."""
+    from app.services.auth.google import GoogleOIDC
+
+    settings = get_settings()
+    if not (settings.google_client_id and settings.google_client_secret and settings.app_secret):
+        return None
+    return GoogleOIDC(settings.google_client_id, settings.google_client_secret)

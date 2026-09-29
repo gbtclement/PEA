@@ -59,7 +59,9 @@ def fake_breach():
 
 @pytest.fixture
 def fake_google():
-    return None  # remplacé à la Task 5
+    from tests.fake_google import FakeGoogle
+
+    return FakeGoogle()
 
 
 def _build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google):
@@ -82,10 +84,11 @@ def _build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google
     app.dependency_overrides[get_llm_factory] = llm_factory
     app.dependency_overrides[get_session_maker] = lambda: (lambda: nullcontext(db))
 
-    from app.api.deps import get_breach_checker, get_captcha
+    from app.api.deps import get_breach_checker, get_captcha, get_google_client
 
     app.dependency_overrides[get_captcha] = lambda: fake_captcha
     app.dependency_overrides[get_breach_checker] = lambda: fake_breach
+    app.dependency_overrides[get_google_client] = lambda: fake_google
     return app
 
 
