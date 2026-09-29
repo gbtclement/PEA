@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiGet, apiSend, type AssistantSettingsOut, type ConversationDetail, type ConversationOut } from "@/lib/api/client";
+import { apiGet, apiSend, type AssistantStatus, type ConversationDetail, type ConversationOut } from "@/lib/api/client";
 
-export const useAssistantSettings = () =>
-  useQuery({ queryKey: ["assistant-settings"], queryFn: () => apiGet<AssistantSettingsOut>("/api/assistant/settings") });
+export const useAssistantStatus = () =>
+  useQuery({ queryKey: ["assistant-status"], queryFn: () => apiGet<AssistantStatus>("/api/assistant/status") });
 
 export const useConversations = () =>
   useQuery({ queryKey: ["conversations"], queryFn: () => apiGet<ConversationOut[]>("/api/assistant/conversations") });

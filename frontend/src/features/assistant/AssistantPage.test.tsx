@@ -10,7 +10,7 @@ const item = (id: number, title: string, cost: number) => ({ id, title, security
 
 test("liste les conversations avec leur coût et ouvre celle choisie", async () => {
   mockFetch((url) => {
-    if (url === "/api/assistant/settings") return { body: { configured: true, source: "settings", model: "claude-opus-5", models: [] } };
+    if (url === "/api/assistant/status") return { body: { available: true, reason: null, spent_usd: 0.5, limit_usd: 5, model: "Claude Opus 5 (recommandé)" } };
     if (url === "/api/assistant/conversations") return { body: [item(2, "Mon portefeuille", 0.0421), item(1, "À propos de LVMH", 0.003)] };
     if (url === "/api/assistant/conversations/2") {
       return { body: { ...item(2, "Mon portefeuille", 0.0421), messages: [{ id: 9, role: "user", content: "Analyse mon portefeuille", tools: [],
@@ -29,7 +29,7 @@ test("suit l'adresse : lien ou retour arrière vers une autre conversation", asy
   const detail = (id: number, content: string) => ({ ...item(id, `Conv ${id}`, 0), messages: [{ id: id * 10, role: "user", content, tools: [],
     interrupted: false, error: null, cost_usd: 0, created_at: "2026-09-26T10:00:00Z" }] });
   mockFetch((url) => {
-    if (url === "/api/assistant/settings") return { body: { configured: true, source: "settings", model: "claude-opus-5", models: [] } };
+    if (url === "/api/assistant/status") return { body: { available: true, reason: null, spent_usd: 0.5, limit_usd: 5, model: "Claude Opus 5 (recommandé)" } };
     if (url === "/api/assistant/conversations") return { body: [item(2, "Conv 2", 0), item(1, "Conv 1", 0)] };
     if (url === "/api/assistant/conversations/2") return { body: detail(2, "Question deux") };
     if (url === "/api/assistant/conversations/1") return { body: detail(1, "Question une") };

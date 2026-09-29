@@ -7,7 +7,7 @@ import { AssistantPanelProvider } from "./AssistantPanel";
 afterEach(() => vi.unstubAllGlobals());
 
 test("le bouton ✨ ouvre le panneau avec le titre en contexte et les questions prêtes", async () => {
-  mockFetch((url) => ({ body: url === "/api/assistant/settings" ? { configured: true, source: "settings", model: "claude-opus-5", models: [] } : {} }));
+  mockFetch((url) => ({ body: url === "/api/assistant/status" ? { available: true, reason: null, spent_usd: 0.5, limit_usd: 5, model: "Claude Opus 5 (recommandé)" } : {} }));
   renderWithProviders(<AssistantPanelProvider><AskAiButton security={{ id: 1, name: "LVMH" }} label /></AssistantPanelProvider>);
   await userEvent.click(screen.getByRole("button", { name: "Demander à l'IA à propos de LVMH" }));
   expect(await screen.findByRole("dialog", { name: "Assistant IA — LVMH" })).toBeInTheDocument();

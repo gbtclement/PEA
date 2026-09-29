@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { AssistantStatus } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
-import { useAssistantSettings, useConversation } from "./api";
+import { useAssistantStatus, useConversation } from "./api";
 import { ChatMessages } from "./ChatMessages";
 import { Composer } from "./Composer";
 import { GENERAL_SUGGESTIONS, SECURITY_SUGGESTIONS } from "./suggestions";
@@ -17,7 +17,7 @@ type Props = {
 };
 
 export function ChatView({ conversationId, securityId, securityName, onConversationCreated, compact }: Props) {
-  const settings = useAssistantSettings();
+  const status = useAssistantStatus();
   // Garde l'id créé pendant l'envoi, même si le parent ne le renvoie pas tout de suite.
   const [currentId, setCurrentId] = useState(conversationId);
   const conversation = useConversation(currentId);
@@ -35,18 +35,8 @@ export function ChatView({ conversationId, securityId, securityName, onConversat
     bottom.current?.scrollIntoView?.({ block: "end" });
   }, [messages.length, chat.pending?.text]);
 
-  if (settings.isPending) return <Skeleton className="h-40 w-full" />;
-  if (!settings.data?.configured) {
-    return (
-      <div className="rounded-xl border border-dashed border-border bg-white p-6 text-sm">
-        <p className="font-medium">L'assistant a besoin de votre clé API Claude.</p>
-        <p className="mt-1 text-muted-foreground">
-          Créez-la sur console.anthropic.com puis collez-la dans les Réglages. Elle reste chiffrée sur votre ordinateur.
-        </p>
-        <Link to="/reglages" className="mt-3 inline-block font-medium text-primary">Ouvrir les Réglages</Link>
-      </div>
-    );
-  }
+  if (status.isPending) return <Skeleton className="h-40 w-full" />;
+  if (status.data && !status.data.available) return <Unavailable status={status.data} />;
   const empty = messages.length === 0 && !chat.pending;
   const suggestions = securityId ? SECURITY_SUGGESTIONS : GENERAL_SUGGESTIONS;
   return (
@@ -72,7 +62,40 @@ export function ChatView({ conversationId, securityId, securityName, onConversat
         <div ref={bottom} />
       </div>
       <Composer onSend={chat.send} onStop={chat.stop} streaming={chat.streaming} />
+      {status.data && (
+        <p className="text-center text-xs text-muted-foreground">
+          Modèle : {status.data.model} · ce mois-ci : {usd(status.data.spent_usd)} $ sur {usd(status.data.limit_usd)} $
+        </p>
+      )}
       <p className="text-center text-xs text-muted-foreground">Outil d'aide à la décision : ceci n'est pas un conseil en investissement.</p>
+    </div>
+  );
+}
+
+const usd = (value: number) => value.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const UNAVAILABLE = {
+  premium: {
+    title: "Réservé aux membres Premium",
+    text: "L'assistant IA fait partie de l'offre Premium. L'abonnement arrivera bientôt ; en attendant, l'administrateur peut activer Premium sur votre compte.",
+  },
+  not_configured: {
+    title: "Assistant pas encore configuré",
+    text: "La clé Claude n'est pas encore renseignée sur le serveur. L'administrateur doit l'ajouter dans le fichier .env (ANTHROPIC_API_KEY).",
+  },
+  limit_reached: { title: "Limite du mois atteinte", text: "" },
+} as const;
+
+function Unavailable({ status }: { status: AssistantStatus }) {
+  const copy = UNAVAILABLE[status.reason ?? "premium"];
+  return (
+    <div className="rounded-xl border border-dashed border-border bg-white p-6 text-sm">
+      <p className="font-medium">{copy.title}</p>
+      <p className="mt-1 text-muted-foreground">
+        {status.reason === "limit_reached"
+          ? `Vous avez utilisé ${usd(status.spent_usd)} $ sur ${usd(status.limit_usd)} $ ce mois-ci. L'assistant sera de nouveau disponible le 1er du mois prochain.`
+          : copy.text}
+      </p>
     </div>
   );
 }
