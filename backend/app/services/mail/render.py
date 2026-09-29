@@ -18,6 +18,8 @@ KINDS = frozenset(SUBJECTS)
 
 # Phrases des alertes de sécurité (C4) ; les étapes suivantes en ajoutent.
 SECURITY_EVENTS = {
+    "google_linked": ("Un compte Google vient d'être associé à votre compte PEA Radar : vous pouvez maintenant vous "
+                      "connecter avec Google. Si ce n'était pas vous, choisissez un nouveau mot de passe."),
     "password_reset": "Le mot de passe de votre compte vient d'être réinitialisé.",
     "signup_attempt": ("Quelqu'un vient d'essayer de créer un compte PEA Radar avec votre adresse. Vous avez déjà un "
                        "compte : si c'était vous, connectez-vous ou choisissez un nouveau mot de passe."),

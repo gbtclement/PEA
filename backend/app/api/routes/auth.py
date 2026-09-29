@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
 from app.api.cookies import clear_auth_cookies, set_auth_cookies, set_device_cookie
-from app.api.deps import get_breach_checker, get_captcha
+from app.api.deps import get_breach_checker, get_captcha, get_google_client
 from app.api.origin import check_origin
 from app.core.config import get_settings
 from app.core.current_user import get_auth_session, get_now
@@ -12,12 +12,13 @@ from app.core.db import get_db
 from app.core.security import normalize_email, password_problem
 from app.models import AuthSession, User
 from app.schemas.auth import (
-    EmailIn, LoginIn, MeOut, NoticeOut, RegisterIn, ResetPasswordIn, TokenIn, VerifyEmailIn,
+    AuthConfigOut, EmailIn, LoginIn, MeOut, NoticeOut, RegisterIn, ResetPasswordIn, TokenIn, VerifyEmailIn,
 )
 from app.services import ratelimit
 from app.services.auth import accounts
 from app.services.auth.breach import BreachChecker
 from app.services.auth.captcha import CaptchaVerifier
+from app.services.auth.google import GoogleClient
 from app.services.auth.codes import CodeCheck
 from app.services.auth.devices import remember_device
 from app.services.auth.sessions import DEVICE_COOKIE, SESSION_COOKIE, open_session, resolve_session, revoke_session
@@ -210,3 +211,8 @@ def not_me(payload: TokenIn, request: Request, db: Session = Depends(get_db),
     db.commit()
     return NoticeOut(message="Tous vos appareils ont été déconnectés. Un lien pour choisir un nouveau mot de passe "
                               "vient de vous être envoyé.")
+
+
+@router.get("/config", response_model=AuthConfigOut)
+def auth_config(google: GoogleClient | None = Depends(get_google_client)) -> AuthConfigOut:
+    return AuthConfigOut(google=google is not None, turnstile_site_key=get_settings().turnstile_site_key or None)
