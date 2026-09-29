@@ -11,7 +11,7 @@ PRIVATE = [
     ("GET", "/api/portfolio"), ("GET", "/api/portfolio/history"),
     ("PUT", "/api/favorites/1"), ("DELETE", "/api/favorites/1"),
     ("GET", "/api/settings"), ("PUT", "/api/settings"),
-    ("GET", "/api/assistant/conversations"),
+    ("GET", "/api/assistant/status"), ("GET", "/api/assistant/conversations"),
     ("GET", "/api/forecasts"), ("GET", "/api/forecasts/signals"), ("GET", "/api/forecasts/track-record"),
     ("GET", "/api/securities/1/forecast"),
     ("PATCH", "/api/securities/1/eligibility"),

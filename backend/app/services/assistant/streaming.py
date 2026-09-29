@@ -12,6 +12,7 @@ import uuid
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 import anyio.to_thread
 from sqlalchemy import func
@@ -20,6 +21,7 @@ from sqlalchemy.orm import Session
 from app.models import ChatMessage, Conversation, User
 from app.repositories.assistant import conversation_out, message_out
 from app.services.assistant.catalog import AssistantModel, estimate_cost
+from app.services.assistant.usage import add_cost
 from app.services.assistant.chat import ChatRun
 from app.services.assistant.tools import ToolError, run_tool
 
@@ -59,6 +61,7 @@ def save_reply(db: Session, conversation_id: int, model: AssistantModel, run: Ch
     conv.output_tokens += run.usage.output_tokens
     conv.cost_usd += cost
     conv.updated_at = func.now()
+    add_cost(db, conv.user_id, cost, datetime.now(UTC))
     db.commit()
     return msg, conv
 

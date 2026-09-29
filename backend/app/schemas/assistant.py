@@ -9,6 +9,14 @@ class ModelOut(BaseModel):
     label: str
 
 
+class AssistantStatusOut(BaseModel):
+    available: bool
+    reason: Literal["premium", "not_configured", "limit_reached"] | None
+    spent_usd: float
+    limit_usd: float
+    model: str  # libellé du modèle par défaut
+
+
 class ConversationIn(BaseModel):
     security_id: int | None = None
 
