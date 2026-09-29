@@ -40,6 +40,9 @@ services:
 
   web:
     build: ./frontend
+    environment:
+      HSTS_ENABLED: ${HSTS_ENABLED:-false}
+      NGINX_ENVSUBST_FILTER: "^HSTS_"  # ne remplacer que nos variables, jamais $host & co
     ports:
       - "8095:80"
     depends_on:
