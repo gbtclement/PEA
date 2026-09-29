@@ -6,6 +6,7 @@ import pytest
 
 from app.core.config import get_settings
 from app.models import ChatMessage
+from app.repositories.app_settings import get_app_settings
 from app.services.assistant.chat import friendly_error
 from tests.factories import make_security
 from tests.fake_llm import error_turn, text_turn, tool_turn
@@ -14,10 +15,9 @@ KEY = "sk-ant-test-1234567890abcdef"
 
 
 @pytest.fixture(autouse=True)
-def configured(client, monkeypatch):
-    monkeypatch.setattr(get_settings(), "app_secret", "test-secret")
-    monkeypatch.setattr(get_settings(), "anthropic_api_key", "")
-    client.put("/api/assistant/settings", json={"api_key": KEY, "model": "claude-opus-5"})
+def configured(user, monkeypatch):
+    monkeypatch.setattr(get_settings(), "anthropic_api_key", KEY)
+    user.is_premium = True
 
 
 def events(response) -> list[dict]:
@@ -138,8 +138,8 @@ def test_history_and_security_context_sent(client, db, fake_llm):
     assert client.get(f"/api/assistant/conversations/{cid}").json()["title"] == "À propos de LVMH"
 
 
-def test_haiku_has_no_thinking_nor_fallback(client, fake_llm):
-    client.put("/api/assistant/settings", json={"model": "claude-haiku-4-5"})
+def test_haiku_has_no_thinking_nor_fallback(client, db, fake_llm):
+    get_app_settings(db).ai_model = "claude-haiku-4-5"
     fake_llm.turns = [text_turn("ok")]
     send(client, new_conversation(client))
     call = fake_llm.calls[0]
@@ -147,10 +147,10 @@ def test_haiku_has_no_thinking_nor_fallback(client, fake_llm):
     assert {"type": "web_search_20250305", "name": "web_search", "max_uses": 3} in call["tools"]
 
 
-def test_no_key_is_409(client, db, fake_llm):
-    client.put("/api/assistant/settings", json={"remove_key": True, "model": "claude-opus-5"})
+def test_no_key_is_409(client, db, fake_llm, monkeypatch):
+    monkeypatch.setattr(get_settings(), "anthropic_api_key", "")
     response = send(client, new_conversation(client))
-    assert response.status_code == 409 and "Réglages" in response.json()["detail"]
+    assert response.status_code == 409 and response.json()["detail"]["code"] == "ai_not_configured"
     assert db.query(ChatMessage).count() == 0
 
 

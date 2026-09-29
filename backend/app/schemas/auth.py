@@ -12,6 +12,9 @@ class MeOut(BaseModel):
     last_name: str
     role: str
     is_premium: bool
+    has_password: bool
+    has_google: bool
+    has_premium: bool  # Premium ou admin : accès à l'assistant
 
 
 class NoticeOut(BaseModel):
