@@ -41,7 +41,7 @@ test("inscription : envoie le formulaire puis demande le code", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Créer mon compte" }));
   await waitFor(() => expect(router.state.location.pathname).toBe("/verifier-email"));
   expect(router.state.location.search).toBe("?adresse=jean%40example.com");
-  expect(JSON.parse(fetchMock.mock.calls[0][1]!.body as string)).toMatchObject({ email: "jean@example.com", accept_terms: true });
+  expect(JSON.parse(fetchMock.mock.calls.find(([u]) => u === "/api/auth/register")![1]!.body as string)).toMatchObject({ email: "jean@example.com", accept_terms: true });
 });
 
 test("inscription : mot de passe trop court refusé sans appel", async () => {
@@ -49,12 +49,12 @@ test("inscription : mot de passe trop court refusé sans appel", async () => {
   renderAuth("/inscription");
   await userEvent.type(screen.getByLabelText("Mot de passe"), "court");
   await userEvent.click(screen.getByRole("button", { name: "Créer mon compte" }));
-  expect(fetchMock).not.toHaveBeenCalled();
+  expect(fetchMock.mock.calls.filter(([u]) => u !== "/api/auth/config")).toEqual([]);
 });
 
 test("connexion : erreur affichée, puis retour à la page demandée", async () => {
   let attempt = 0;
-  mockFetch(() => (attempt++ === 0
+  mockFetch((url) => (url === "/api/auth/config" ? { body: {} } : attempt++ === 0
     ? { status: 401, body: { detail: { code: "invalid_credentials", message: "Adresse mail ou mot de passe incorrect." } } }
     : { body: { email: "jean@example.com" } }));
   const router = renderAuth("/connexion?suite=%2Fportefeuille");
