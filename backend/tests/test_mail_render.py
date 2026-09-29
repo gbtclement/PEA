@@ -11,6 +11,8 @@ CONTEXTS = {
     "reset_password": {"first_name": "Jean", "token": "abc_123", "valid_minutes": 30},
     "security_alert": {"first_name": "Jean", "event": "password_reset"},
     "new_device": {"first_name": "Jean", "device": "Chrome sur Windows", "when": datetime(2026, 9, 28, 12, 5, tzinfo=UTC), "token": "tok"},
+    "account_deleted": {"first_name": "Jean"},
+    "test": {"first_name": "Jean"},
 }
 
 
@@ -48,3 +50,11 @@ def test_long_reset_validity_is_shown_in_hours():
     mail = render("reset_password", {**CONTEXTS["reset_password"], "valid_minutes": 1440}, base_url=BASE)
     assert "24 heures" in mail.text and "24 heures" in mail.html
     assert "30 minutes" in render("reset_password", CONTEXTS["reset_password"], base_url=BASE).text
+
+
+def test_account_deleted_and_admin_alerts_render():
+    deleted = render("account_deleted", {"first_name": "Jean"}, base_url=BASE)
+    assert deleted.subject == "Votre compte PEA Radar a été supprimé" and "Jean" in deleted.text
+    for event in ("admin_updated", "email_changed_by_admin", "password_changed", "email_changed"):
+        mail = render("security_alert", {"first_name": "Jean", "event": event}, base_url=BASE)
+        assert mail.text.strip()

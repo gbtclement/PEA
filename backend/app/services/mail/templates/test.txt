@@ -1,0 +1,5 @@
+Bonjour {{ first_name }},
+
+Ce mail de test confirme que l'envoi fonctionne depuis PEA Radar.
+
+{% include "_footer.txt" %}

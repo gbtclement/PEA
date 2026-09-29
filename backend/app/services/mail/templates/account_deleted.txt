@@ -1,0 +1,7 @@
+Bonjour {{ first_name }},
+
+Votre compte PEA Radar et toutes ses données (ordres, favoris, conversations, réglages) viennent d'être supprimés.
+
+Si vous pensez qu'il s'agit d'une erreur, répondez à ce mail.
+
+{% include "_footer.txt" %}
