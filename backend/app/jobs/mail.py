@@ -5,6 +5,7 @@ from sqlalchemy import select
 
 from app.jobs.context import JobContext
 from app.models import EmailLog
+from app.services.mail.outbox import forget_secrets
 
 logger = logging.getLogger(__name__)
 RETRY_DELAYS = (timedelta(minutes=1), timedelta(minutes=5), timedelta(minutes=30))
@@ -31,12 +32,14 @@ def send_pending_emails(ctx: JobContext) -> int:
                 row.error = str(exc)[:300]
                 if row.attempts > len(RETRY_DELAYS):
                     row.status = "failed"
+                    forget_secrets(row)
                     logger.error("Mail %s abandonné après %d essais : %s", row.id, row.attempts, row.error)
                 else:
                     row.next_attempt_at = now + RETRY_DELAYS[row.attempts - 1]
                     logger.warning("Échec d'envoi du mail %s (essai %d) : %s", row.id, row.attempts, row.error)
             else:
                 row.status, row.sent_at, row.error = "sent", now, None
+                forget_secrets(row)
                 sent += 1
         session.commit()
     return sent
