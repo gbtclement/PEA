@@ -1,8 +1,11 @@
 import hashlib
+from datetime import UTC, datetime, timedelta
 
 import httpx
 
 from app.services.auth.breach import HibpChecker, suffix_found
+from app.services.auth.codes import issue_link_token
+from tests.factories import make_user
 
 FORM = {"first_name": "Jean", "last_name": "Dupont", "email": "jean@example.com",
         "password": "motdepasse123", "accept_terms": True}
@@ -36,9 +39,21 @@ def test_a_silent_service_is_ignored(monkeypatch):
     assert not HibpChecker().is_pwned("motdepasse123")
 
 
-def test_signup_and_reset_refuse_a_pwned_password(anon_client, fake_breach):
+def test_signup_and_reset_refuse_a_pwned_password(anon_client, db, fake_breach):
     fake_breach.pwned.add("motdepasse123")
     refused = anon_client.post("/api/auth/register", json=FORM)
     assert refused.status_code == 400 and refused.json()["detail"]["code"] == "pwned_password"
-    reset = anon_client.post("/api/auth/reset-password", json={"token": "x" * 43, "password": "motdepasse123"})
+    token = issue_link_token(db, make_user(db, "paul@example.com"), "reset_password", datetime.now(UTC),
+                             timedelta(minutes=30))
+    reset = anon_client.post("/api/auth/reset-password", json={"token": token, "password": "motdepasse123"})
     assert reset.json()["detail"]["code"] == "pwned_password"
+    retry = anon_client.post("/api/auth/reset-password", json={"token": token, "password": "une-phrase-bien-a-moi"})
+    assert retry.status_code == 200  # le lien reste valable après un refus
+
+
+def test_a_bad_reset_link_never_reaches_the_breach_service(anon_client, fake_breach):
+    calls = []
+    fake_breach.is_pwned = lambda password: calls.append(password) or True
+    reset = anon_client.post("/api/auth/reset-password", json={"token": "x" * 43, "password": "motdepasse123"})
+    assert reset.status_code == 400 and reset.json()["detail"]["code"] == "invalid_token"
+    assert calls == []  # pas d'appel sortant pour un lien faux

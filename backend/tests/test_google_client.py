@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import hmac
 import time
 from datetime import UTC, datetime, timedelta
 
@@ -8,7 +9,7 @@ import pytest
 from joserfc import jwt
 from joserfc.jwk import RSAKey
 
-from app.core.security import pkce_challenge, sign, unsign
+from app.core.security import _b64, pkce_challenge, sign, unsign
 from app.services.auth.google import GoogleError, GoogleOIDC
 
 NOW = datetime(2026, 9, 28, 12, 0, tzinfo=UTC)
@@ -68,3 +69,12 @@ def test_identify_refuses_a_foreign_or_replayed_token(monkeypatch, signing_key, 
     _mock_google(monkeypatch, signing_key, _id_token(signing_key, **claims))
     with pytest.raises(GoogleError):
         GoogleOIDC("id-client", "secret").identify(code="c", code_verifier="v", nonce="n", redirect_uri="r")
+
+
+def test_an_empty_secret_never_signs_nor_verifies():
+    now = datetime(2026, 9, 29, tzinfo=UTC)
+    with pytest.raises(ValueError):
+        sign({"sub": "x"}, "", now)
+    forged = sign({"sub": "x"}, "n-importe-quoi", now).rsplit(".", 1)[0]
+    empty_key_mac = _b64(hmac.new(b"", forged.encode(), hashlib.sha256).digest())
+    assert unsign(f"{forged}.{empty_key_mac}", "", now, timedelta(minutes=5)) is None

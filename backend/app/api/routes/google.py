@@ -93,7 +93,9 @@ def callback(request: Request, state: str | None = None, code: str | None = None
 
 
 @router.get("/pending", response_model=GooglePendingOut)
-def pending(request: Request, now: datetime = Depends(get_now)) -> GooglePendingOut:
+def pending(request: Request, now: datetime = Depends(get_now),
+            google: GoogleClient | None = Depends(get_google_client)) -> GooglePendingOut:
+    _require(google)
     data = unsign(request.cookies.get(PENDING_COOKIE), get_settings().app_secret, now, PENDING_MAX_AGE)
     if data is None:
         raise HTTPException(404, detail={"code": "google_expired", "message": "Recommencez la connexion avec Google."})
@@ -102,7 +104,8 @@ def pending(request: Request, now: datetime = Depends(get_now)) -> GooglePending
 
 @router.post("/complete", response_model=MeOut, dependencies=[Depends(check_origin)])
 def complete(payload: GoogleCompleteIn, request: Request, response: Response, db: Session = Depends(get_db),
-             now: datetime = Depends(get_now)) -> MeOut:
+             now: datetime = Depends(get_now), google: GoogleClient | None = Depends(get_google_client)) -> MeOut:
+    _require(google)  # Google éteint (ou APP_SECRET vide) : aucun cookie « en attente » n'est accepté
     data = unsign(request.cookies.get(PENDING_COOKIE), get_settings().app_secret, now, PENDING_MAX_AGE)
     if data is None:
         raise fail(400, "google_expired", "Recommencez la connexion avec Google.")

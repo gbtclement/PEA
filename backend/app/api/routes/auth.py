@@ -19,7 +19,7 @@ from app.services.auth import accounts
 from app.services.auth.breach import BreachChecker
 from app.services.auth.captcha import CaptchaVerifier
 from app.services.auth.google import GoogleClient
-from app.services.auth.codes import CodeCheck
+from app.services.auth.codes import CodeCheck, link_token_valid
 from app.services.auth.devices import remember_device
 from app.services.auth.sessions import DEVICE_COOKIE, SESSION_COOKIE, open_session, resolve_session, revoke_session
 from app.services.security_log import log_event
@@ -192,6 +192,8 @@ def forgot_password(payload: EmailIn, request: Request, db: Session = Depends(ge
 @router.post("/reset-password", response_model=NoticeOut, dependencies=[Depends(check_origin)])
 def reset_password(payload: ResetPasswordIn, request: Request, db: Session = Depends(get_db),
                    now: datetime = Depends(get_now), breach: BreachChecker = Depends(get_breach_checker)) -> NoticeOut:
+    if not link_token_valid(db, payload.token, "reset_password", now):
+        raise fail(400, *INVALID_TOKEN)  # avant tout appel à Have I Been Pwned : pas de relais gratuit
     check_password_rules(payload.password, breach)
     user = accounts.reset_password(db, payload.token, payload.password, now)
     if user is None:

@@ -114,3 +114,20 @@ def test_google_is_404_when_not_configured(anon_client):
     anon_client.app.dependency_overrides[get_google_client] = lambda: None
     assert anon_client.get("/api/auth/google/start").status_code == 404
     assert anon_client.get("/api/auth/config").json()["google"] is False
+
+
+def test_pending_google_sign_up_is_404_when_google_is_off(anon_client, db):
+    from datetime import UTC, datetime
+
+    from app.api.deps import get_google_client
+    from app.core.config import get_settings
+    from app.core.security import sign
+
+    anon_client.app.dependency_overrides[get_google_client] = lambda: None
+    forged = sign({"sub": "x", "email": "chef@example.com", "first_name": "A", "last_name": "B"},
+                  get_settings().app_secret, datetime.now(UTC))
+    anon_client.cookies.set("pea_google_pending", forged, path="/api/auth/google")
+    assert anon_client.get("/api/auth/google/pending").status_code == 404
+    finish = anon_client.post("/api/auth/google/complete", json={"first_name": "A", "last_name": "B", "accept_terms": True})
+    assert finish.status_code == 404
+    assert db.scalar(select(User).where(User.email == "chef@example.com")) is None

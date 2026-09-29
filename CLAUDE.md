@@ -153,4 +153,5 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
 - **En-têtes nginx** (`frontend/nginx/security-headers.conf`, inclus dans `server` et dans tout `location` qui a ses propres `add_header`) : CSP stricte, `X-Frame-Options DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`.
   - **Ne jamais affaiblir la CSP de l'application pour une page de documentation** : au besoin, une CSP propre à `location ~ ^/(guide|documentation|docsify)/`.
   - `HSTS_ENABLED=true` (lu par `web`) seulement une fois le HTTPS en place.
+  - Derrière un proxy HTTPS devant nginx, ajouter `set_real_ip_from` / `real_ip_header` : sinon toutes les limites par IP (`client_ip()`, dernière entrée de `X-Forwarded-For`) visent l'IP du proxy.
 - **Fuseau** : `Europe/Paris` pour le calendrier de bourse (`services/market_calendar.py`).

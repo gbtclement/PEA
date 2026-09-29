@@ -99,6 +99,8 @@ def _unb64(text: str) -> bytes:
 
 def sign(data: dict, secret: str, now: datetime) -> str:
     """Valeur de cookie signée (HMAC-SHA256), horodatée. Lisible par le navigateur : n'y mettre rien de secret."""
+    if not secret:
+        raise ValueError("APP_SECRET manquant : impossible de signer")
     payload = _b64(json.dumps({"d": data, "t": int(now.timestamp())}, separators=(",", ":")).encode())
     mac = _b64(hmac.new(secret.encode(), payload.encode(), hashlib.sha256).digest())
     return f"{payload}.{mac}"
@@ -106,7 +108,7 @@ def sign(data: dict, secret: str, now: datetime) -> str:
 
 def unsign(value: str | None, secret: str, now: datetime, max_age: timedelta) -> dict | None:
     """Le contenu si la signature est bonne et la valeur assez récente, sinon None."""
-    if not value or "." not in value:
+    if not secret or not value or "." not in value:  # clé vide : n'importe qui pourrait signer
         return None
     payload, _, mac = value.rpartition(".")
     expected = _b64(hmac.new(secret.encode(), payload.encode(), hashlib.sha256).digest())

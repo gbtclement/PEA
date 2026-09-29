@@ -114,7 +114,7 @@ Chaque tentative est comptée dans `rate_limit_hits` sur une fenêtre glissante 
 
 Après **3** mots de passe faux (par adresse ou par IP, `CAPTCHA_AFTER`), la connexion exige Turnstile. Une connexion réussie remet à zéro le compteur de l'adresse.
 
-L'IP retenue est la **dernière** de `X-Forwarded-For`, celle qu'ajoute notre nginx. Derrière un autre proxy (Cloudflare, hébergeur), il faudra revoir `client_ip()` dans `routes/auth.py`.
+L'IP retenue est la **dernière** de `X-Forwarded-For`, celle qu'ajoute notre nginx. Derrière un proxy HTTPS placé devant nginx, toutes les requêtes sembleraient venir de ce proxy : configurer `set_real_ip_from` dans nginx avant la mise en ligne (voir [SEO et mise en ligne](seo.md#à-prévoir-avant-une-mise-en-ligne)).
 
 Débloquer un compte à la main :
 
