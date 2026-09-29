@@ -1,4 +1,5 @@
 import { createBrowserRouter, type RouteObject } from "react-router";
+import { RequireAdmin } from "@/features/auth/RequireAdmin";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { LegalPage } from "@/features/legal/LegalPage";
 import { ScreenerPage } from "@/features/screener/ScreenerPage";
@@ -35,6 +36,10 @@ export const routes: RouteObject[] = [
           { path: "portefeuille", lazy: async () => ({ Component: (await import("@/features/portfolio/PortfolioPage")).PortfolioPage }) },
           { path: "assistant", lazy: async () => ({ Component: (await import("@/features/assistant/AssistantPage")).AssistantPage }) },
           { path: "reglages", element: <SettingsPage /> },
+          {
+            element: <RequireAdmin />,
+            children: [{ path: "admin", lazy: async () => ({ Component: (await import("@/features/admin/AdminPage")).AdminPage }) }],
+          },
         ],
       },
       { path: "*", element: <NotFoundPage /> },

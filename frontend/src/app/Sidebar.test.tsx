@@ -15,8 +15,14 @@ test("met en évidence la page courante", () => {
   expect(screen.getByRole("link", { name: "Accueil" })).not.toHaveAttribute("aria-current");
 });
 
-test("renvoie vers le guide, servi hors de l'application, mais pas vers la documentation admin", () => {
-  render(<MemoryRouter><Sidebar /></MemoryRouter>);
+test("ajoute l'entrée Admin pour un administrateur", () => {
+  render(<MemoryRouter><Sidebar admin /></MemoryRouter>);
+  const nav = screen.getByRole("navigation", { name: "Navigation principale" });
+  expect(Array.from(nav.querySelectorAll("a")).map((a) => a.textContent).at(-1)).toBe("Admin");
+});
+
+test("renvoie vers le guide, servi hors de l'application, mais jamais vers la documentation admin", () => {
+  render(<MemoryRouter><Sidebar admin /></MemoryRouter>);
   expect(screen.getByRole("link", { name: "Guide" })).toHaveAttribute("href", "/guide/");
   expect(document.querySelector("a[href^='/documentation']")).toBeNull();
 });

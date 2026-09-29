@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router";
-import { BookOpen, House, Layers, Radar, Search, Settings, Sparkles, Telescope, Wallet } from "lucide-react";
+import { BookOpen, House, Layers, Radar, Search, Settings, ShieldCheck, Sparkles, Telescope, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const NAV_ITEMS = [
@@ -13,7 +13,10 @@ export const NAV_ITEMS = [
   { to: "/reglages", label: "Réglages", icon: Settings, end: false },
 ];
 
-export function Sidebar({ footer, account }: { footer?: ReactNode; account?: ReactNode }) {
+const ADMIN_ITEM = { to: "/admin", label: "Admin", icon: ShieldCheck, end: false };
+
+export function Sidebar({ footer, account, admin = false }: { footer?: ReactNode; account?: ReactNode; admin?: boolean }) {
+  const items = admin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
   return (
     <aside className="fixed inset-y-0 left-0 flex w-60 flex-col border-r border-border bg-white">
       <div className="flex items-center gap-2.5 px-6 py-5">
@@ -23,7 +26,7 @@ export function Sidebar({ footer, account }: { footer?: ReactNode; account?: Rea
         <span className="text-lg font-semibold tracking-tight">PEA Radar</span>
       </div>
       <nav aria-label="Navigation principale" className="flex-1 space-y-1 px-3">
-        {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+        {items.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
@@ -41,7 +44,7 @@ export function Sidebar({ footer, account }: { footer?: ReactNode; account?: Rea
         ))}
       </nav>
       {/* Le guide est servi par nginx hors de l'application : lien classique, pas NavLink.
-          La documentation admin (/documentation/) n'est volontairement pas liée. */}
+          La documentation admin (/documentation/) est liée depuis la page Admin, pas d'ici. */}
       {account && <div className="border-t border-border px-4 py-3">{account}</div>}
       <div className="px-3 pb-3">
         <a

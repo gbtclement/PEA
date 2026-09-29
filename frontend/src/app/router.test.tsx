@@ -132,3 +132,17 @@ test("les pages légales sont publiques", async () => {
   expect(await screen.findByRole("heading", { level: 1, name: "Politique de confidentialité" }, { timeout: 5000 })).toBeInTheDocument();
   expect(screen.queryByRole("link", { name: "Créer un compte gratuit" })).toBeNull();
 });
+
+test.each([["user", "Page introuvable"], ["admin", "Admin"]])("un compte %s qui ouvre /admin voit « %s »", async (role, title) => {
+  mockFetch((url) => (url === "/api/me" ? { body: { ...ME, role } }
+    : url.startsWith("/api/admin/users") ? { body: { items: [], total: 0, page: 1, page_size: 50 } }
+    : url === "/api/admin/settings" ? { body: { ai_model: "claude-opus-5", ai_monthly_cost_limit_usd: 5, models: [] } }
+    : { body: body(url) }));
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <RouterProvider router={createMemoryRouter(routes, { initialEntries: ["/admin"] })} />
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByRole("heading", { level: 1, name: title }, { timeout: 5000 })).toBeInTheDocument();
+  expect(screen.queryAllByRole("link", { name: "Admin" }).length > 0).toBe(role === "admin");
+});
