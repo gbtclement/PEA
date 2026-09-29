@@ -174,6 +174,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/admin-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Check
+         * @description Pour `auth_request` de nginx (/documentation/) : 204 pour un admin connecté, 401 sinon.
+         */
+        get: operations["admin_check_api_auth_admin_check_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/google/start": {
         parameters: {
             query?: never;
@@ -253,6 +273,183 @@ export interface paths {
         get: operations["read_me_api_me_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Me */
+        patch: operations["update_me_api_me_patch"];
+        trace?: never;
+    };
+    "/api/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Password */
+        post: operations["change_password_api_me_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Request Email Change */
+        post: operations["request_email_change_api_me_email_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/email/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Email Change */
+        post: operations["confirm_email_change_api_me_email_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sessions */
+        get: operations["list_sessions_api_me_sessions_get"];
+        put?: never;
+        post?: never;
+        /** Revoke Other Sessions */
+        delete: operations["revoke_other_sessions_api_me_sessions_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke One Session */
+        delete: operations["revoke_one_session_api_me_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin List Users */
+        get: operations["admin_list_users_api_admin_users_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Admin Delete User */
+        delete: operations["admin_delete_user_api_admin_users__user_id__delete"];
+        options?: never;
+        head?: never;
+        /** Admin Update User */
+        patch: operations["admin_update_user_api_admin_users__user_id__patch"];
+        trace?: never;
+    };
+    "/api/admin/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin Read Settings */
+        get: operations["admin_read_settings_api_admin_settings_get"];
+        /** Admin Update Settings */
+        put: operations["admin_update_settings_api_admin_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/config-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Admin Config Status
+         * @description Ce qui est renseigné dans .env : oui ou non, jamais la valeur.
+         */
+        get: operations["admin_config_status_api_admin_config_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/test-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Admin Test Email */
+        post: operations["admin_test_email_api_admin_test_email_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -586,17 +783,16 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/assistant/settings": {
+    "/api/assistant/status": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Read Assistant Settings */
-        get: operations["read_assistant_settings_api_assistant_settings_get"];
-        /** Update Assistant Settings */
-        put: operations["update_assistant_settings_api_assistant_settings_put"];
+        /** Assistant Status */
+        get: operations["assistant_status_api_assistant_status_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -780,26 +976,87 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AssistantSettingsOut */
-        AssistantSettingsOut: {
-            /** Configured */
-            configured: boolean;
-            /** Source */
-            source: ("settings" | "env") | null;
-            /** Model */
-            model: string;
-            /** Models */
-            models: components["schemas"]["ModelOut"][];
+        /** AdminSettingsIn */
+        AdminSettingsIn: {
+            /** Ai Model */
+            ai_model: string;
+            /** Ai Monthly Cost Limit Usd */
+            ai_monthly_cost_limit_usd: number;
         };
-        /** AssistantSettingsUpdate */
-        AssistantSettingsUpdate: {
-            /** Api Key */
-            api_key?: string | null;
+        /** AdminSettingsOut */
+        AdminSettingsOut: {
+            /** Ai Model */
+            ai_model: string;
+            /** Ai Monthly Cost Limit Usd */
+            ai_monthly_cost_limit_usd: number;
+            /** Models */
+            models: components["schemas"]["ModelChoice"][];
+        };
+        /** AdminUserListOut */
+        AdminUserListOut: {
+            /** Items */
+            items: components["schemas"]["AdminUserOut"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** AdminUserOut */
+        AdminUserOut: {
             /**
-             * Remove Key
-             * @default false
+             * Id
+             * Format: uuid
              */
-            remove_key: boolean;
+            id: string;
+            /** Email */
+            email: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Role */
+            role: string;
+            /** Is Premium */
+            is_premium: boolean;
+            /** Verified */
+            verified: boolean;
+            /** Has Password */
+            has_password: boolean;
+            /** Has Google */
+            has_google: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Last Login At */
+            last_login_at: string | null;
+        };
+        /** AdminUserUpdate */
+        AdminUserUpdate: {
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Role */
+            role?: ("user" | "admin") | null;
+            /** Is Premium */
+            is_premium?: boolean | null;
+        };
+        /** AssistantStatusOut */
+        AssistantStatusOut: {
+            /** Available */
+            available: boolean;
+            /** Reason */
+            reason: ("premium" | "not_configured" | "limit_reached") | null;
+            /** Spent Usd */
+            spent_usd: number;
+            /** Limit Usd */
+            limit_usd: number;
             /** Model */
             model: string;
         };
@@ -846,6 +1103,11 @@ export interface components {
             /** Volume */
             volume: number | null;
         };
+        /** CodeIn */
+        CodeIn: {
+            /** Code */
+            code: string;
+        };
         /** ComponentOut */
         ComponentOut: {
             /** Key */
@@ -860,6 +1122,24 @@ export interface components {
             message: string;
             /** Group */
             group: string;
+        };
+        /**
+         * ConfigStatusOut
+         * @description Ce qui est renseigné dans .env : oui ou non, jamais la valeur.
+         */
+        ConfigStatusOut: {
+            /** Claude */
+            claude: boolean;
+            /** Smtp */
+            smtp: boolean;
+            /** Google */
+            google: boolean;
+            /** Turnstile */
+            turnstile: boolean;
+            /** App Secret */
+            app_secret: boolean;
+            /** Admin Email */
+            admin_email: boolean;
         };
         /** ConversationDetail */
         ConversationDetail: {
@@ -943,10 +1223,25 @@ export interface components {
             /** Penalty Fee */
             penalty_fee: number;
         };
+        /** DeleteUserIn */
+        DeleteUserIn: {
+            /** Confirm Email */
+            confirm_email: string;
+        };
         /** EligibilityUpdate */
         EligibilityUpdate: {
             /** Override */
             override: ("eligible" | "non_eligible") | null;
+        };
+        /** EmailChangeIn */
+        EmailChangeIn: {
+            /**
+             * New Email
+             * Format: email
+             */
+            new_email: string;
+            /** Password */
+            password?: string | null;
         };
         /** EmailIn */
         EmailIn: {
@@ -1191,6 +1486,12 @@ export interface components {
             role: string;
             /** Is Premium */
             is_premium: boolean;
+            /** Has Password */
+            has_password: boolean;
+            /** Has Google */
+            has_google: boolean;
+            /** Has Premium */
+            has_premium: boolean;
         };
         /** MessageIn */
         MessageIn: {
@@ -1222,8 +1523,8 @@ export interface components {
              */
             created_at: string;
         };
-        /** ModelOut */
-        ModelOut: {
+        /** ModelChoice */
+        ModelChoice: {
             /** Id */
             id: string;
             /** Label */
@@ -1303,6 +1604,13 @@ export interface components {
             /** Note */
             note: string | null;
         };
+        /** PasswordChangeIn */
+        PasswordChangeIn: {
+            /** Current Password */
+            current_password?: string | null;
+            /** New Password */
+            new_password: string;
+        };
         /** PortfolioOut */
         PortfolioOut: {
             /** Total Value */
@@ -1353,6 +1661,13 @@ export interface components {
             gain_pct: number | null;
             /** Weight */
             weight: number;
+        };
+        /** ProfileIn */
+        ProfileIn: {
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
         };
         /** RealTrackOut */
         RealTrackOut: {
@@ -1586,6 +1901,30 @@ export interface components {
             items: components["schemas"]["SecurityItem"][];
             /** Total */
             total: number;
+        };
+        /** SessionOut */
+        SessionOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Device */
+            device: string;
+            /** Ip */
+            ip: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             */
+            last_seen_at: string;
+            /** Current */
+            current: boolean;
         };
         /** SettingsOut */
         SettingsOut: {
@@ -2093,6 +2432,24 @@ export interface operations {
             };
         };
     };
+    admin_check_api_auth_admin_check_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     start_api_auth_google_start_get: {
         parameters: {
             query?: {
@@ -2226,6 +2583,400 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MeOut"];
+                };
+            };
+        };
+    };
+    update_me_api_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_password_api_me_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChangeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoticeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_email_change_api_me_email_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailChangeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoticeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_email_change_api_me_email_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sessions_api_me_sessions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"][];
+                };
+            };
+        };
+    };
+    revoke_other_sessions_api_me_sessions_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    revoke_one_session_api_me_sessions__session_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_list_users_api_admin_users_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                sort?: "email" | "first_name" | "last_name" | "role" | "is_premium" | "verified" | "created_at" | "last_login_at";
+                order?: string;
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUserListOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_delete_user_api_admin_users__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteUserIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_update_user_api_admin_users__user_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminUserUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_read_settings_api_admin_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSettingsOut"];
+                };
+            };
+        };
+    };
+    admin_update_settings_api_admin_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminSettingsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    admin_config_status_api_admin_config_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigStatusOut"];
+                };
+            };
+        };
+    };
+    admin_test_email_api_admin_test_email_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoticeOut"];
                 };
             };
         };
@@ -2882,7 +3633,7 @@ export interface operations {
             };
         };
     };
-    read_assistant_settings_api_assistant_settings_get: {
+    assistant_status_api_assistant_status_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -2897,40 +3648,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AssistantSettingsOut"];
-                };
-            };
-        };
-    };
-    update_assistant_settings_api_assistant_settings_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AssistantSettingsUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantSettingsOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["AssistantStatusOut"];
                 };
             };
         };

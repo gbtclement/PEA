@@ -83,7 +83,7 @@ test("une seule navigation par écran (le pied de page n'en ajoute pas)", () => 
 
 test("après une déconnexion, la connexion ouvre bien la page privée demandée", async () => {
   mockFetch((url) => (url === "/api/auth/login"
-    ? { body: { id: "u1", email: "jean@example.com", first_name: "Jean", last_name: "Dupont", role: "user", is_premium: false } }
+    ? { body: { id: "u1", email: "jean@example.com", first_name: "Jean", last_name: "Dupont", role: "user", is_premium: false, has_password: true, has_google: false, has_premium: false } }
     : { status: 401, body: { detail: { code: "not_authenticated", message: "…" } } }));
   const queryClient = new QueryClient();
   queryClient.setQueryData(["me"], null); // « visiteur » en cache, comme après une déconnexion
