@@ -26,14 +26,21 @@ def _cancel_pending(db: Session, user: User, purpose: str, now: datetime) -> Non
                                        EmailCode.used_at.is_(None)).values(used_at=now))
 
 
-def issue_code(db: Session, user: User, purpose: str, now: datetime) -> str:
+def issue_code(db: Session, user: User, purpose: str, now: datetime, *, new_email: str | None = None) -> str:
     """Nouveau code à 6 chiffres ; les codes précédents du même type ne marchent plus."""
     _cancel_pending(db, user, purpose, now)
     code = new_code()
-    db.add(EmailCode(user_id=user.id, purpose=purpose, code_hash=token_hash(code), expires_at=now + CODE_TTL,
-                     created_at=now))
+    db.add(EmailCode(user_id=user.id, purpose=purpose, code_hash=token_hash(code), new_email=new_email,
+                     expires_at=now + CODE_TTL, created_at=now))
     db.flush()
     return code
+
+
+def pending_new_email(db: Session, user: User) -> str | None:
+    """Adresse demandée par le dernier code de changement de mail (lu avant de le vérifier)."""
+    return db.scalar(select(EmailCode.new_email).where(EmailCode.user_id == user.id,
+                                                       EmailCode.purpose == "change_email")
+                     .order_by(EmailCode.id.desc()).limit(1))
 
 
 def last_code_at(db: Session, user: User, purpose: str) -> datetime | None:

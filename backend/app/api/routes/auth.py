@@ -76,7 +76,7 @@ def start_session(db: Session, user: User, request: Request, response: Response,
     set_device_cookie(response, device_token, settings)
 
 
-def _mail_allowed(db: Session, email: str, ip: str, now: datetime) -> bool:
+def mail_allowed(db: Session, email: str, ip: str, now: datetime) -> bool:
     """Compte une demande de code ou de lien. 429 si l'IP abuse ; False (sans rien dire) si l'adresse a assez reçu."""
     if ratelimit.over(db, "mail_ip", ip, now):
         raise fail(429, *TOO_MANY)
@@ -122,7 +122,7 @@ def verify_email(payload: VerifyEmailIn, request: Request, response: Response, d
 def resend_code(payload: EmailIn, request: Request, db: Session = Depends(get_db),
                 now: datetime = Depends(get_now)) -> NoticeOut:
     email = normalize_email(payload.email)
-    if _mail_allowed(db, email, client_ip(request) or "inconnue", now):
+    if mail_allowed(db, email, client_ip(request) or "inconnue", now):
         accounts.resend_code(db, email, now)
     db.commit()
     return CODE_SENT
@@ -183,7 +183,7 @@ def forgot_password(payload: EmailIn, request: Request, db: Session = Depends(ge
     ip, email = client_ip(request) or "inconnue", normalize_email(payload.email)
     if not captcha.verify(payload.captcha, ip):
         raise fail(400, *CAPTCHA)
-    if _mail_allowed(db, email, ip, now):
+    if mail_allowed(db, email, ip, now):
         accounts.request_password_reset(db, email, now)
     db.commit()
     return RESET_SENT
