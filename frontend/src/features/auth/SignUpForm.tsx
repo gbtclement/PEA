@@ -1,9 +1,10 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiSend } from "@/lib/api/client";
+import { GoogleButton } from "./GoogleButton";
 import { PasswordField, passwordStrength } from "./PasswordField";
 
 const TOO_SHORT = "Le mot de passe doit contenir au moins 12 caractères.";
@@ -11,6 +12,7 @@ const TERMS = "Acceptez les CGU et la politique de confidentialité pour créer 
 
 export function SignUpForm() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -46,6 +48,7 @@ export function SignUpForm() {
         <h1 className="text-2xl font-semibold">Créer un compte</h1>
         <p className="text-sm text-muted-foreground">Gratuit, sans engagement.</p>
       </div>
+      <GoogleButton suite={params.get("suite")} remember />
       <div className="grid grid-cols-2 gap-3">
         <Field id="signup-first-name" label="Prénom">
           <Input id="signup-first-name" value={firstName} onChange={(e) => setFirstName(e.target.value)}

@@ -4,8 +4,14 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError, apiSend, type Me } from "@/lib/api/client";
+import { GoogleButton } from "./GoogleButton";
 import { PasswordField } from "./PasswordField";
 import { safeNext } from "./redirect";
+
+const GOOGLE_ERRORS: Record<string, string> = {
+  google: "La connexion avec Google n'a pas abouti. Réessayez.",
+  google_email: "Votre adresse Google n'est pas validée par Google : utilisez une autre méthode.",
+};
 
 export function SignInForm() {
   const navigate = useNavigate();
@@ -29,6 +35,8 @@ export function SignInForm() {
     },
   });
 
+  const googleError = GOOGLE_ERRORS[params.get("erreur") ?? ""];
+
   function submit(event: FormEvent) {
     event.preventDefault();
     login.mutate();
@@ -40,6 +48,7 @@ export function SignInForm() {
         <h1 className="text-2xl font-semibold">Se connecter</h1>
         <p className="text-sm text-muted-foreground">Content de vous revoir.</p>
       </div>
+      <GoogleButton suite={params.get("suite")} remember={remember} />
       <div className="space-y-1">
         <label htmlFor="signin-email" className="text-sm font-medium">Adresse mail</label>
         <Input id="signin-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)}
@@ -54,6 +63,7 @@ export function SignInForm() {
         </label>
         <Link to="/mot-de-passe-oublie" className="text-primary underline">Mot de passe oublié ?</Link>
       </div>
+      {googleError && !login.error && <p role="alert" className="text-sm text-red-600">{googleError}</p>}
       {login.error && <p role="alert" className="text-sm text-red-600">{login.error.message}</p>}
       <Button type="submit" disabled={login.isPending}>{login.isPending ? "Connexion…" : "Me connecter"}</Button>
     </form>
