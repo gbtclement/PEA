@@ -24,15 +24,33 @@ Détails dans [Comptes utilisateurs](comptes.md).
 
 | Méthode | Route | Rôle |
 |---|---|---|
-| POST | `/auth/register` | Inscription `{first_name, last_name, email, password, accept_terms}`. Envoie le code. Toujours `202`, même si l'adresse existe |
+| GET | `/auth/config` | Ce que le serveur active : `{google, turnstile_site_key}` (bouton Google, widget Turnstile) |
+| POST | `/auth/register` | Inscription `{first_name, last_name, email, password, accept_terms, captcha}`. Envoie le code. Toujours `202`, même si l'adresse existe |
 | POST | `/auth/verify-email` | `{email, code}` : valide l'adresse et ouvre une session |
 | POST | `/auth/resend-code` | `{email}` : nouveau code, au plus toutes les 60 s |
-| POST | `/auth/login` | `{email, password, remember}`. `403 email_not_verified` si l'adresse n'est pas validée |
+| POST | `/auth/login` | `{email, password, remember, captcha}`. `403 email_not_verified` si l'adresse n'est pas validée. `captcha` n'est exigé qu'après 3 échecs |
 | POST | `/auth/logout` | Ferme la session courante |
-| POST | `/auth/forgot-password` | `{email}` : envoie un lien. Toujours `202` |
+| POST | `/auth/forgot-password` | `{email, captcha}` : envoie un lien. Toujours `202` |
 | POST | `/auth/reset-password` | `{token, password}` : nouveau mot de passe, toutes les sessions sont fermées |
 | POST | `/auth/not-me` | `{token}` : « Ce n'était pas moi » |
+| GET | `/auth/google/start` | `?suite=<page>&remember=1\|0` : redirige vers Google. `404 google_disabled` si Google n'est pas configuré |
+| GET | `/auth/google/callback` | Retour de Google : ouvre la session et redirige vers `suite`, ou vers `/finaliser-inscription` pour un nouveau compte, ou vers `/connexion?erreur=google\|google_email` |
+| GET | `/auth/google/pending` | Nouveau compte Google en attente : `{email, first_name, last_name}`, ou `404 google_expired` |
+| POST | `/auth/google/complete` | `{first_name, last_name, accept_terms}` : crée le compte Google et ouvre la session. `400 google_expired` après 30 min |
 | GET | `/me` | Le compte connecté (`id`, `email`, `first_name`, `last_name`, `role`, `is_premium`), ou `401` |
+
+Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_not_verified` et des erreurs de code ou de lien :
+
+| Code | Statut | Quand |
+|---|---|---|
+| `captcha_required` | 400 | Jeton Turnstile absent ou refusé (inscription, mot de passe oublié, connexion après 3 échecs) |
+| `weak_password` | 400 | Mot de passe trop court (moins de 12 caractères) ou trop long |
+| `pwned_password` | 400 | Mot de passe connu dans les fuites (Have I Been Pwned) |
+| `account_locked` | 429 | 10 mots de passe faux en 15 min pour cette adresse |
+| `too_many_requests` | 429 | Trop de tentatives depuis cette IP (voir [Comptes](comptes.md#limites-anti-abus)) |
+| `bad_origin` | 403 | En-tête `Origin` étranger |
+| `google_disabled` | 404 | Google n'est pas configuré |
+| `google_expired` | 400 / 404 | Inscription Google en attente depuis plus de 30 min |
 
 ## État
 
