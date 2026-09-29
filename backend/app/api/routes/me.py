@@ -1,19 +1,25 @@
+import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
+from app.api.cookies import clear_auth_cookies
 from app.api.deps import get_breach_checker
 from app.api.routes.auth import CODE_ERRORS, check_password_rules, client_ip, fail, mail_allowed
+from app.core.config import get_settings
 from app.core.current_user import get_auth_session, get_current_user, get_now
 from app.core.db import get_db
 from app.core.security import normalize_email
 from app.models import AuthSession, User
 from app.schemas.auth import MeOut, NoticeOut
-from app.schemas.me import CodeIn, EmailChangeIn, PasswordChangeIn, ProfileIn
+from app.schemas.me import CodeIn, EmailChangeIn, PasswordChangeIn, ProfileIn, SessionOut
 from app.services.auth import profile
 from app.services.auth.breach import BreachChecker
 from app.services.auth.codes import CodeCheck
+from app.services.auth.sessions import revoke_session
+from app.services.security_log import log_event
 
 router = APIRouter(tags=["account"])
 
@@ -69,3 +75,37 @@ def confirm_email_change(payload: CodeIn, request: Request, db: Session = Depend
         raise fail(400, *CODE_ERRORS[result])
     db.commit()
     return MeOut.model_validate(user)
+
+
+@router.get("/me/sessions", response_model=list[SessionOut])
+def list_sessions(db: Session = Depends(get_db), auth: AuthSession = Depends(get_auth_session),
+                  user: User = Depends(get_current_user), now: datetime = Depends(get_now)) -> list[SessionOut]:
+    rows = db.scalars(select(AuthSession).where(AuthSession.user_id == user.id, AuthSession.expires_at > now)
+                      .order_by(AuthSession.last_seen_at.desc()))
+    return [SessionOut(id=r.id, device=r.device, ip=r.ip, created_at=r.created_at, last_seen_at=r.last_seen_at,
+                       current=r.id == auth.id) for r in rows]
+
+
+@router.delete("/me/sessions/{session_id}", status_code=204)
+def revoke_one_session(session_id: uuid.UUID, request: Request, response: Response, db: Session = Depends(get_db),
+                       auth: AuthSession = Depends(get_auth_session), user: User = Depends(get_current_user),
+                       now: datetime = Depends(get_now)) -> Response:
+    row = db.get(AuthSession, session_id)
+    if row is None or row.user_id != user.id:
+        raise fail(404, "not_found", "Appareil introuvable.")
+    revoke_session(db, row.id)
+    log_event(db, "session_revoked", now=now, user_id=user.id, ip=client_ip(request))
+    db.commit()
+    if row.id == auth.id:
+        clear_auth_cookies(response, get_settings())
+    response.status_code = 204
+    return response
+
+
+@router.delete("/me/sessions", status_code=204)
+def revoke_other_sessions(request: Request, db: Session = Depends(get_db), auth: AuthSession = Depends(get_auth_session),
+                          user: User = Depends(get_current_user), now: datetime = Depends(get_now)) -> Response:
+    db.execute(delete(AuthSession).where(AuthSession.user_id == user.id, AuthSession.id != auth.id))
+    log_event(db, "session_revoked", now=now, user_id=user.id, ip=client_ip(request), details={"all_others": True})
+    db.commit()
+    return Response(status_code=204)

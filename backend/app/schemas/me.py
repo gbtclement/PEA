@@ -1,3 +1,6 @@
+import uuid
+from datetime import datetime
+
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
@@ -26,3 +29,12 @@ class EmailChangeIn(BaseModel):
 
 class CodeIn(BaseModel):
     code: str = Field(pattern=r"^\s*\d{6}\s*$")
+
+
+class SessionOut(BaseModel):
+    id: uuid.UUID
+    device: str
+    ip: str | None
+    created_at: datetime
+    last_seen_at: datetime
+    current: bool
