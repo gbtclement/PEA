@@ -73,7 +73,7 @@ Au démarrage (et dans la migration pour la partie structure) :
 
 ### 1.5 Abonnement (plus tard)
 
-`is_premium` suffit. Quand le paiement arrivera, une table `subscriptions` le mettra à jour ; elle n'est pas créée maintenant.
+`is_premium` suffit. Le paiement passera par **Stripe** : une table `subscriptions`, tenue à jour par les webhooks Stripe, mettra `is_premium` à jour ; elle n'est pas créée maintenant.
 
 ## 2. Authentification et sécurité
 
