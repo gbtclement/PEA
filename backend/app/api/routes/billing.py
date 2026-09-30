@@ -13,10 +13,11 @@ from app.core.db import get_db
 from app.core.security import truncate_ip
 from app.core.terms import CGV_VERSION
 from app.models import BillingConsent, User
-from app.schemas.billing import CheckoutIn, PlanOut, PlansOut, RedirectOut, SubscriptionOut
+from app.schemas.billing import CheckoutIn, PlanOut, PlansOut, RedirectOut, SubscriptionOut, SyncIn
 from app.services import ratelimit
 from app.services.billing.access import premium_source
 from app.services.billing.gateway import BillingGateway, BillingUnavailable
+from app.services.billing.state import apply_subscription
 from app.services.security_log import log_event
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -96,3 +97,32 @@ def billing_checkout(payload: CheckoutIn, request: Request, gateway: GatewayDep,
     consent.checkout_session_id = session_id
     db.commit()
     return RedirectOut(url=url)
+
+
+@router.post("/sync", response_model=SubscriptionOut)
+def billing_sync(payload: SyncIn, gateway: GatewayDep, db: Session = Depends(get_db),
+                 user: User = Depends(get_current_user), now: datetime = Depends(get_now)) -> SubscriptionOut:
+    """Retour de Stripe (/premium/merci) : applique l'abonnement sans attendre le webhook (spec 3.3)."""
+    gateway = require_gateway(gateway)
+    try:
+        info = gateway.checkout_session(payload.session_id)
+        if info is None or info.user_id != str(user.id):
+            raise fail(404, "not_found", "Paiement introuvable.")
+        if info.subscription_id:
+            apply_subscription(db, user, gateway.subscription(info.subscription_id), now=now)
+            db.commit()
+    except BillingUnavailable:
+        db.rollback()
+        raise unavailable()
+    return summary(user)
+
+
+@router.post("/portal", response_model=RedirectOut)
+def billing_portal(gateway: GatewayDep, user: User = Depends(get_current_user)) -> RedirectOut:
+    gateway = require_gateway(gateway)
+    if user.subscription is None:
+        raise fail(404, "no_customer", "Aucun abonnement à gérer pour ce compte.")
+    try:
+        return RedirectOut(url=gateway.portal(user.subscription.stripe_customer_id, f"{_base_url()}/reglages#abonnement"))
+    except BillingUnavailable:
+        raise unavailable()

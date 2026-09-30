@@ -16,6 +16,7 @@ PRIVATE = [
     ("GET", "/api/securities/1/forecast"),
     ("PATCH", "/api/securities/1/eligibility"),
     ("GET", "/api/billing/subscription"), ("POST", "/api/billing/checkout"),
+    ("POST", "/api/billing/sync"), ("POST", "/api/billing/portal"),
 ]
 PUBLIC = ["/api/screener?kind=stock", "/api/rankings/top", "/api/rankings/movers", "/api/market/heatmap",
           "/api/securities", "/api/status", "/api/fees/estimate?amount=1000", "/api/health",
