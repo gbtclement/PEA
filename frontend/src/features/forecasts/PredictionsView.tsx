@@ -46,7 +46,8 @@ const COLUMNS: ColumnSpec<ForecastRow>[] = [
         </div>
       </div>
     ) },
-  { id: "price", header: "Cours", width: "76px", align: "right", enableSorting: false,
+  { id: "price", header: "Cours", width: "76px", align: "right", sortDescFirst: true, sortUndefined: "last",
+    accessorFn: (row) => row.security.price ?? undefined,
     cell: ({ row }) => <span className="font-medium">{formatPrice(row.original.security.price)}</span> },
   { id: "signals", header: "Signaux du jour", width: "minmax(170px, 1.6fr)", enableSorting: false,
     cell: ({ row }) => {

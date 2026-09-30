@@ -30,6 +30,7 @@ export function DataTable<T>({ rows, columns, sorting, onSortingChange, onRowCli
     onSortingChange: (updater) => onSortingChange(typeof updater === "function" ? updater(sorting) : updater),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    enableSortingRemoval: false,  // un clic inverse le sens ; sans ça, le 3e clic enlevait le tri (ordre d'origine, l'air mélangé)
     getRowId,
   });
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -59,7 +60,8 @@ export function DataTable<T>({ rows, columns, sorting, onSortingChange, onRowCli
           const spec = header.column.columnDef as ColumnSpec<T>;
           const sorted = header.column.getIsSorted();
           return (
-            <div role="columnheader" key={header.id} className={cn(spec.align === "right" && "text-right")}>
+            <div role="columnheader" key={header.id} className={cn(spec.align === "right" && "text-right")}
+                 aria-sort={sorted === "asc" ? "ascending" : sorted === "desc" ? "descending" : undefined}>
               {header.column.getCanSort() ? (
                 <button type="button" onClick={header.column.getToggleSortingHandler()}
                         className={cn("inline-flex items-center gap-1 hover:text-foreground", sorted && "text-foreground")}>

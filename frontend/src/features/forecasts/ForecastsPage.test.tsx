@@ -6,22 +6,22 @@ import { ForecastsPage } from "./ForecastsPage";
 afterEach(() => vi.unstubAllGlobals());
 
 const h = (expected: number, rank: number, reliability = "elevee") => ({ expected_return: expected, prob_up: 0.56, reliability, rank });
-const security = (id: number, name: string, eligibility = "eligible") => ({
-  id, name, symbol: name.slice(0, 3).toUpperCase(), market: "Euronext Paris", eligibility, price: 100, change_pct: 1.2,
+const security = (id: number, name: string, eligibility = "eligible", price = 100) => ({
+  id, name, symbol: name.slice(0, 3).toUpperCase(), market: "Euronext Paris", eligibility, price, change_pct: 1.2,
 });
 const LIST = {
   as_of: "2026-09-25",
   round_trip_cost: 0.0096,
   rows: [
-    { security: security(2, "Airbus"), signals: [{ key: "trend_strong", label: "Tendance haussière forte", bullish: true }],
+    { security: security(2, "Airbus", "eligible", 150), signals: [{ key: "trend_strong", label: "Tendance haussière forte", bullish: true }],
       horizons: { "1d": null, "1w": h(0.009, 1), "1m": h(0.004, 2, "moyenne") } },
-    { security: security(1, "LVMH"), signals: [{ key: "high_52w", label: "Plus haut sur 1 an", bullish: true }],
+    { security: security(1, "LVMH", "eligible", 600), signals: [{ key: "high_52w", label: "Plus haut sur 1 an", bullish: true }],
       horizons: { "1d": h(0.002, 1), "1w": h(0.004, 2), "1m": h(0.02, 1) } },
     { security: security(3, "Étranger", "non_eligible"), signals: [{ key: "surge_week", label: "Forte hausse sur 1 semaine", bullish: false }],
       horizons: { "1d": null, "1w": h(-0.01, 3, "faible"), "1m": null } },
   ],
 };
-const stat = (n: number, mean: number, hit: number) => ({ n, mean, median: mean, hit_rate: hit, mean_excess: mean, beat_index: 0.5, hit_after_fees: hit - 0.1, reliability: "moyenne" });
+const stat = (n: number, mean: number, hit: number, reliability = "moyenne") => ({ n, mean, median: mean, hit_rate: hit, mean_excess: mean, beat_index: 0.5, hit_after_fees: hit - 0.1, reliability });
 const SIGNALS = {
   as_of: "2026-09-25", computed_at: "2026-09-27T05:00:00Z", round_trip_cost: 0.0096,
   baseline: { "1d": stat(700000, 0.0005, 0.49), "1w": stat(719055, 0.0012, 0.509), "1m": stat(650000, 0.009, 0.53) },
@@ -29,7 +29,7 @@ const SIGNALS = {
     { key: "surge_week", label: "Forte hausse sur 1 semaine", description: "Au moins +15 %…", bullish: false,
       horizons: { "1d": stat(10000, -0.003, 0.46), "1w": stat(10548, -0.0118, 0.424), "1m": null } },
     { key: "high_52w", label: "Plus haut sur 1 an", description: "Plus haut des 12 derniers mois.", bullish: true,
-      horizons: { "1d": stat(33000, 0.001, 0.51), "1w": stat(32616, 0.003, 0.52), "1m": stat(30000, 0.012, 0.55) } },
+      horizons: { "1d": stat(33000, 0.001, 0.51), "1w": stat(32616, 0.003, 0.52, "faible"), "1m": stat(30000, 0.012, 0.55) } },
   ],
 };
 const backtest = (mean: number, baseline: number) => ({ days: 231, picks: 2310, hit_rate: 0.589, hit_after_fees: 0.532, mean_return: mean,
@@ -113,4 +113,44 @@ test("bulletin : verdict quand le gain est déjà négatif avant frais, et compa
   expect(screen.getByText(/gain moyen était déjà négatif avant frais/)).toBeInTheDocument();
   expect(screen.getByText("Moyenne des titres suivis")).toBeInTheDocument();
   expect(screen.getByText(/entreprises disparues/)).toBeInTheDocument();
+});
+
+test("prédictions : chaque clic inverse le sens, le tri ne disparaît jamais", async () => {
+  renderPage();
+  await screen.findByText("Airbus");
+  const month = () => screen.getByRole("button", { name: /^1 mois/ });
+  await userEvent.click(month());
+  expect(rowNames().map((n) => n?.slice(0, 4))).toEqual(["LVMH", "Airb"]);
+  expect(screen.getByRole("columnheader", { name: /1 mois/ })).toHaveAttribute("aria-sort", "descending");
+  await userEvent.click(month());
+  expect(rowNames().map((n) => n?.slice(0, 4))).toEqual(["Airb", "LVMH"]);
+  expect(screen.getByRole("columnheader", { name: /1 mois/ })).toHaveAttribute("aria-sort", "ascending");
+  await userEvent.click(month());
+  expect(rowNames().map((n) => n?.slice(0, 4))).toEqual(["LVMH", "Airb"]);
+});
+
+test("prédictions : tri par cours", async () => {
+  renderPage();
+  await screen.findByText("Airbus");
+  await userEvent.click(screen.getByRole("button", { name: "Cours" }));
+  expect(rowNames().map((n) => n?.slice(0, 4))).toEqual(["LVMH", "Airb"]);
+});
+
+const statNames = async () => {
+  const table = await screen.findByRole("table", { name: "Statistiques des signaux" });
+  return within(table).getAllByRole("row").slice(2).map((r) => within(r).getAllByRole("rowheader")[0].textContent?.slice(2, 12));
+};
+
+test("statistiques : recliquer inverse le sens, Signal et Fiabilité se trient aussi", async () => {
+  renderPage("/previsions?vue=statistiques");
+  expect(await statNames()).toEqual(["Plus haut ", "Forte haus"]);  // gain moyen décroissant par défaut
+  await userEvent.click(screen.getByRole("button", { name: /Gain moyen/ }));
+  expect(await statNames()).toEqual(["Forte haus", "Plus haut "]);
+  expect(screen.getByRole("columnheader", { name: /Gain moyen/ })).toHaveAttribute("aria-sort", "ascending");
+  await userEvent.click(screen.getByRole("button", { name: "Signal" }));
+  expect(await statNames()).toEqual(["Forte haus", "Plus haut "]);  // ordre alphabétique d'abord
+  await userEvent.click(screen.getByRole("button", { name: "Fiabilité" }));
+  expect(await statNames()).toEqual(["Forte haus", "Plus haut "]);  // moyenne avant faible
+  await userEvent.click(screen.getByRole("button", { name: "Fiabilité" }));
+  expect(await statNames()).toEqual(["Plus haut ", "Forte haus"]);
 });
