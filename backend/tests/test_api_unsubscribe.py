@@ -49,3 +49,11 @@ def test_forged_or_unknown_links_are_404(anon_client, db, user):
         assert response.status_code == 404 and response.json()["detail"]["code"] == "bad_link"
     db.expire_all()
     assert get_prefs(db, other.id).price_move is True
+
+
+def test_header_link_opened_in_a_browser_goes_to_the_confirmation_page(anon_client, db, user):
+    query = f"jeton={_token(user)}&type=price_move"
+    response = anon_client.get(f"/api/unsubscribe?{query}", headers={"Accept": "text/html,application/xhtml+xml"},
+                               follow_redirects=False)
+    assert response.status_code == 303 and response.headers["location"] == f"/desinscription?{query}"
+    assert get_prefs(db, user.id).price_move is True  # une simple ouverture ne désinscrit pas

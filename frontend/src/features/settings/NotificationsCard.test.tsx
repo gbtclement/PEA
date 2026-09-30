@@ -47,7 +47,14 @@ test("alertes de prix : réarmer ou supprimer", async () => {
   renderWithProviders(<NotificationsCard />);
   expect(await screen.findByText(/Au-dessus de 300,00 NOK/)).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Réarmer l'alerte sur Equinor" }));
+  const price = screen.getByLabelText("Nouveau prix (NOK)");
+  expect(price).toHaveValue("300,00");  // le cours est déjà au-dessus : on choisit un autre seuil
+  await userEvent.clear(price);
+  await userEvent.type(price, "320");
+  await userEvent.click(screen.getByRole("button", { name: "Confirmer le réarmement" }));
   await waitFor(() => expect(sent(fetchMock, "PATCH", "/api/me/price-alerts/a1")).toHaveLength(1));
+  expect(JSON.parse(String(sent(fetchMock, "PATCH", "/api/me/price-alerts/a1")[0][1]!.body)))
+    .toEqual({ active: true, direction: "above", price: 320 });
   await userEvent.click(screen.getByRole("button", { name: "Supprimer l'alerte sur Equinor" }));
   await waitFor(() => expect(sent(fetchMock, "DELETE", "/api/me/price-alerts/a1")).toHaveLength(1));
 });

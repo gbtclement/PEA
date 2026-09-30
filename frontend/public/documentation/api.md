@@ -54,9 +54,9 @@ Détails dans [Comptes utilisateurs](comptes.md).
 | PUT | `/me/notifications` | Les mêmes champs : enregistre les préférences. `move_threshold_pct` de 1 à 50 |
 | GET | `/me/price-alerts` | Alertes de prix : `[{id, security_id, symbol, name, currency, direction, price, current_price, active, triggered_at, created_at}]` |
 | POST | `/me/price-alerts` | `{security_id, direction: "above"|"below", price}` : créer une alerte (`201`). Prix dans la devise du titre |
-| PATCH | `/me/price-alerts/{id}` | `{active: true}` : réarmer une alerte déclenchée (mêmes contrôles qu'à la création) |
+| PATCH | `/me/price-alerts/{id}` | `{active: true, direction, price}` : réarmer une alerte déclenchée, avec un nouveau seuil si besoin (mêmes contrôles qu'à la création) |
 | DELETE | `/me/price-alerts/{id}` | Supprimer une alerte (`204`) |
-| GET | `/unsubscribe?jeton=&type=` | **Sans connexion.** Vérifie le lien d'un mail : `{kind, label}`, ou `404 bad_link` |
+| GET | `/unsubscribe?jeton=&type=` | **Sans connexion.** Vérifie le lien d'un mail : `{kind, label}`, ou `404 bad_link`. Ouverte dans un navigateur (`Accept: text/html`, lien `List-Unsubscribe`) : `303` vers la page `/desinscription`, sans rien changer |
 | POST | `/unsubscribe?jeton=&type=` | **Sans connexion.** Désactive ce type de mail, ou toutes les notifications sans `type`. Aussi appelée par la messagerie (`List-Unsubscribe` en un clic) |
 | DELETE | `/me` | `{confirm_email, password}` : supprimer son compte et toutes ses données. `204` et cookies effacés. `password` est ignoré pour un compte Google sans mot de passe, qui doit s'être reconnecté depuis moins de 5 min |
 

@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.api.origin import check_origin
@@ -31,8 +32,13 @@ def _target(db: Session, jeton: str, kind: str | None) -> User:
 
 
 @router.get("/unsubscribe", response_model=UnsubscribeOut)
-def check_unsubscribe_link(jeton: str = Query(max_length=100), kind: str | None = Query(None, alias="type"),
-                           db: Session = Depends(get_db)) -> UnsubscribeOut:
+def check_unsubscribe_link(request: Request, jeton: str = Query(max_length=100),
+                           kind: str | None = Query(None, alias="type"),
+                           db: Session = Depends(get_db)) -> UnsubscribeOut | RedirectResponse:
+    """Appelée par la page /desinscription. Ouverte dans un navigateur (lien List-Unsubscribe) : renvoie vers la page
+    de confirmation, sans rien changer."""
+    if "text/html" in request.headers.get("accept", ""):
+        return RedirectResponse(f"/desinscription?{request.url.query}", status_code=303)
     _target(db, jeton, kind)
     return UnsubscribeOut(kind=kind, label=LABELS.get(kind) if kind else None)
 

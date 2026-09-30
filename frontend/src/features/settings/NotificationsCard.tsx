@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
@@ -85,8 +85,11 @@ function PriceAlertList() {
   const queryClient = useQueryClient();
   const alerts = useQuery({ queryKey: ["price-alerts"], queryFn: () => apiGet<PriceAlert[]>("/api/me/price-alerts") });
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["price-alerts"] });
+  const [editing, setEditing] = useState<string | null>(null);
   const rearm = useMutation({
-    mutationFn: (alert: PriceAlert) => apiSend("PATCH", `/api/me/price-alerts/${alert.id}`, { active: true }), onSuccess: refresh,
+    mutationFn: ({ id, direction, price }: { id: string; direction: string; price: number }) =>
+      apiSend("PATCH", `/api/me/price-alerts/${id}`, { active: true, direction, price }),
+    onSuccess: () => { setEditing(null); refresh(); },
   });
   const remove = useMutation({
     mutationFn: (alert: PriceAlert) => apiSend("DELETE", `/api/me/price-alerts/${alert.id}`), onSuccess: refresh,
@@ -101,7 +104,7 @@ function PriceAlertList() {
       ) : (
         <ul className="divide-y divide-border">
           {list.map((alert) => (
-            <li key={alert.id} className="flex items-center justify-between gap-4 py-2 text-sm">
+            <li key={alert.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2 text-sm">
               <div className="min-w-0">
                 <Link to={`/titres/${alert.security_id}`} className="font-medium hover:underline">{alert.name}</Link>
                 <p className="text-xs text-muted-foreground">
@@ -112,16 +115,47 @@ function PriceAlertList() {
               <div className="flex gap-2">
                 {!alert.active && (
                   <Button size="sm" variant="outline" aria-label={`Réarmer l'alerte sur ${alert.name}`}
-                          disabled={rearm.isPending} onClick={() => rearm.mutate(alert)}>Réarmer</Button>
+                          onClick={() => { rearm.reset(); setEditing(alert.id); }}>Réarmer</Button>
                 )}
                 <Button size="sm" variant="outline" aria-label={`Supprimer l'alerte sur ${alert.name}`}
                         disabled={remove.isPending} onClick={() => remove.mutate(alert)}>Supprimer</Button>
               </div>
+              {editing === alert.id && (
+                <RearmForm alert={alert} pending={rearm.isPending} onCancel={() => setEditing(null)}
+                           onSubmit={(direction, price) => rearm.mutate({ id: alert.id, direction, price })} />
+              )}
             </li>
           ))}
         </ul>
       )}
       {error && <p role="alert" className="text-sm text-destructive">{error.message}</p>}
     </div>
+  );
+}
+
+/** Réarmer : le cours est souvent resté près du seuil, on propose donc d'en choisir un autre. */
+function RearmForm({ alert, pending, onSubmit, onCancel }: {
+  alert: PriceAlert; pending: boolean; onSubmit: (direction: string, price: number) => void; onCancel: () => void;
+}) {
+  const [direction, setDirection] = useState(alert.direction);
+  const [price, setPrice] = useState(alert.price.toFixed(2).replace(".", ","));
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    onSubmit(direction, Number(price.replace(/s/g, "").replace(",", ".")));
+  }
+  return (
+    <form className="flex w-full flex-wrap items-end gap-2" onSubmit={submit}>
+      <select aria-label="Sens" className="rounded-md border border-input bg-background px-2 py-1.5 text-sm"
+              value={direction} onChange={(e) => setDirection(e.target.value)}>
+        <option value="above">au-dessus de</option>
+        <option value="below">en dessous de</option>
+      </select>
+      <label htmlFor={`rearm-${alert.id}`} className="sr-only">Nouveau prix ({unit(alert.currency)})</label>
+      <Input id={`rearm-${alert.id}`} inputMode="decimal" className="w-28" value={price}
+             onChange={(e) => setPrice(e.target.value)} required />
+      <span className="text-xs text-muted-foreground">{unit(alert.currency)}</span>
+      <Button type="submit" size="sm" disabled={pending}>Confirmer le réarmement</Button>
+      <Button type="button" size="sm" variant="ghost" onClick={onCancel}>Annuler</Button>
+    </form>
   );
 }

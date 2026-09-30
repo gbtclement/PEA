@@ -36,7 +36,7 @@ Carte **Notifications par mail** : un interrupteur par mail, enregistré dès qu
 | **Changement de score d'un favori** | Désactivé | Après la séance : entrée ou sortie du top 10, ou score qui bouge d'au moins 10 points |
 
 - **Seuil de forte variation** : de 1 à 50 %, 5 % par défaut. Il est enregistré quand vous quittez le champ ; une virgule est acceptée (« 3,5 »).
-- **Alertes de prix** : la liste de vos alertes, créées depuis la [fiche d'un titre](app/fiche-titre.md). Une alerte déclenchée affiche sa date : **Réarmer** la relance, **Supprimer** l'efface. 50 alertes actives au plus.
+- **Alertes de prix** : la liste de vos alertes, créées depuis la [fiche d'un titre](app/fiche-titre.md). Une alerte déclenchée affiche sa date : **Réarmer** la relance après vous avoir laissé choisir un nouveau prix (le cours est souvent resté près de l'ancien seuil), **Supprimer** l'efface. 50 alertes actives au plus.
 - **Ne plus recevoir ce mail** : chaque notification se termine par ce lien. Il marche sans vous connecter : vous choisissez d'arrêter ce mail seulement, ou toutes les notifications.
 
 Les mails liés à votre compte (codes, alertes de sécurité) sont toujours envoyés.
