@@ -134,9 +134,39 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Écran de connexion : le panneau indigo glisse d'une moitié à l'autre, le formulaire apparaît en fondu */
-.auth-panel { transition: transform 600ms cubic-bezier(0.65, 0, 0.35, 1); }
-.auth-form { transition: opacity 400ms ease 200ms; }
+/* Écran de connexion : le panneau indigo glisse d'une moitié à l'autre (700 ms, SWITCH_MS dans AuthPage.tsx).
+   Le formulaire qui part s'efface en suivant le panneau, celui qui arrive glisse depuis le bord en fondu. */
+.auth-panel { transition: translate 700ms cubic-bezier(0.77, 0, 0.18, 1); } /* Tailwind 4 déplace avec `translate`, pas `transform` */
+.auth-panel-text { opacity: 0; transform: translateY(8px); transition: opacity 200ms ease, transform 200ms ease; }
+.auth-panel-text.is-active { opacity: 1; transform: none; transition: opacity 350ms ease 320ms, transform 450ms cubic-bezier(0.22, 1, 0.36, 1) 320ms; }
+
+.auth-form { opacity: 0; transition: opacity 250ms ease, transform 500ms cubic-bezier(0.77, 0, 0.18, 1); }
+.auth-form-left { transform: translateX(-3rem); }
+.auth-form-right { transform: translateX(3rem); }
+.auth-form.is-active { opacity: 1; transform: none; transition: opacity 400ms ease 300ms, transform 600ms cubic-bezier(0.22, 1, 0.36, 1) 200ms; }
+@media (max-width: 767px) {
+  .auth-form { transform: none; transition: none; }
+  .auth-form.is-active { animation: auth-rise 400ms cubic-bezier(0.22, 1, 0.36, 1); }
+}
+
+/* Illustration du panneau : la courbe se dessine, les bougies montent, la carte flotte doucement */
+.auth-art { animation: auth-float 7s ease-in-out infinite; }
+.auth-line { stroke-dasharray: 1; stroke-dashoffset: 1; animation: auth-draw 1100ms cubic-bezier(0.65, 0, 0.35, 1) 500ms forwards; }
+.auth-area, .auth-dot { opacity: 0; animation: auth-fade 600ms ease 1400ms forwards; }
+.auth-candle { transform-box: fill-box; transform-origin: bottom; animation: auth-grow 500ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.auth-bar { transform-origin: left; animation: auth-fill 900ms cubic-bezier(0.22, 1, 0.36, 1) 600ms backwards; }
+.auth-badge { animation: auth-pop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) 900ms backwards; }
+
+@keyframes auth-rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes auth-float { 50% { transform: translateY(-6px); } }
+@keyframes auth-draw { to { stroke-dashoffset: 0; } }
+@keyframes auth-fade { to { opacity: 1; } }
+@keyframes auth-grow { from { opacity: 0; transform: scaleY(0.2); } }
+@keyframes auth-fill { from { transform: scaleX(0); } }
+@keyframes auth-pop { from { opacity: 0; transform: scale(0.6); } }
+
 @media (prefers-reduced-motion: reduce) {
-  .auth-panel, .auth-form { transition: none; }
+  .auth-panel, .auth-panel-text, .auth-panel-text.is-active, .auth-form, .auth-form.is-active { transition: none; animation: none; }
+  .auth-art, .auth-candle, .auth-bar, .auth-badge, .auth-area, .auth-dot { animation: none; opacity: 1; }
+  .auth-line { animation: none; stroke-dashoffset: 0; }
 }

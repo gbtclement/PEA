@@ -9,8 +9,9 @@ import { NotFoundPage } from "./NotFoundPage";
 
 export const routes: RouteObject[] = [
   // Écrans de compte : plein écran, hors de la mise en page de l'application
-  { path: "/inscription", lazy: async () => { const { AuthPage } = await import("@/features/auth/AuthPage"); return { Component: () => <AuthPage mode="inscription" /> }; } },
-  { path: "/connexion", lazy: async () => { const { AuthPage } = await import("@/features/auth/AuthPage"); return { Component: () => <AuthPage mode="connexion" /> }; } },
+  // Inscription et connexion partagent une route parente : la page reste montée et le panneau glisse
+  { lazy: async () => ({ Component: (await import("@/features/auth/AuthPage")).AuthRoute }),
+    children: [{ path: "/inscription" }, { path: "/connexion" }] },
   { path: "/verifier-email", lazy: async () => ({ Component: (await import("@/features/auth/VerifyEmailPage")).VerifyEmailPage }) },
   { path: "/mot-de-passe-oublie", lazy: async () => ({ Component: (await import("@/features/auth/ForgotPasswordPage")).ForgotPasswordPage }) },
   { path: "/finaliser-inscription", lazy: async () => ({ Component: (await import("@/features/auth/FinishSignUpPage")).FinishSignUpPage }) },

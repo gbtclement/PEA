@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryRouter } from "react-router";
 import { ME, mockFetch } from "@/test/utils";
@@ -145,4 +146,17 @@ test.each([["user", "Page introuvable"], ["admin", "Admin"]])("un compte %s qui 
   );
   expect(await screen.findByRole("heading", { level: 1, name: title }, { timeout: 5000 })).toBeInTheDocument();
   expect(screen.queryAllByRole("link", { name: "Admin" }).length > 0).toBe(role === "admin");
+});
+
+test("passer de l'inscription à la connexion garde la même page : le panneau peut glisser", async () => {
+  mockFetch(() => ({ body: {} }));
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <RouterProvider router={createMemoryRouter(routes, { initialEntries: ["/inscription"] })} />
+    </QueryClientProvider>,
+  );
+  const panel = await screen.findByRole("complementary", {}, { timeout: 5000 });
+  await userEvent.click(within(panel).getByRole("button", { name: "Se connecter" }));
+  expect(await screen.findByRole("heading", { level: 1, name: "Se connecter" })).toBeInTheDocument();
+  expect(screen.getByRole("complementary")).toBe(panel);
 });
