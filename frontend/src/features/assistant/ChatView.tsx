@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PremiumCard } from "@/features/premium/PremiumCard";
 import type { AssistantStatus } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import { useAssistantStatus, useConversation } from "./api";
@@ -80,10 +81,6 @@ export function ChatView({ conversationId, securityId, securityName, onConversat
 const usd = (value: number) => value.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const UNAVAILABLE = {
-  premium: {
-    title: "Réservé aux membres Premium",
-    text: "L'assistant IA fait partie de l'offre Premium. L'abonnement arrivera bientôt ; en attendant, l'administrateur peut activer Premium sur votre compte.",
-  },
   not_configured: {
     title: "Assistant pas encore configuré",
     text: "La clé Claude n'est pas encore renseignée sur le serveur. L'administrateur doit l'ajouter dans le fichier .env (ANTHROPIC_API_KEY).",
@@ -92,7 +89,8 @@ const UNAVAILABLE = {
 } as const;
 
 function Unavailable({ status }: { status: AssistantStatus }) {
-  const copy = UNAVAILABLE[status.reason ?? "premium"];
+  if ((status.reason ?? "premium") === "premium") return <PremiumCard feature="L'assistant IA" />;
+  const copy = UNAVAILABLE[status.reason as "not_configured" | "limit_reached"];
   return (
     <div className="rounded-xl border border-dashed border-border bg-white p-6 text-sm">
       <p className="font-medium">{copy.title}</p>

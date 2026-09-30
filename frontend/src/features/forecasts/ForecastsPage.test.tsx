@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { mockFetch, renderWithProviders } from "@/test/utils";
+import { ME, PREMIUM_ME, mockFetch, renderWithProviders } from "@/test/utils";
 import { ForecastsPage } from "./ForecastsPage";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -40,13 +40,15 @@ const TRACK = {
   real: { "1d": null, "1w": null, "1m": null },
 };
 
-function renderPage(route = "/previsions", { empty = false } = {}) {
-  mockFetch((url) => {
+function renderPage(route = "/previsions", { empty = false, me = PREMIUM_ME as object } = {}) {
+  const fetchMock = mockFetch((url) => {
+    if (url === "/api/me") return { body: me };
     if (url.startsWith("/api/forecasts/signals")) return { body: empty ? { ...SIGNALS, as_of: null, signals: [] } : SIGNALS };
     if (url.startsWith("/api/forecasts/track-record")) return { body: TRACK };
     return { body: empty ? { as_of: null, round_trip_cost: null, rows: [] } : LIST };
   });
-  return renderWithProviders(<ForecastsPage />, { route });
+  renderWithProviders(<ForecastsPage />, { route });
+  return fetchMock;
 }
 
 const rowNames = () => screen.getAllByRole("row").slice(1).map((r) => within(r).getAllByRole("cell")[0].textContent);
@@ -153,4 +155,12 @@ test("statistiques : recliquer inverse le sens, Signal et Fiabilité se trient a
   expect(await statNames()).toEqual(["Forte haus", "Plus haut "]);  // moyenne avant faible
   await userEvent.click(screen.getByRole("button", { name: "Fiabilité" }));
   expect(await statNames()).toEqual(["Plus haut ", "Forte haus"]);
+});
+
+test("membre gratuit : la page s'ouvre sur le bulletin et les prédictions sont réservées", async () => {
+  const fetchMock = renderPage("/previsions", { me: ME });
+  expect(await screen.findByRole("button", { name: "Bulletin de notes", current: "page" })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Prédictions" }));
+  expect(await screen.findByText("Réservé aux membres Premium")).toBeInTheDocument();
+  expect(fetchMock.mock.calls.some(([url]) => String(url) === "/api/forecasts")).toBe(false);
 });

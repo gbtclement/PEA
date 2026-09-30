@@ -1,6 +1,6 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ME, mockFetch, renderWithProviders } from "@/test/utils";
+import { ME, PREMIUM_ME, mockFetch, renderWithProviders } from "@/test/utils";
 import { AccountMenu } from "./AccountMenu";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -19,4 +19,16 @@ test("visiteur : liens de connexion et d'inscription", async () => {
   renderWithProviders(<AccountMenu />);
   expect(await screen.findByRole("link", { name: "Se connecter" })).toHaveAttribute("href", "/connexion");
   expect(screen.getByRole("link", { name: "Créer un compte" })).toHaveAttribute("href", "/inscription");
+});
+
+test("membre gratuit : lien « Passer Premium » ; membre Premium : badge", async () => {
+  mockFetch(() => ({ body: ME }));
+  const { unmount } = renderWithProviders(<AccountMenu />);
+  expect(await screen.findByRole("link", { name: "Passer Premium" })).toHaveAttribute("href", "/premium");
+  unmount();
+  vi.unstubAllGlobals();
+  mockFetch(() => ({ body: PREMIUM_ME }));
+  renderWithProviders(<AccountMenu />);
+  expect(await screen.findByText("Premium")).toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Passer Premium" })).not.toBeInTheDocument();
 });
