@@ -97,3 +97,14 @@ test("après une déconnexion, la connexion ouvre bien la page privée demandée
   await userEvent.click(screen.getByRole("button", { name: "Me connecter" }));
   expect(await screen.findByRole("heading", { level: 1, name: "Portefeuille" })).toBeInTheDocument();
 });
+
+test("connexion : la documentation admin demandée est ouverte par une navigation complète", async () => {
+  const assign = vi.fn();
+  vi.stubGlobal("location", { ...window.location, assign });
+  mockFetch((url) => (url === "/api/auth/config" ? { body: {} } : { body: { email: "jean@example.com" } }));
+  renderAuth("/connexion?suite=%2Fdocumentation%2F");
+  await userEvent.type(screen.getByLabelText("Adresse mail"), "jean@example.com");
+  await userEvent.type(screen.getByLabelText("Mot de passe"), "motdepasse-solide");
+  await userEvent.click(screen.getByRole("button", { name: "Me connecter" }));
+  await waitFor(() => expect(assign).toHaveBeenCalledWith("/documentation/"));
+});
