@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models import EmailLog
-from app.services.mail.render import render
+from app.services.mail.render import SUBJECTS, render
 
 
 def enqueue(
@@ -24,3 +24,15 @@ def enqueue(
         .returning(EmailLog.id)
     )
     return db.execute(stmt).scalar_one_or_none()
+
+
+# Mails qui portent un code ou un lien de connexion : une fois partis (ou abandonnés), la copie en base ne doit plus
+# permettre de s'en servir. Le reste de l'historique (destinataire, type, dates, erreur) est gardé.
+SECRET_KINDS = frozenset({"verify_code", "reset_password", "new_device"})
+ERASED = "Contenu effacé après l'envoi : ce mail contenait un code ou un lien personnel."
+
+
+def forget_secrets(row: EmailLog) -> None:
+    if row.kind in SECRET_KINDS:
+        row.subject = SUBJECTS[row.kind].split(" : {")[0]  # « Votre code PEA Radar : {code} » perd son code
+        row.html = row.text = ERASED

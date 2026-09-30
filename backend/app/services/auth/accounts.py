@@ -10,8 +10,11 @@ from app.services.auth.codes import (
     NOT_ME_TTL, RESEND_AFTER, RESET_TTL, CodeCheck, check_code, consume_link_token, issue_code, issue_link_token,
     last_code_at,
 )
+from app.services import ratelimit
+from app.services.auth.google import GoogleIdentity
 from app.services.auth.sessions import revoke_user_sessions
 from app.services.mail.outbox import enqueue
+from app.services.security_log import log_event
 
 TERMS_VERSION = "2026-09-28"  # à changer quand les CGU changent (étape 4)
 
@@ -25,7 +28,7 @@ def send_verification_code(db: Session, user: User, now: datetime) -> None:
     enqueue(db, "verify_code", to=user.email, user_id=user.id, context={"first_name": user.first_name, "code": code})
 
 
-def register(db: Session, *, first_name: str, last_name: str, email: str, password: str, now: datetime) -> None:
+def register(db: Session, *, first_name: str, last_name: str, email: str, password: str, now: datetime) -> User | None:
     """Crée (ou remplace, s'il n'a jamais été validé) un compte et envoie le code.
 
     Si l'adresse appartient déjà à un compte validé, rien ne change : son propriétaire reçoit une alerte,
@@ -37,7 +40,7 @@ def register(db: Session, *, first_name: str, last_name: str, email: str, passwo
         enqueue(db, "security_alert", to=user.email, user_id=user.id,
                 context={"first_name": user.first_name, "event": "signup_attempt"},
                 dedupe_key=f"signup_attempt:{user.id}:{now:%Y-%m-%d}")  # au plus une alerte par jour
-        return
+        return None
     if user is None:
         user = User(email=normalize_email(email), first_name=first_name, last_name=last_name)
         db.add(user)
@@ -46,6 +49,7 @@ def register(db: Session, *, first_name: str, last_name: str, email: str, passwo
     user.terms_accepted_at, user.terms_version = now, TERMS_VERSION
     db.flush()
     send_verification_code(db, user, now)
+    return user
 
 
 def verify_email(db: Session, email: str, code: str, now: datetime) -> tuple[User | None, CodeCheck]:
@@ -56,8 +60,7 @@ def verify_email(db: Session, email: str, code: str, now: datetime) -> tuple[Use
     if result != CodeCheck.OK:
         return None, result
     user.email_verified_at = now
-    if user.email == normalize_email(get_settings().admin_email or "-"):
-        user.role, user.is_premium = "admin", True
+    promote_if_admin(user)
     enqueue(db, "welcome", to=user.email, user_id=user.id, context={"first_name": user.first_name})
     return user, result
 
@@ -118,3 +121,49 @@ def not_me(db: Session, token: str, now: datetime) -> User | None:
     revoke_user_sessions(db, user.id)
     request_password_reset(db, user.email, now)
     return user
+
+
+def promote_if_admin(user: User) -> None:
+    """Le compte ADMIN_EMAIL devient admin dès que son adresse est prouvée (code ou Google)."""
+    if user.email == normalize_email(get_settings().admin_email or "-"):
+        user.role, user.is_premium = "admin", True
+
+
+def google_sign_in(db: Session, identity: GoogleIdentity, now: datetime, *, ip: str | None = None) -> User | None:
+    """Compte à connecter pour cette identité Google (vérifiée), ou None s'il faut en créer un (après les CGU)."""
+    user = db.scalar(select(User).where(User.google_sub == identity.sub))
+    if user is not None:
+        return user
+    user = find_user(db, identity.email)
+    if user is None:
+        return None
+    if user.email_verified_at is None:
+        # Inscription jamais validée : rien ne prouve que son mot de passe vient du propriétaire de l'adresse.
+        user.password_hash = None
+        user.email_verified_at = now
+        promote_if_admin(user)
+    user.google_sub = identity.sub
+    log_event(db, "google_linked", now=now, user_id=user.id, ip=ip)
+    enqueue(db, "security_alert", to=user.email, user_id=user.id,
+            context={"first_name": user.first_name, "event": "google_linked"})
+    return user
+
+
+def create_google_account(db: Session, identity: GoogleIdentity, *, first_name: str, last_name: str,
+                          now: datetime) -> User:
+    user = User(email=normalize_email(identity.email), first_name=first_name, last_name=last_name,
+                google_sub=identity.sub, email_verified_at=now, terms_accepted_at=now, terms_version=TERMS_VERSION)
+    db.add(user)
+    promote_if_admin(user)
+    db.flush()
+    enqueue(db, "welcome", to=user.email, user_id=user.id, context={"first_name": user.first_name})
+    return user
+
+
+def oauth_state_used(db: Session, state: str, now: datetime) -> bool:
+    """Un « state » Google ne sert qu'une fois (cookie rejoué = refus)."""
+    if ratelimit.over(db, "oauth_state", state, now):
+        return True
+    ratelimit.record(db, "oauth_state", state, now)
+    db.commit()
+    return False

@@ -13,7 +13,7 @@ Navigateur ────────► │ web  (nginx)                         
                      └──────────────────────┬─────────────────────┘
                                             ▼
             Claude API ◄──────────── api (FastAPI, :8000) ─────────► db (PostgreSQL 16)
-                                                                          ▲
+ Google, Cloudflare, HIBP ◄──────────┘                                     ▲
    Yahoo Finance / Euronext ◄──── worker (APScheduler, même image) ───────┘
                                      │
                                      └─ SMTP ──► mailpit (:8025, en local) ou Brevo (en ligne)
@@ -30,6 +30,36 @@ Cinq conteneurs Docker Compose :
 | `mailpit` | Capture les mails envoyés en local et les affiche sur http://localhost:8025 | Mailpit |
 
 `api` et `worker` partagent le paquet Python `backend/app`, mais sont deux processus distincts.
+
+### Fournisseurs externes
+
+| Fournisseur | Appelé par | Pour | Si absent ou muet |
+|---|---|---|---|
+| Yahoo Finance, Euronext | `worker` (et `api` pour l'intraday) | Titres, cours, fondamentaux | Données non rafraîchies |
+| Claude (Anthropic) | `api` | Assistant IA | Assistant indisponible |
+| SMTP (Mailpit, Brevo) | `worker` | Mails du compte | Mails gardés en file d'attente |
+| Google (OpenID Connect) | `api` | « Continuer avec Google » | Bouton masqué si non configuré |
+| Cloudflare Turnstile | `api` (vérification), navigateur (widget) | Case anti-robot | Désactivé si non configuré, ignoré si muet 5 s |
+| Have I Been Pwned | `api` | Refuser les mots de passe connus dans les fuites | Ignoré après 2 s |
+
+Aucun test n'appelle Google, Cloudflare ni Have I Been Pwned : ils sont remplacés par des faux (voir [Développement et tests](developpement.md)).
+
+### En-têtes de sécurité
+
+nginx ajoute à toutes ses réponses (`frontend/nginx/security-headers.conf`) :
+
+| En-tête | Valeur |
+|---|---|
+| `Content-Security-Policy` | `default-src 'self'`, scripts de `'self'` et `https://challenges.cloudflare.com` (Turnstile), iframe Turnstile seulement, styles en ligne autorisés, `frame-ancestors 'none'` |
+| `X-Frame-Options` | `DENY` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | Caméra, micro, géolocalisation, paiement et USB interdits |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains`, seulement si `HSTS_ENABLED=true` |
+
+- La configuration nginx est un **modèle** (`frontend/nginx/default.conf.template`) : au démarrage, l'image remplace `${HSTS_ENABLED}`, et seulement les variables `HSTS_*` (`NGINX_ENVSUBST_FILTER`).
+- Un `location` qui ajoute son propre `add_header` perd ceux du `server` : il doit inclure `security-headers.conf` à nouveau, comme `/assets/`.
+- Aucun script en ligne n'est permis : la configuration de Docsify est dans `guide/config.js` et `documentation/config.js`. Ne jamais affaiblir la CSP de l'application pour une page de documentation. `e2e/headers.spec.ts` vérifie les en-têtes et l'absence de violation sur l'application, le guide et la documentation.
 
 ## Arborescence
 
@@ -113,6 +143,11 @@ Toutes les valeurs sont dans `backend/app/core/config.py` (`Settings`, pydantic-
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` | *(vide)* / `587` / *(vide)* / *(vide)* | Serveur d'envoi des mails |
 | `SMTP_TLS` | `starttls` | `starttls`, `ssl` ou `none` (Mailpit) |
 | `MAIL_FROM` | `PEA Radar <no-reply@localhost>` | Expéditeur des mails |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | *(vide)* | Client OAuth Google ; vide = pas de bouton Google |
+| `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | *(vide)* | Cloudflare Turnstile ; clé secrète vide = captcha désactivé |
+| `HIBP_ENABLED` | `true` | Refus des mots de passe connus dans les fuites |
+| `DEV_ORIGINS` | `http://localhost:5180` | Origines acceptées en plus de `PUBLIC_BASE_URL`, séparées par des virgules |
+| `HSTS_ENABLED` | `false` | Lu par `web` (nginx) : envoie l'en-tête HSTS. `true` seulement derrière HTTPS |
 
 ## Ports
 

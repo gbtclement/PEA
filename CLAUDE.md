@@ -26,7 +26,7 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
   - Les calculs (indicateurs, score, frais, positions, éligibilité) sont des fonctions pures, testées sans base ni réseau.
 - **Contenu des dossiers** :
   - `core/` : configuration (`config.py`, surchargée par variables d'environnement), base de données, `security.py` (Argon2, empreintes de jetons), `current_user.py`.
-  - `services/auth/` : comptes, codes et liens par mail, sessions, appareils connus, reprise par l'admin (`bootstrap.py`). `services/mail/` : rendu des mails et file d'envoi (`enqueue`), envoyée par la tâche `jobs/mail.py` toutes les 5 s.
+  - `services/auth/` : comptes, codes et liens par mail, sessions, appareils connus, reprise par l'admin (`bootstrap.py`), Google (`google.py`), Turnstile (`captcha.py`), fuites de mots de passe (`breach.py`). `services/ratelimit.py` (limites anti-abus) et `services/security_log.py` (journal `security_events`). `services/mail/` : rendu des mails et file d'envoi (`enqueue`), envoyée par la tâche `jobs/mail.py` toutes les 5 s.
   - `models/` : SQLAlchemy 2 (API synchrone). Les migrations sont dans `backend/alembic/versions`.
   - `providers/` : `yahoo.py` (yfinance) et `euronext.py`, derrière les interfaces `providers/base.py`.
   - `jobs/` : tâches planifiées du worker :
@@ -57,7 +57,7 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
 - Deux sites **Docsify** en Markdown, servis par nginx **hors du routeur React** :
   - `/guide/` : guide utilisateur (`app/` une page par écran, `bourse/` cours avec exemples chiffrés), sans nom de fichier ni commande. Lié en bas de la barre latérale par un `<a>` classique, pas un `NavLink` ;
   - `/documentation/` : documentation admin (technique, installation, API, formules), **non liée** dans la navigation, `noindex`, sans protection pour l'instant (à protéger avant une mise en ligne).
-- Docsify, ses plugins, `theme.css` et `back-to-app.js` sont partagés dans `public/docsify/` (pas de CDN, versions dans `VERSIONS.md`).
+- Docsify, ses plugins, `theme.css` et `back-to-app.js` sont partagés dans `public/docsify/` (pas de CDN, versions dans `VERSIONS.md`). La configuration de chaque site est dans son `config.js` : **aucun script en ligne** (CSP).
 - Liens entre pages toujours depuis la racine du site (`bourse/pea.md`), menu dans le `_sidebar.md` de chaque site. Le guide ne renvoie jamais vers la documentation admin. Dans un tableau, écrire `&lt;` au lieu de `<` devant du gras.
 - Quand une fonctionnalité change, mettre à jour la page du guide et la page de la documentation admin concernées dans la même branche. `e2e/documentation.spec.ts` vérifie que chaque page des deux sites s'affiche et que les liens internes existent.
 
@@ -71,7 +71,7 @@ docker compose up -d --build
 
 # Backend de dev (code monté, rechargement auto, API sur :8000, migrations appliquées au démarrage)
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db api worker
-docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api pytest -q        # ~470 tests, base pea_radar_test
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api pytest -q        # ~520 tests, base pea_radar_test
 docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api alembic revision --autogenerate -m "..."
 docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api alembic upgrade head
 
@@ -82,14 +82,14 @@ docker compose exec -T api python -m app.cli ensure-user --email … --password 
 # Frontend
 cd frontend && npm install
 npm run dev          # :5180, proxy /api et fichiers SEO vers :8000
-npm test             # Vitest (~150 tests)
+npm test             # Vitest (~160 tests)
 npx tsc -b           # vérification des types
 npm run build
-npm run e2e          # Playwright contre http://localhost:8095 : reconstruire web et api avant (COOKIE_SECURE=false, Mailpit lancé)
+npm run e2e          # Playwright contre http://localhost:8095 : reconstruire web et api avant (COOKIE_SECURE=false, mails vers Mailpit : si .env vise Brevo, voir docker-compose.e2e.yml)
 ```
 
 - `pytest` exclut par défaut les tests marqués `network`, qui appellent le vrai Yahoo.
-- Le test de bout en bout `layout.spec.ts` vérifie qu'aucune page n'est coupée entre 1100 et 1440 px. `seo.spec.ts` vérifie qu'il y a un seul `h1` par page, les métadonnées et `noindex`.
+- Le test de bout en bout `layout.spec.ts` vérifie qu'aucune page n'est coupée entre 1100 et 1440 px. `seo.spec.ts` vérifie qu'il y a un seul `h1` par page, les métadonnées et `noindex`. `headers.spec.ts` vérifie les en-têtes de sécurité et l'absence de violation CSP.
 
 ## Conventions
 
@@ -105,7 +105,7 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
   - `enqueue()` ne fait jamais de commit, et l'API n'envoie jamais un mail elle-même : c'est le worker.
 - **TDD** : écrire le test qui échoue, puis le code.
   - Côté backend, tests d'API avec `client` (connecté), `anon_client` (visiteur) ou `admin_client` (conftest, sur `https://testserver` pour les cookies `Secure`), `sign_in()` dans `tests/auth_helpers.py`, et fabriques dans `tests/factories.py`.
-  - Faux fournisseurs dans `tests/fakes.py` (marché), `tests/fake_llm.py` (Claude) et `tests/fake_mailer.py` (SMTP). Aucun test ne doit appeler Yahoo, Anthropic ni un vrai serveur de mail.
+  - Faux fournisseurs dans `tests/fakes.py` (marché), `tests/fake_llm.py` (Claude), `tests/fake_mailer.py` (SMTP), et les fixtures `fake_captcha` (Turnstile), `fake_breach` (Have I Been Pwned) et `fake_google`. Aucun test ne doit appeler Yahoo, Anthropic, un vrai serveur de mail, Google, Cloudflare ni Have I Been Pwned.
 - **Mise en page** : thème clair, bureau uniquement. L'app est utilisable dès 1024 px, sur deux colonnes à partir de `xl` (1280 px). Les enfants d'une grille ont besoin de `min-w-0`. Toujours vérifier qu'aucune carte n'est coupée (les cartes shadcn ont `overflow-hidden`).
 - **Titres** : un seul `h1` par page. `CardTitle` rend un `h2`, un sous-titre dans une carte est un `h3`.
 - **Flux Git** : une branche par lot ou par sujet, et des PR ouvertes par l'utilisateur via des liens GitHub `compare` préremplis (`gh` n'est pas installé). Dépôt : https://github.com/gbtclement/PEA.
@@ -146,5 +146,12 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
   - la migration `a7c3e9f1b2d4` (identifiants des utilisateurs en UUID) est **à sens unique** : sauvegarder la base (`pg_dump`) avant la première reconstruction qui l'applique. L'API de dev partage le volume `pgdata` et migre au démarrage ;
   - `COOKIE_SECURE=false` seulement en local (HTTP). En ligne, `true`, sinon les sessions voyagent en clair ;
   - `ADMIN_EMAIL` reprend au démarrage le compte « Moi » d'avant les comptes, et reçoit un lien pour choisir son mot de passe ;
-  - les routes qui reçoivent une adresse mail répondent pareil qu'un compte existe ou non : ne pas le trahir dans un message.
+  - les routes qui reçoivent une adresse mail répondent pareil qu'un compte existe ou non : ne pas le trahir dans un message ;
+  - limites anti-abus dans `ratelimit.LIMITS` : 10 mots de passe faux par adresse en 15 min bloquent le compte 15 min, Turnstile après 3 échecs, plafonds par IP pour la connexion, l'inscription et les mails. Les nouvelles routes publiques de compte prennent `Depends(check_origin)` ;
+  - fournisseurs externes : Google (`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, vide = pas de bouton), Cloudflare Turnstile (`TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY`, clé secrète vide = désactivé), Have I Been Pwned (`HIBP_ENABLED`). Tous les trois laissent passer s'ils ne répondent pas ;
+  - le contenu des mails à code ou à lien est effacé de `email_log` dès l'envoi : ne jamais y relire un code.
+- **En-têtes nginx** (`frontend/nginx/security-headers.conf`, inclus dans `server` et dans tout `location` qui a ses propres `add_header`) : CSP stricte, `X-Frame-Options DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`.
+  - **Ne jamais affaiblir la CSP de l'application pour une page de documentation** : au besoin, une CSP propre à `location ~ ^/(guide|documentation|docsify)/`.
+  - `HSTS_ENABLED=true` (lu par `web`) seulement une fois le HTTPS en place.
+  - Derrière un proxy HTTPS devant nginx, ajouter `set_real_ip_from` / `real_ip_header` : sinon toutes les limites par IP (`client_ip()`, dernière entrée de `X-Forwarded-For`) visent l'IP du proxy.
 - **Fuseau** : `Europe/Paris` pour le calendrier de bourse (`services/market_calendar.py`).

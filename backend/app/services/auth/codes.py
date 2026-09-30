@@ -66,9 +66,18 @@ def issue_link_token(db: Session, user: User, purpose: str, now: datetime, ttl: 
     return token
 
 
+def _live_link(db: Session, token: str, purpose: str, now: datetime) -> EmailCode | None:
+    return db.scalar(select(EmailCode).where(EmailCode.code_hash == token_hash(token), EmailCode.purpose == purpose,
+                                             EmailCode.used_at.is_(None), EmailCode.expires_at > now))
+
+
+def link_token_valid(db: Session, token: str, purpose: str, now: datetime) -> bool:
+    """Le lien marche-t-il encore ? Ne le consomme pas."""
+    return _live_link(db, token, purpose, now) is not None
+
+
 def consume_link_token(db: Session, token: str, purpose: str, now: datetime) -> User | None:
-    row = db.scalar(select(EmailCode).where(EmailCode.code_hash == token_hash(token), EmailCode.purpose == purpose,
-                                            EmailCode.used_at.is_(None), EmailCode.expires_at > now))
+    row = _live_link(db, token, purpose, now)
     if row is None:
         return None
     row.used_at = now

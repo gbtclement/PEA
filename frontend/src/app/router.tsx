@@ -12,6 +12,7 @@ export const routes: RouteObject[] = [
   { path: "/connexion", lazy: async () => { const { AuthPage } = await import("@/features/auth/AuthPage"); return { Component: () => <AuthPage mode="connexion" /> }; } },
   { path: "/verifier-email", lazy: async () => ({ Component: (await import("@/features/auth/VerifyEmailPage")).VerifyEmailPage }) },
   { path: "/mot-de-passe-oublie", lazy: async () => ({ Component: (await import("@/features/auth/ForgotPasswordPage")).ForgotPasswordPage }) },
+  { path: "/finaliser-inscription", lazy: async () => ({ Component: (await import("@/features/auth/FinishSignUpPage")).FinishSignUpPage }) },
   { path: "/reinitialiser", lazy: async () => ({ Component: (await import("@/features/auth/ResetPasswordPage")).ResetPasswordPage }) },
   { path: "/ce-n-etait-pas-moi", lazy: async () => ({ Component: (await import("@/features/auth/NotMePage")).NotMePage }) },
   {

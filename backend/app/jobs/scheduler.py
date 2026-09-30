@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.jobs.context import JobContext
 from app.jobs.forecasts import refresh_forecast_stats, refresh_forecasts, stats_are_stale
+from app.jobs.cleanup import purge_security_data
 from app.jobs.mail import send_pending_emails
 from app.jobs.market import refresh_daily_history, refresh_fundamentals, refresh_quotes
 from app.jobs.runner import run_job
@@ -112,6 +113,10 @@ def mail_job(ctx: JobContext) -> None:
         logging.getLogger(__name__).exception("Échec de la file d'envoi des mails")
 
 
+def cleanup_job(ctx: JobContext) -> None:
+    run_job(ctx, "cleanup", purge_security_data)
+
+
 def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> BaseScheduler:
     tz = ctx.settings.timezone
     scheduler = scheduler or BlockingScheduler(timezone=tz)
@@ -124,6 +129,7 @@ def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> 
                       args=[ctx], id="daily", **daily)
     scheduler.add_job(evening_job, CronTrigger(day_of_week="mon-fri", hour=18, minute=15, timezone=tz),
                       args=[ctx], id="evening", **daily)
+    scheduler.add_job(cleanup_job, CronTrigger(hour=3, minute=30, timezone=tz), args=[ctx], id="cleanup", **daily)
     intervals = {1: ctx.settings.quotes_t1_minutes, 2: ctx.settings.quotes_t2_minutes, 3: ctx.settings.quotes_t3_minutes}
     for tier, minutes in intervals.items():
         scheduler.add_job(quotes_job, IntervalTrigger(minutes=minutes, timezone=tz), args=[ctx, tier],

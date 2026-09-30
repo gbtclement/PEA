@@ -31,3 +31,28 @@ def get_session_maker():
     from app.core.db import get_session_factory
 
     return get_session_factory()
+
+
+def get_captcha():
+    """Turnstile si la clé secrète est configurée, sinon captcha désactivé ; remplacé en test."""
+    from app.services.auth.captcha import DisabledCaptcha, TurnstileVerifier
+
+    secret = get_settings().turnstile_secret_key
+    return TurnstileVerifier(secret) if secret else DisabledCaptcha()
+
+
+def get_breach_checker():
+    """Have I Been Pwned (désactivable par HIBP_ENABLED=false) ; remplacé en test."""
+    from app.services.auth.breach import HibpChecker, NoBreachCheck
+
+    return HibpChecker() if get_settings().hibp_enabled else NoBreachCheck()
+
+
+def get_google_client():
+    """Client Google, ou None si GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET ou APP_SECRET manque ; remplacé en test."""
+    from app.services.auth.google import GoogleOIDC
+
+    settings = get_settings()
+    if not (settings.google_client_id and settings.google_client_secret and settings.app_secret):
+        return None
+    return GoogleOIDC(settings.google_client_id, settings.google_client_secret)

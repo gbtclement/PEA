@@ -11,7 +11,7 @@ cp .env.example .env        # la première fois, puis remplacer APP_SECRET par u
 docker compose up -d --build
 ```
 
-Dans `.env`, en local : `ADMIN_EMAIL=<votre adresse>`, `COOKIE_SECURE=false` et le SMTP de Mailpit (`SMTP_HOST=mailpit`, `SMTP_PORT=1025`, `SMTP_TLS=none`), déjà proposés par `.env.example`. En ligne : `COOKIE_SECURE=true` et les identifiants SMTP de Brevo.
+Dans `.env`, en local : `ADMIN_EMAIL=<votre adresse>`, `COOKIE_SECURE=false` et le SMTP de Mailpit (`SMTP_HOST=mailpit`, `SMTP_PORT=1025`, `SMTP_TLS=none`), déjà proposés par `.env.example`. En ligne : `COOKIE_SECURE=true`, les identifiants SMTP de Brevo, `HSTS_ENABLED=true` une fois le HTTPS en place, et les clés Turnstile. Facultatif partout : `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` pour le bouton « Continuer avec Google » (création du client OAuth et des clés Turnstile : documentation admin, page Installation).
 
 **Premier démarrage** : le compte `ADMIN_EMAIL` devient administrateur et reçoit un mail pour choisir son mot de passe. En local, tous les mails arrivent dans **Mailpit** : http://localhost:8025. Les autres personnes créent leur compte avec « Créer un compte » (code à 6 chiffres reçu par mail).
 
@@ -37,7 +37,7 @@ npm run gen:api   # régénère les types TypeScript depuis l'API
 
 ## Fonctionnalités
 
-- **Comptes** : inscription avec code de validation par mail, connexion (« Rester connecté »), mot de passe oublié, alerte « nouvelle connexion » avec bouton « Ce n'était pas moi ». Sans compte, l'accueil, l'Explorer, les ETF et les fiches restent consultables ; prévisions, portefeuille, favoris, assistant et réglages demandent une connexion.
+- **Comptes** : inscription avec code de validation par mail, connexion (« Rester connecté »), mot de passe oublié, alerte « nouvelle connexion » avec bouton « Ce n'était pas moi », « Continuer avec Google », case anti-robot Cloudflare Turnstile, blocage 15 min après 10 mots de passe faux, refus des mots de passe connus dans les fuites (Have I Been Pwned, sans jamais envoyer le mot de passe), en-têtes de sécurité nginx (CSP, HSTS en option). Sans compte, l'accueil, l'Explorer, les ETF et les fiches restent consultables ; prévisions, portefeuille, favoris, assistant et réglages demandent une connexion.
 - **Accueil** : top 10 du score mixte, indices, compteur d'ordres de l'année, plus fortes hausses/baisses, carte du marché.
 - **Explorer / ETF** : tous les titres, filtres (secteur, pays, place, score, prix, liquidité, favoris) et tris, conservés dans l'URL.
 - **Prévisions** : prédictions à 1 jour, 1 semaine et 1 mois calculées sans API à partir de 14 signaux techniques (cassures, tendances, RSI, MACD…), triables ; statistiques historiques de chaque signal sur 5 ans (cas, % de hausses, gain moyen, après frais, comparaison au CAC 40) ; bulletin de notes : test honnête sur l'année écoulée (statistiques recalculées sans elle) puis suivi réel des prédictions de chaque matin. Des estimations, pas des certitudes.
@@ -69,7 +69,9 @@ Deux variables dans `.env` :
 
 ```bash
 cd frontend && npx playwright install chromium   # une fois
-npm run e2e                                        # l'application doit tourner sur http://localhost:8095 (parcours, inscription via Mailpit, mise en page, SEO)
+npm run e2e                                        # l'application doit tourner sur http://localhost:8095 (parcours, inscription via Mailpit, mise en page, SEO, en-têtes de sécurité)
+# si .env vise Brevo, envoyer d'abord les mails vers Mailpit :
+# docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --wait api worker && docker compose restart web
 ```
 
 Guide et documentation admin (Docsify) : `frontend/public/guide/` et `frontend/public/documentation/`, servis sur `/guide/` et `/documentation/`. Documentation de conception : `docs/superpowers/specs/`. Contexte pour Claude Code (architecture, commandes, conventions, points d'attention) : `CLAUDE.md`.

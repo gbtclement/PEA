@@ -1,6 +1,13 @@
+# HSTS seulement derrière HTTPS (HSTS_ENABLED=true dans .env) ; une valeur vide n'envoie pas l'en-tête.
+map "${HSTS_ENABLED}" $hsts {
+  "true"  "max-age=31536000; includeSubDomains";
+  default "";
+}
+
 server {
   listen 80;
   root /usr/share/nginx/html;
+  include /etc/nginx/security-headers.conf;
 
   gzip on;
   gzip_types text/css application/javascript application/json image/svg+xml;
@@ -35,6 +42,7 @@ server {
   location /assets/ {
     expires 1y;
     add_header Cache-Control "public, immutable";
+    include /etc/nginx/security-headers.conf;
   }
 
   location / {

@@ -32,6 +32,32 @@ Renseignez aussi les comptes et les mails :
 | `SMTP_USER` / `SMTP_PASSWORD` | vides | Identifiants SMTP de Brevo |
 | `SMTP_TLS` | `none` | `starttls` |
 | `MAIL_FROM` | `PEA Radar <no-reply@pea-radar.local>` | Une adresse de votre domaine, validée chez Brevo |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Vides (pas de bouton Google), ou le client OAuth ci-dessous | Client OAuth Google |
+| `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Vides (pas de case anti-robot) | Clés du widget Turnstile |
+| `HIBP_ENABLED` | `true` (`false` hors connexion) | `true` |
+| `HSTS_ENABLED` | `false` | `true`, une fois le HTTPS en place |
+| `DEV_ORIGINS` | `http://localhost:5180` (serveur Vite) | Vide |
+
+### Connexion avec Google (facultatif)
+
+1. Dans la [console Google Cloud](https://console.cloud.google.com/apis/credentials), créez un projet, puis configurez l'**écran de consentement OAuth** (type « Externe », nom « PEA Radar », votre adresse de contact).
+2. **Identifiants → Créer des identifiants → ID client OAuth**, type **Application Web**.
+3. Dans **URI de redirection autorisés**, ajoutez :
+   - en local : `http://localhost:8095/api/auth/google/callback` ;
+   - en ligne : `https://<votre-domaine>/api/auth/google/callback`.
+
+   Les « origines JavaScript autorisées » sont inutiles : tout passe par le serveur.
+4. Copiez l'ID client et le code secret dans `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET`, puis `docker compose up -d`.
+
+L'adresse de retour est construite à partir de `PUBLIC_BASE_URL` : elle doit correspondre exactement à l'une des URI déclarées.
+
+### Case anti-robot Cloudflare Turnstile (facultatif en local)
+
+1. Dans le tableau de bord Cloudflare, ouvrez **Turnstile → Add widget** (gratuit, sans y déplacer votre domaine).
+2. Nom « PEA Radar », mode **Managed**, domaines `localhost` et votre domaine public.
+3. Copiez la **Site Key** dans `TURNSTILE_SITE_KEY` et la **Secret Key** dans `TURNSTILE_SECRET_KEY`.
+
+Sans ces clés, les formulaires fonctionnent sans case anti-robot ; les limites de tentatives restent actives.
 
 Lancez ensuite tout :
 
