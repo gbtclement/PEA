@@ -58,7 +58,8 @@ nginx ajoute à toutes ses réponses (`frontend/nginx/security-headers.conf`) :
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains`, seulement si `HSTS_ENABLED=true` |
 
 - La configuration nginx est un **modèle** (`frontend/nginx/default.conf.template`) : au démarrage, l'image remplace `${HSTS_ENABLED}`, et seulement les variables `HSTS_*` (`NGINX_ENVSUBST_FILTER`).
-- Un `location` qui ajoute son propre `add_header` perd ceux du `server` : il doit inclure `security-headers.conf` à nouveau, comme `/assets/`.
+- Un `location` qui ajoute son propre `add_header` perd ceux du `server` : il doit inclure `security-headers.conf` à nouveau, comme `/assets/` et `/documentation/`.
+- `/documentation/` est réservée aux admins : nginx interroge `GET /api/auth/admin-check` avant chaque fichier (`auth_request`) et renvoie les autres vers `/connexion?suite=%2Fdocumentation%2F`. `/guide/` et `/docsify/` restent publics. Voir [Comptes utilisateurs](comptes.md#documentation-protégée).
 - Aucun script en ligne n'est permis : la configuration de Docsify est dans `guide/config.js` et `documentation/config.js`. Ne jamais affaiblir la CSP de l'application pour une page de documentation. `e2e/headers.spec.ts` vérifie les en-têtes et l'absence de violation sur l'application, le guide et la documentation.
 
 ## Arborescence
@@ -125,9 +126,9 @@ Toutes les valeurs sont dans `backend/app/core/config.py` (`Settings`, pydantic-
 |---|---|---|
 | `DATABASE_URL` | `postgresql+psycopg://pea:pea@db:5432/pea_radar` | Base principale |
 | `TEST_DATABASE_URL` | `…/pea_radar_test` | Base des tests (créée par `backend/docker/initdb`) |
-| `APP_SECRET` | *(vide)* | Chiffre la clé API Claude en base. **À définir, puis ne plus changer.** |
-| `ANTHROPIC_API_KEY` | *(vide)* | Clé Claude optionnelle (sinon saisie dans les Réglages) |
-| `ASSISTANT_MODEL` | `claude-opus-5` | Modèle par défaut de l'assistant |
+| `APP_SECRET` | *(vide)* | Signe les cookies temporaires de la connexion Google (obligatoire pour Google) |
+| `ANTHROPIC_API_KEY` | *(vide)* | Clé Claude de l'assistant. Seul endroit où elle est lue ; sans elle, l'assistant est « pas encore configuré » |
+| `ASSISTANT_MODEL` | `claude-opus-5` | Modèle initial de `app_settings` ; ensuite, il se change dans l'onglet Admin |
 | `HISTORY_YEARS` | `5` | Profondeur de l'historique journalier |
 | `YAHOO_CHUNK_SIZE` / `YAHOO_PAUSE_SECONDS` | `50` / `1.0` | Taille des paquets et pause entre deux requêtes Yahoo |
 | `TIER2_SIZE` | `150` | Nombre de titres du palier T2 |

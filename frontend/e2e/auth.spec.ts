@@ -26,7 +26,9 @@ test("inscription, code reçu par mail, déconnexion puis connexion", async ({ p
   await page.getByLabel("Code à 6 chiffres").fill(await lastCode(request, email));
   await page.getByRole("button", { name: "Valider" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Accueil" })).toBeVisible();
+  const logout = page.waitForResponse("**/api/auth/logout"); // sinon le goto suivant peut annuler la requête
   await page.getByRole("button", { name: "Se déconnecter" }).click();
+  await logout;
   await page.goto("/portefeuille");
   await expect(page).toHaveURL(/\/connexion\?suite=%2Fportefeuille/);
   await page.getByLabel("Adresse mail").fill(email);

@@ -5,7 +5,7 @@ Application web personnelle, en local, pour un investisseur débutant qui a un P
 C'est un outil d'aide à la décision, pas un conseil en investissement : garder cet avertissement partout où l'app recommande quelque chose.
 
 - Spécification : `docs/superpowers/specs/2026-09-26-pea-radar-design.md`. C'est la référence en cas de doute.
-- Comptes utilisateurs : `docs/superpowers/specs/2026-09-28-comptes-utilisateurs-design.md` (étape 1 « socle » faite, étape 2 `comptes-securite` à venir).
+- Comptes utilisateurs : `docs/superpowers/specs/2026-09-28-comptes-utilisateurs-design.md` (étapes `comptes-socle`, `comptes-securite` et `comptes-admin` faites, suivante : `comptes-rgpd`).
 - Plans des lots : `docs/superpowers/plans/`.
 - Utilisateur : francophone et débutant en bourse comme en code. Il lui faut des explications simples, en français.
 
@@ -48,7 +48,7 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
 - **Stack** : React 19, react-router 7, TanStack Query/Table/Virtual, Tailwind 4 et shadcn (`components/ui`, qui importe `cn` depuis le paquet `cn` de shadcn). Graphiques avec Lightweight Charts (fiche d'un titre) et ECharts.
 - **Contenu des dossiers** :
   - `features/<domaine>/` contient une page, ses composants et ses tests. `app/` contient le layout, le routeur, le menu du compte et la page 404.
-  - `features/auth/` : écrans de compte, `useMe()` (compte connecté ou `null`) et `RequireAuth`, qui enveloppe les pages privées dans le routeur. Le client HTTP (`lib/api/client.ts`) ajoute l'en-tête `X-CSRF-Token` et transforme les erreurs en `ApiError(status, message, code)`.
+  - `features/auth/` : écrans de compte, `useMe()` (compte connecté ou `null`), `RequireAuth`, qui enveloppe les pages privées dans le routeur, et `RequireAdmin` (page 404 pour un non-admin). `features/settings/` : cartes du compte (profil, mot de passe, adresse, appareils) et frais. `features/admin/` : onglet Admin. Le client HTTP (`lib/api/client.ts`) ajoute l'en-tête `X-CSRF-Token` et transforme les erreurs en `ApiError(status, message, code)`.
   - `lib/api/schema.d.ts` est **généré** depuis l'OpenAPI de l'API (`npm run gen:api`, API de dev lancée). Ne pas l'éditer à la main.
   - `seo/usePageMeta.ts` : chaque page l'appelle pour son titre, sa description, sa canonical et son JSON-LD. Les pages privées passent `noindex: true`.
 
@@ -56,7 +56,7 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
 
 - Deux sites **Docsify** en Markdown, servis par nginx **hors du routeur React** :
   - `/guide/` : guide utilisateur (`app/` une page par écran, `bourse/` cours avec exemples chiffrés), sans nom de fichier ni commande. Lié en bas de la barre latérale par un `<a>` classique, pas un `NavLink` ;
-  - `/documentation/` : documentation admin (technique, installation, API, formules), **non liée** dans la navigation, `noindex`, sans protection pour l'instant (à protéger avant une mise en ligne).
+  - `/documentation/` : documentation admin (technique, installation, API, formules), **réservée aux admins** : nginx appelle `GET /api/auth/admin-check` (`auth_request`) avant chaque fichier et renvoie les autres vers `/connexion?suite=%2Fdocumentation%2F`. Liée seulement depuis l'onglet Admin, `noindex`. `/guide/` et `/docsify/` restent publics.
 - Docsify, ses plugins, `theme.css` et `back-to-app.js` sont partagés dans `public/docsify/` (pas de CDN, versions dans `VERSIONS.md`). La configuration de chaque site est dans son `config.js` : **aucun script en ligne** (CSP).
 - Liens entre pages toujours depuis la racine du site (`bourse/pea.md`), menu dans le `_sidebar.md` de chaque site. Le guide ne renvoie jamais vers la documentation admin. Dans un tableau, écrire `&lt;` au lieu de `<` devant du gras.
 - Quand une fonctionnalité change, mettre à jour la page du guide et la page de la documentation admin concernées dans la même branche. `e2e/documentation.spec.ts` vérifie que chaque page des deux sites s'affiche et que les liens internes existent.
@@ -71,7 +71,7 @@ docker compose up -d --build
 
 # Backend de dev (code monté, rechargement auto, API sur :8000, migrations appliquées au démarrage)
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db api worker
-docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api pytest -q        # ~520 tests, base pea_radar_test
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api pytest -q        # ~560 tests, base pea_radar_test
 docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api alembic revision --autogenerate -m "..."
 docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api alembic upgrade head
 
@@ -82,7 +82,7 @@ docker compose exec -T api python -m app.cli ensure-user --email … --password 
 # Frontend
 cd frontend && npm install
 npm run dev          # :5180, proxy /api et fichiers SEO vers :8000
-npm test             # Vitest (~160 tests)
+npm test             # Vitest (~170 tests)
 npx tsc -b           # vérification des types
 npm run build
 npm run e2e          # Playwright contre http://localhost:8095 : reconstruire web et api avant (COOKIE_SECURE=false, mails vers Mailpit : si .env vise Brevo, voir docker-compose.e2e.yml)
@@ -99,7 +99,7 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
   - messages de commit en anglais, au format conventional commits (`feat:`, `fix:`, `docs:`, `chore:`).
 - **Comptes** :
   - toute donnée personnelle (ordres, favoris, conversations, réglages) porte un `user_id` (UUID) ;
-  - les routes obtiennent l'utilisateur **uniquement** via `core/current_user.py` : `get_current_user()` (route privée, `401`), `get_optional_user()` (route publique) ou `require_admin()` ;
+  - les routes obtiennent l'utilisateur **uniquement** via `core/current_user.py` : `get_current_user()` (route privée, `401`), `get_optional_user()` (route publique), `require_admin()` (toutes les routes `/api/admin/*`) ou `require_premium()` (assistant ; un admin est toujours Premium, voir `User.has_premium`) ;
   - les nouvelles erreurs d'API renvoient `{"detail": {"code", "message"}}` ;
   - ne **jamais** stocker un jeton en clair (session, code, lien) : seulement son empreinte (`token_hash`) ;
   - `enqueue()` ne fait jamais de commit, et l'API n'envoie jamais un mail elle-même : c'est le worker.
@@ -128,12 +128,14 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
 - **Score** : il sert à trier et à expliquer, pas à prédire.
   - Le top 10 exclut les titres peu liquides (`min_turnover_eur`), à l'historique trop court (< 200 jours) ou non confirmés éligibles.
   - Chaque composante renvoie un message lisible, affiché tel quel dans l'interface.
-- **Clé API Claude** :
-  - elle est chiffrée en base (Fernet, clé dérivée de `APP_SECRET`) ou lue dans `ANTHROPIC_API_KEY` ;
-  - **jamais renvoyée au navigateur ni écrite dans les logs** ;
-  - changer `APP_SECRET` rend la clé enregistrée illisible ;
+- **Secrets** (clé Claude, SMTP, Google, Turnstile, `APP_SECRET`) :
+  - uniquement dans `.env` : **jamais en base, jamais renvoyés au navigateur ni écrits dans les logs**. La clé Claude est lue seulement dans `ANTHROPIC_API_KEY` ;
+  - l'onglet Admin montre l'état de la configuration (`GET /api/admin/config-status`) en booléens, **jamais les valeurs** ;
   - `.env` n'est pas versionné, seul `.env.example` l'est.
 - **Assistant** :
+  - réservé aux membres Premium (`require_premium()`) ; `GET /api/assistant/status` dit à l'interface pourquoi il est indisponible (`premium`, `not_configured`, `limit_reached`) ;
+  - modèle et limite mensuelle par utilisateur dans `app_settings` (une ligne, lue par `get_app_settings()`, réglée dans l'onglet Admin) ;
+  - le coût de chaque réponse s'ajoute dans `ai_usage` par `add_cost()` (utilisateur × mois de Paris) : **jamais recalculé depuis les conversations**, supprimer une conversation ne rend pas de budget ;
   - modèle par défaut `claude-opus-5`, avec `thinking: {type: "adaptive"}`. Le repli serveur en cas de refus n'est activé que pour Opus 5 ;
   - la réponse tourne dans un fil avec sa propre session : elle est toujours enregistrée, même si le navigateur part, et la connexion à Claude est alors coupée ;
   - nginx : `proxy_buffering off` et `proxy_read_timeout 600s` pour le SSE.
@@ -151,7 +153,7 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
   - fournisseurs externes : Google (`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, vide = pas de bouton), Cloudflare Turnstile (`TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY`, clé secrète vide = désactivé), Have I Been Pwned (`HIBP_ENABLED`). Tous les trois laissent passer s'ils ne répondent pas ;
   - le contenu des mails à code ou à lien est effacé de `email_log` dès l'envoi : ne jamais y relire un code.
 - **En-têtes nginx** (`frontend/nginx/security-headers.conf`, inclus dans `server` et dans tout `location` qui a ses propres `add_header`) : CSP stricte, `X-Frame-Options DENY`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`.
-  - **Ne jamais affaiblir la CSP de l'application pour une page de documentation** : au besoin, une CSP propre à `location ~ ^/(guide|documentation|docsify)/`.
+  - **Ne jamais affaiblir la CSP de l'application pour une page de documentation** : au besoin, une CSP propre aux `location` du guide, de `/docsify/` et de `/documentation/`.
   - `HSTS_ENABLED=true` (lu par `web`) seulement une fois le HTTPS en place.
   - Derrière un proxy HTTPS devant nginx, ajouter `set_real_ip_from` / `real_ip_header` : sinon toutes les limites par IP (`client_ip()`, dernière entrée de `X-Forwarded-For`) visent l'IP du proxy.
 - **Fuseau** : `Europe/Paris` pour le calendrier de bourse (`services/market_calendar.py`).
