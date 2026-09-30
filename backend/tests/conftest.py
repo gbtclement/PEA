@@ -64,7 +64,14 @@ def fake_google():
     return FakeGoogle()
 
 
-def _build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google):
+@pytest.fixture
+def fake_billing():
+    from tests.fake_billing import FakeBilling
+
+    return FakeBilling()
+
+
+def _build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google, fake_billing):
     from contextlib import nullcontext
 
     from app.api.deps import INTRADAY_CACHE, NEWS_CACHE, get_llm_factory, get_market_provider, get_session_maker
@@ -89,6 +96,10 @@ def _build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google
     app.dependency_overrides[get_captcha] = lambda: fake_captcha
     app.dependency_overrides[get_breach_checker] = lambda: fake_breach
     app.dependency_overrides[get_google_client] = lambda: fake_google
+
+    from app.api.deps import get_billing_gateway
+
+    app.dependency_overrides[get_billing_gateway] = lambda: fake_billing
     return app
 
 
@@ -100,29 +111,29 @@ def user(db):
 
 
 @pytest.fixture
-def anon_client(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google):
+def anon_client(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google, fake_billing):
     # https : les cookies « Secure » posés par l'API sont renvoyés comme par un vrai navigateur.
-    with TestClient(_build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google), base_url="https://testserver") as test_client:
+    with TestClient(_build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google, fake_billing), base_url="https://testserver") as test_client:
         yield test_client
 
 
 @pytest.fixture
-def client(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google, user):
+def client(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google, fake_billing, user):
     """Client connecté avec le compte `user` (validé, rôle utilisateur)."""
     from tests.auth_helpers import sign_in
 
-    with TestClient(_build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google), base_url="https://testserver") as test_client:
+    with TestClient(_build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google, fake_billing), base_url="https://testserver") as test_client:
         sign_in(test_client, db, user)
         yield test_client
 
 
 @pytest.fixture
-def admin_client(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google):
+def admin_client(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google, fake_billing):
     """Client connecté avec un compte administrateur."""
     from tests.auth_helpers import sign_in
     from tests.factories import make_user
 
-    with TestClient(_build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google), base_url="https://testserver") as test_client:
+    with TestClient(_build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google, fake_billing), base_url="https://testserver") as test_client:
         sign_in(test_client, db, make_user(db, "admin@example.com", first_name="Admin", role="admin"))
         yield test_client
 

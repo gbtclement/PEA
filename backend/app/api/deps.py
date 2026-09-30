@@ -58,3 +58,14 @@ def get_google_client():
     if not (settings.google_client_id and settings.google_client_secret and settings.app_secret):
         return None
     return GoogleOIDC(settings.google_client_id, settings.google_client_secret)
+
+
+def get_billing_gateway():
+    """Stripe si les quatre variables sont renseignées, sinon None (spec 7) ; remplacé en test."""
+    from app.services.billing.stripe_gateway import StripeGateway
+
+    s = get_settings()
+    if not s.stripe_configured:
+        return None
+    return StripeGateway(secret_key=s.stripe_secret_key, webhook_secret=s.stripe_webhook_secret,
+                         price_monthly=s.stripe_price_monthly, price_yearly=s.stripe_price_yearly)
