@@ -1,27 +1,17 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.routes.orders import counter_for, paris_today
 from app.core.current_user import get_current_user
 from app.core.db import get_db
-from app.models import DailyPrice, Security, SecurityQuote, User
+from app.models import Security, SecurityQuote, User
 from app.repositories.orders import closes_since, order_lines
 from app.schemas.portfolio import HistoryPointOut, PortfolioOut, PositionOut, SectorOut
-from app.services.fx import currency_for_market, to_eur
 from app.services.market_calendar import PARIS
-from app.services.portfolio import compute_positions, sort_orders, value_history
+from app.services.portfolio import sort_orders, value_history
+from app.services.portfolio_value import eur_rate, value_portfolio
 
 router = APIRouter(tags=["portfolio"])
-
-
-def _rate(security: Security) -> float:
-    return to_eur(1.0, currency_for_market(security.market)) or 1.0
-
-
-def _last_close(db: Session, security_id: int) -> float | None:
-    return db.scalars(select(DailyPrice.close).where(DailyPrice.security_id == security_id)
-                      .order_by(DailyPrice.date.desc()).limit(1)).first()
 
 
 def _pct(part: float, base: float) -> float | None:
@@ -30,51 +20,27 @@ def _pct(part: float, base: float) -> float | None:
 
 @router.get("/portfolio", response_model=PortfolioOut)
 def get_portfolio(db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> PortfolioOut:
-    lines = order_lines(db, user.id)
-    positions = compute_positions(lines)
-    realized = round(sum(p.realized_gain for p in positions.values()), 2)
-    today = paris_today()
-    bought_today: dict[int, tuple[int, float]] = {}  # titres achetés aujourd'hui : (quantité, montant)
-    for line in lines:
-        if line.side == "buy" and line.trade_date == today:
-            qty, amount = bought_today.get(line.security_id, (0, 0.0))
-            bought_today[line.security_id] = (qty + line.quantity, amount + line.quantity * line.unit_price)
-    open_positions = [p for p in positions.values() if p.quantity]
+    valued = value_portfolio(db, user.id, paris_today())
     rows: list[PositionOut] = []
-    day_change = 0.0
-    for p in open_positions:
-        security = db.get(Security, p.security_id)
-        quote = db.get(SecurityQuote, p.security_id)
-        rate = _rate(security)
-        native = quote.price if quote else _last_close(db, p.security_id)
-        price = round(native * rate, 4) if native is not None else None
-        value = round(p.quantity * price, 2) if price is not None else round(p.cost, 2)
-        if quote and quote.previous_close:
-            # Les titres achetés aujourd'hui varient depuis leur prix d'achat, pas depuis la clôture de la veille.
-            today_qty, today_amount = bought_today.get(p.security_id, (0, 0.0))
-            kept_today = min(today_qty, p.quantity)
-            average_buy = today_amount / today_qty if today_qty else 0.0
-            day_change += (p.quantity - kept_today) * (quote.price - quote.previous_close) * rate
-            day_change += kept_today * (quote.price * rate - average_buy)
-        gain = round(value - p.cost, 2)
+    for v in valued.positions:
+        p, security, quote = v.position, v.security, v.quote
+        gain = round(v.value - p.cost, 2)
         rows.append(PositionOut(
             security_id=security.id, symbol=security.symbol, name=security.name, sector=security.sector,
-            kind=security.kind, quantity=p.quantity, avg_cost=round(p.avg_cost, 4), price=price,
-            change_pct=quote.change_pct if quote else None, value=value, gain=gain, gain_pct=_pct(gain, p.cost),
+            kind=security.kind, quantity=p.quantity, avg_cost=round(p.avg_cost, 4), price=v.price,
+            change_pct=quote.change_pct if quote else None, value=v.value, gain=gain, gain_pct=_pct(gain, p.cost),
             weight=0.0,
         ))
-    total = round(sum(r.value for r in rows), 2)
-    invested = round(sum(p.cost for p in open_positions), 2)
+    total, invested, day_change = valued.total, valued.invested, valued.day_change
     sectors: dict[str, float] = {}
     for r in rows:
         r.weight = round(r.value / total, 4) if total else 0.0
         key = "ETF" if r.kind == "etf" else (r.sector or "Autres")
         sectors[key] = sectors.get(key, 0.0) + r.value
     rows.sort(key=lambda r: -r.value)
-    day_change = round(day_change, 2)
     return PortfolioOut(
         total_value=total, invested=invested, gain=round(total - invested, 2), gain_pct=_pct(total - invested, invested),
-        day_change=day_change, day_change_pct=_pct(day_change, total - day_change), realized_gain=realized,
+        day_change=day_change, day_change_pct=_pct(day_change, total - day_change), realized_gain=valued.realized,
         positions=rows,
         sectors=[SectorOut(sector=k, value=round(v, 2), weight=round(v / total, 4) if total else 0.0)
                  for k, v in sorted(sectors.items(), key=lambda kv: -kv[1])],
@@ -91,7 +57,7 @@ def get_portfolio_history(db: Session = Depends(get_db), user: User = Depends(ge
     closes = closes_since(db, ids, sort_orders(lines)[0].trade_date)
     rates: dict[int, float] = {}
     for sid in ids:
-        rates[sid] = _rate(db.get(Security, sid))
+        rates[sid] = eur_rate(db.get(Security, sid))
         quote = db.get(SecurityQuote, sid)
         if quote is not None:
             day = quote.as_of.astimezone(PARIS).date()

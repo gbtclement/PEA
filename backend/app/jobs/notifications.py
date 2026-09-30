@@ -3,6 +3,8 @@ from app.jobs.context import JobContext
 from app.services.market_calendar import is_market_open
 from app.services.notifications.moves import notify_price_moves
 from app.services.notifications.price_alerts import check_price_alerts
+from app.services.notifications.recaps import send_daily_recaps
+from app.services.notifications.reminders import send_order_reminders
 from app.services.notifications.send import notifications_ready
 
 
@@ -21,5 +23,23 @@ def run_price_moves(ctx: JobContext) -> int:
         return 0
     with ctx.session_factory() as db:
         sent = notify_price_moves(db, ctx.now())
+        db.commit()
+    return sent
+
+
+def run_daily_recaps(ctx: JobContext) -> int:
+    if not notifications_ready():
+        return 0
+    with ctx.session_factory() as db:
+        sent = send_daily_recaps(db, ctx.now())
+        db.commit()
+    return sent
+
+
+def run_order_reminders(ctx: JobContext) -> int:
+    if not notifications_ready():
+        return 0
+    with ctx.session_factory() as db:
+        sent = send_order_reminders(db, ctx.now())
         db.commit()
     return sent
