@@ -142,3 +142,18 @@ def test_delete_requires_the_email_and_removes_everything(admin_client, db):
 
 def test_unknown_user_is_404(admin_client):
     assert admin_client.patch(f"/api/admin/users/{uuid.uuid4()}", json={"is_premium": True}).status_code == 404
+
+
+def test_search_treats_percent_and_underscore_literally(admin_client, db):
+    make_user(db, "paul@example.com")
+    assert admin_client.get("/api/admin/users", params={"q": "%"}).json()["total"] == 0
+    assert admin_client.get("/api/admin/users", params={"q": "_"}).json()["total"] == 0
+
+
+def test_admin_email_change_cancels_reset_links(admin_client, db):
+    from app.services.auth.codes import issue_code
+
+    user = make_user(db, "p@example.com")
+    token = issue_code(db, user, "reset_password", datetime.now(UTC))
+    admin_client.patch(f"/api/admin/users/{user.id}", json={"email": "q@example.com"})
+    assert admin_client.post("/api/auth/reset-password", json={"token": token, "password": "un-mot-de-passe-long"}).status_code == 400

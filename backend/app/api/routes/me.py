@@ -3,17 +3,19 @@ from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import delete, func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.cookies import clear_auth_cookies
 from app.api.deps import get_breach_checker
-from app.api.routes.auth import CODE_ERRORS, check_password_rules, client_ip, fail, mail_allowed
+from app.api.routes.auth import CODE_ERRORS, TOO_MANY, check_password_rules, client_ip, fail, mail_allowed
 from app.core.config import get_settings
 from app.core.current_user import get_auth_session, get_account_user, get_now
 from app.core.db import get_db
 from app.core.security import normalize_email
 from app.models import AuthSession, DataExport, User
 from app.schemas.auth import MeOut, NoticeOut
+from app.services import ratelimit
 from app.schemas.me import AcceptTermsIn, CodeIn, DeleteAccountIn, ExportOut, EmailChangeIn, PasswordChangeIn, ProfileIn, SessionOut
 from app.services.auth import accounts, profile
 from app.services.auth.breach import BreachChecker
@@ -26,6 +28,18 @@ from app.services.security_log import log_event
 router = APIRouter(tags=["account"])
 
 WRONG_PASSWORD = ("wrong_password", "Mot de passe actuel incorrect.")
+EMAIL_TAKEN = ("email_taken", "Cette adresse vient d'être prise par un autre compte.")
+
+
+def _check_current_password(db: Session, user: User, password: str | None, now: datetime) -> None:
+    """Mot de passe actuel, limité à 10 essais faux par 15 min : une session volée ne permet pas de le deviner."""
+    key = str(user.id)
+    if ratelimit.over(db, "password_check", key, now):
+        raise fail(429, *TOO_MANY)
+    if not profile.password_ok(user, password):
+        ratelimit.record(db, "password_check", key, now)
+        db.commit()
+        raise fail(400, *WRONG_PASSWORD)
 
 
 @router.get("/me", response_model=MeOut)
@@ -44,8 +58,7 @@ def update_me(payload: ProfileIn, db: Session = Depends(get_db), user: User = De
 def change_password(payload: PasswordChangeIn, request: Request, db: Session = Depends(get_db),
                     user: User = Depends(get_account_user), auth: AuthSession = Depends(get_auth_session),
                     now: datetime = Depends(get_now), breach: BreachChecker = Depends(get_breach_checker)) -> NoticeOut:
-    if not profile.password_ok(user, payload.current_password):
-        raise fail(400, *WRONG_PASSWORD)  # avant Have I Been Pwned : pas de relais gratuit
+    _check_current_password(db, user, payload.current_password, now)  # avant Have I Been Pwned : pas de relais gratuit
     check_password_rules(payload.new_password, breach)
     profile.change_password(db, user, payload.new_password, keep_session=auth, now=now, ip=client_ip(request))
     db.commit()
@@ -55,8 +68,7 @@ def change_password(payload: PasswordChangeIn, request: Request, db: Session = D
 @router.post("/me/email", response_model=NoticeOut, status_code=202)
 def request_email_change(payload: EmailChangeIn, request: Request, db: Session = Depends(get_db),
                          user: User = Depends(get_account_user), now: datetime = Depends(get_now)) -> NoticeOut:
-    if not profile.password_ok(user, payload.password):
-        raise fail(400, *WRONG_PASSWORD)
+    _check_current_password(db, user, payload.password, now)
     new_email = normalize_email(payload.new_email)
     if mail_allowed(db, new_email, client_ip(request) or "inconnue", now):
         profile.request_email_change(db, user, new_email, now)
@@ -70,13 +82,15 @@ def confirm_email_change(payload: CodeIn, request: Request, db: Session = Depend
                          now: datetime = Depends(get_now)) -> MeOut:
     try:
         result = profile.confirm_email_change(db, user, payload.code, now, client_ip(request), keep_session=auth)
+        db.commit()  # code bon : l'adresse change ; code faux : l'essai raté est enregistré
     except profile.EmailTaken:
         db.commit()  # le code est consommé : il faudra en redemander un
-        raise fail(409, "email_taken", "Cette adresse vient d'être prise par un autre compte.")
+        raise fail(409, *EMAIL_TAKEN)
+    except IntegrityError:  # adresse prise entre la vérification et l'écriture
+        db.rollback()
+        raise fail(409, *EMAIL_TAKEN)
     if result != CodeCheck.OK:
-        db.commit()  # enregistre l'essai raté
         raise fail(400, *CODE_ERRORS[result])
-    db.commit()
     return MeOut.model_validate(user)
 
 
@@ -133,8 +147,7 @@ def delete_account(payload: DeleteAccountIn, response: Response, db: Session = D
     if normalize_email(payload.confirm_email) != user.email:
         raise fail(400, "confirm_mismatch", "L'adresse retapée ne correspond pas à votre compte.")
     if user.has_password:
-        if not profile.password_ok(user, payload.password):
-            raise fail(400, *WRONG_PASSWORD)
+        _check_current_password(db, user, payload.password, now)
     elif now - auth.created_at > REAUTH_WINDOW:
         raise fail(403, "reauth_required", "Reconnectez-vous avec Google, puis confirmez dans les 5 minutes.")
     if user.role == "admin" and db.scalar(select(func.count()).select_from(User).where(User.role == "admin")) <= 1:

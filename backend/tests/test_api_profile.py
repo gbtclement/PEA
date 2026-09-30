@@ -110,3 +110,36 @@ def test_email_verify_refuses_an_address_taken_meanwhile(client, db, user):
 def test_profile_routes_need_a_session(anon_client):
     assert anon_client.patch("/api/me", json={"first_name": "a", "last_name": "b"}).status_code == 401
     assert anon_client.post("/api/me/password", json={"new_password": NEW}).status_code == 401
+
+
+def test_current_password_guesses_are_limited(client, db, user):
+    for _ in range(10):
+        client.post("/api/me/password", json={"current_password": "faux", "new_password": NEW})
+    for call in (lambda p: client.post("/api/me/password", json={"current_password": p, "new_password": NEW}),
+                 lambda p: client.post("/api/me/email", json={"new_email": "n@example.com", "password": p}),
+                 lambda p: client.request("DELETE", "/api/me", json={"confirm_email": user.email, "password": p})):
+        response = call(PASSWORD)  # même le bon mot de passe est refusé pendant 15 min
+        assert response.status_code == 429 and response.json()["detail"]["code"] == "too_many_requests"
+
+
+def test_email_change_code_is_not_resent_within_60_seconds(client, db, user):
+    client.post("/api/me/email", json={"new_email": "nouveau@example.com", "password": PASSWORD})
+    client.post("/api/me/email", json={"new_email": "nouveau@example.com", "password": PASSWORD})
+    assert len(mails(db, "verify_code")) == 1
+
+
+def test_email_change_cancels_pending_reset_links(client, db, user):
+    reset = issue_code(db, user, "reset_password", NOW)
+    code = issue_code(db, user, "change_email", NOW, new_email="nouveau@example.com")
+    client.post("/api/me/email/verify", json={"code": code})
+    assert client.post("/api/auth/reset-password", json={"token": reset, "password": NEW}).status_code == 400
+
+
+def test_email_taken_at_commit_time_is_a_409_not_a_500(client, db, user, monkeypatch):
+    from app.services.auth import profile
+
+    code = issue_code(db, user, "change_email", NOW, new_email="course@example.com")
+    make_user(db, "course@example.com")
+    monkeypatch.setattr(profile, "email_in_use", lambda db, email: False)  # la vérification passe, la base refuse
+    response = client.post("/api/me/email/verify", json={"code": code})
+    assert response.status_code == 409 and response.json()["detail"]["code"] == "email_taken"
