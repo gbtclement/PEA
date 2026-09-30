@@ -31,6 +31,7 @@ export const routes: RouteObject[] = [
       { path: "cgu", element: <LegalPage kind="cgu" /> },
       { path: "confidentialite", element: <LegalPage kind="confidentialite" /> },
       { path: "mentions-legales", element: <LegalPage kind="mentions-legales" /> },
+      { path: "premium", lazy: async () => ({ Component: (await import("@/features/premium/PremiumPage")).PremiumPage }) },
       // Pages personnelles : connexion obligatoire
       {
         element: <RequireAuth />,
@@ -39,6 +40,7 @@ export const routes: RouteObject[] = [
           { path: "portefeuille", lazy: async () => ({ Component: (await import("@/features/portfolio/PortfolioPage")).PortfolioPage }) },
           { path: "assistant", lazy: async () => ({ Component: (await import("@/features/assistant/AssistantPage")).AssistantPage }) },
           { path: "reglages", element: <SettingsPage /> },
+          { path: "premium/merci", lazy: async () => ({ Component: (await import("@/features/premium/PremiumThanksPage")).PremiumThanksPage }) },
           {
             element: <RequireAdmin />,
             children: [{ path: "admin", lazy: async () => ({ Component: (await import("@/features/admin/AdminPage")).AdminPage }) }],
