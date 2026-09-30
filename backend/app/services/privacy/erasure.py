@@ -1,13 +1,15 @@
 """Suppression d'un compte (par son titulaire, par un admin ou pour inactivité), spec 6.4."""
 from datetime import datetime
 
-from sqlalchemy import delete, update
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.core.security import token_hash
 from app.models import EmailLog, User
 from app.services.mail.outbox import enqueue
 from app.services.security_log import log_event
+
+ERASED_ACCOUNT = "Contenu effacé : le compte a été supprimé."
 
 
 def email_fingerprint(email: str) -> str:
@@ -27,7 +29,10 @@ def erase_account(db: Session, user: User, *, now: datetime, actor: User | None 
     else:
         log_event(db, "account_deleted", now=now, user_id=user.id, details={"reason": reason})
     db.execute(delete(EmailLog).where(EmailLog.user_id == user.id, EmailLog.status == "pending"))
-    db.execute(update(EmailLog).where(EmailLog.user_id == user.id).values(recipient=email_fingerprint(email)))
+    for row in db.scalars(select(EmailLog).where(EmailLog.user_id == user.id)):  # chaque ligne garde SA propre empreinte
+        if not row.recipient.startswith("supprimé:"):
+            row.recipient = email_fingerprint(row.recipient)
+        row.html = row.text = ERASED_ACCOUNT  # montants, titres et prénom ne restent pas
     db.flush()
     db.delete(user)
     db.flush()

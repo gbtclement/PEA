@@ -67,7 +67,7 @@ def request_export(db: Session, user: User, now: datetime) -> DataExport:
     last = latest_export(db, user)
     if last is not None and last.status == "pending":
         raise ExportRefused(409, "export_pending", "Votre export est déjà en préparation : vous recevrez un mail.")
-    if last is not None and last.created_at > now - ONE_PER:
+    if last is not None and last.status != "failed" and last.created_at > now - ONE_PER:
         raise ExportRefused(429, "export_limit", "Un export par jour au plus : réessayez demain.")
     row = DataExport(user_id=user.id, created_at=now)
     db.add(row)

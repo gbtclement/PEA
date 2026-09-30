@@ -63,7 +63,7 @@ def list_users(db: Session, *, q: str, sort: str, order: str, page: int) -> User
     return UserPage(list(rows), total)
 
 
-def _admin_count(db: Session) -> int:
+def count_admins(db: Session) -> int:
     """Verrouille les lignes admin : deux admins qui se retirent le rôle en même temps ne passent pas tous les deux."""
     return len(db.scalars(select(User.id).where(User.role == "admin").with_for_update()).all())
 
@@ -73,7 +73,7 @@ def update_user(db: Session, *, actor: User, target: User, changes: dict, now: d
     if changes.get("role") == "user" and target.role == "admin":
         if target.id == actor.id:
             raise AdminError(400, "self_demotion", "Vous ne pouvez pas retirer votre propre rôle d'administrateur.")
-        if _admin_count(db) <= 1:
+        if count_admins(db) <= 1:
             raise AdminError(400, "last_admin", "Il doit rester au moins un administrateur.")
     new_email = normalize_email(changes["email"]) if changes.get("email") else None
     if new_email == target.email:
