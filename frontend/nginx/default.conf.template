@@ -29,14 +29,36 @@ server {
 
   # Guide utilisateur (/guide/) et documentation admin (/documentation/) : sites Docsify statiques
   # de public/, hors du routeur React, avec leurs fichiers communs dans /docsify/.
+  # Guide et fichiers communs : publics. Documentation admin : nginx demande à l'API si la session
+  # est admin (auth_request), sinon renvoie vers la connexion.
   # Redirection relative : le port publié (8095) n'est pas celui d'écoute de nginx (80).
   absolute_redirect off;
   location ~ ^/(guide|documentation)$ { return 301 /$1/; }
-  location ~ ^/(guide|documentation|docsify)/ {
+  location ~ ^/(guide|docsify)/ {
     default_type text/markdown;  # .md absent de mime.types
     charset utf-8;
     charset_types text/markdown text/css application/javascript;
     try_files $uri $uri/ =404;
+  }
+  location /documentation/ {
+    auth_request /_admin_check;
+    error_page 401 403 = @connexion_admin;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/security-headers.conf;
+    default_type text/markdown;
+    charset utf-8;
+    charset_types text/markdown text/css application/javascript;
+    try_files $uri $uri/ =404;
+  }
+  location = /_admin_check {
+    internal;
+    proxy_pass http://api:8000/api/auth/admin-check;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_set_header X-Original-URI $request_uri;
+  }
+  location @connexion_admin {
+    return 302 /connexion?suite=%2Fdocumentation%2F;
   }
 
   location /assets/ {

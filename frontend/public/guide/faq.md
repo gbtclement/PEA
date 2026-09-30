@@ -38,7 +38,7 @@ C'est possible : l'éligibilité est déduite du pays du siège, pas d'une liste
 
 ## Combien coûte l'assistant IA ?
 
-Il se paie à l'usage auprès d'Anthropic, en général quelques centimes par question selon le modèle choisi. Le coût estimé de chaque conversation est affiché. Voir [Assistant IA](app/assistant.md).
+Il est réservé aux membres **Premium**, avec un budget par mois. Chaque question coûte en général quelques centimes ; le coût de chaque conversation et votre dépense du mois sont affichés. Voir [Assistant IA](app/assistant.md).
 
 ## Je suis bloqué après plusieurs essais
 

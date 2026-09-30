@@ -1,9 +1,26 @@
 # Réglages
 
-## Assistant IA
+Les Réglages regroupent votre compte et vos frais de courtage.
 
-- **Clé API Claude** : saisie une fois, puis affichée seulement comme « configurée ». Elle n'est jamais renvoyée à l'écran.
-- **Modèle** : Opus 5 (recommandé), Sonnet 5 (plus rapide), Haiku 4.5 (économique) ou Fable 5.1 (le plus puissant, plus cher).
+## Profil
+
+Votre prénom et votre nom, tels qu'ils apparaissent dans l'application et dans les mails.
+
+## Mot de passe
+
+Saisissez le mot de passe actuel, puis le nouveau (12 caractères au moins). Une jauge indique sa solidité. Après le changement, **tous vos autres appareils sont déconnectés** et un mail vous prévient.
+
+Si vous avez créé votre compte avec Google, vous n'avez pas de mot de passe : la carte propose **Ajouter un mot de passe**, pour pouvoir aussi vous connecter avec votre adresse mail.
+
+## Adresse mail
+
+Saisissez la nouvelle adresse et votre mot de passe. Un **code à 6 chiffres** est envoyé à la nouvelle adresse : tapez-le pour valider le changement : vos autres appareils sont alors déconnectés, et l'ancienne adresse reçoit un mail de prévention.
+
+## Appareils connectés
+
+La liste de vos connexions ouvertes : appareil, navigateur et dernière activité. **Cet appareil** désigne celui que vous utilisez. Vous pouvez déconnecter un appareil que vous ne reconnaissez pas, ou **tous les autres** d'un coup.
+
+?> Un appareil inconnu dans la liste ? Déconnectez-le, puis changez votre mot de passe.
 
 ## Frais et compteur d'ordres
 
@@ -21,4 +38,4 @@ Cette grille sert partout : frais proposés à la saisie d'un ordre, simulateur,
 
 ## Corrections d'éligibilité
 
-Les badges d'éligibilité sont communs à tous les membres : seul l'**administrateur** du site peut les corriger, et cette partie n'apparaît que dans ses réglages. Si un badge vous semble faux, par exemple si votre banque refuse une action marquée « Éligible », signalez-le à l'administrateur. Sa correction est **toujours prioritaire** et n'est jamais écrasée par les mises à jour automatiques.
+Les badges d'éligibilité sont communs à tous les membres : seul l'**administrateur** du site peut les corriger, depuis son onglet Admin. Si un badge vous semble faux, par exemple si votre banque refuse une action marquée « Éligible », signalez-le à l'administrateur. Sa correction est **toujours prioritaire** et n'est jamais écrasée par les mises à jour automatiques.

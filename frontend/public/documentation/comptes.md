@@ -21,9 +21,9 @@ Le code est réparti ainsi :
 |---|---|
 | Visiteur | Pages publiques seulement |
 | `user` | Ses propres données |
-| `admin` | En plus : corrections d'éligibilité (`PATCH /securities/{id}/eligibility`). Toujours `is_premium` |
+| `admin` | En plus : l'[onglet Admin](#onglet-admin) et la [documentation admin](#documentation-protégée). Toujours considéré comme Premium |
 
-`is_premium` existe déjà en base mais ne débloque encore rien.
+`is_premium` donne accès à l'**assistant IA**. `User.has_premium` est vrai pour un compte Premium ou admin. Pour l'instant, seul l'admin l'active (onglet Admin) ; l'abonnement payant passera plus tard par Stripe.
 
 ## Sessions et cookies
 
@@ -139,6 +139,12 @@ Les événements de compte sont écrits dans `security_events` par `log_event()`
 | `not_me` | « Ce n'était pas moi » |
 | `google_linked` | Compte Google associé à un compte existant |
 | `google_signup` | Compte créé avec Google |
+| `password_changed` | Mot de passe changé (ou ajouté) depuis les Réglages |
+| `email_changed` | Nouvelle adresse validée depuis les Réglages |
+| `session_revoked` | Appareil déconnecté (`details.all_others` : tous les autres) |
+| `admin_user_updated` | Compte modifié par un admin (`actor_id`, `details.fields`) |
+| `admin_user_deleted` | Compte supprimé par un admin (`user_id` passe à vide, `actor_id` reste) |
+| `admin_settings_updated` | Modèle ou limite de l'assistant changé (`details` : les nouvelles valeurs) |
 
 ```sql
 SELECT e.created_at, e.kind, u.email, e.ip, e.details
@@ -189,6 +195,42 @@ Turnstile remplace le captcha classique : le plus souvent, la case se coche tout
 
 Les routes publiques de compte (`register`, `verify-email`, `resend-code`, `login`, `logout`, `forgot-password`, `reset-password`, `not-me`, `google/complete`) refusent un en-tête `Origin` qui n'est ni `PUBLIC_BASE_URL` ni l'une des `DEV_ORIGINS` : `403 bad_origin`. Une requête sans `Origin` (outil en ligne de commande) est acceptée.
 
+## Profil et appareils
+
+Les Réglages (`/reglages`) regroupent ce qui concerne le compte connecté (routes `/api/me…`, `backend/app/services/auth/profile.py`) :
+
+- **Profil** : prénom et nom.
+- **Mot de passe** : l'actuel est demandé. Le changement ferme toutes les **autres** sessions et envoie un mail `security_alert`. Un compte créé avec Google, sans mot de passe, voit « Ajouter un mot de passe » et n'a rien à confirmer.
+- **Adresse mail** : un code à 6 chiffres part vers la nouvelle adresse (même quota que les autres codes). La réponse est la même si l'adresse est déjà prise, pour ne pas révéler les comptes existants. Une fois le code validé, les **autres** sessions sont fermées et l'ancienne adresse reçoit une alerte.
+- **Appareils connectés** : chaque session ouverte, avec l'appareil déduit du navigateur, l'IP et la dernière activité. On peut en déconnecter une, ou toutes les autres.
+
+## Onglet Admin
+
+`/admin` n'apparaît dans la barre latérale que pour un admin ; un autre compte qui ouvre l'adresse voit la page introuvable. Côté API, toutes les routes `/api/admin/*` passent par `require_admin()`.
+
+- **Utilisateurs** : 50 comptes par page, recherche (mail, prénom, nom, sans tenir compte des accents), tri sur chaque colonne, interrupteur **Premium** sur chaque ligne.
+- **Modifier** : prénom, nom, adresse, rôle, Premium. Une adresse changée par l'admin est considérée comme validée ; l'ancienne et la nouvelle adresse sont prévenues par mail. Tout autre changement, sauf la bascule Premium, prévient le titulaire (`security_alert`). Un changement de **rôle** ou d'**adresse** ferme toutes ses sessions.
+- **Supprimer** : il faut retaper l'adresse du compte. Toutes ses données partent avec lui (`ON DELETE CASCADE`) et un mail `account_deleted` lui est envoyé.
+- **Garde-fous** : un admin ne peut ni retirer son propre rôle (`self_demotion`), ni supprimer son propre compte ici (`self_delete`), et il reste toujours au moins un admin (`last_admin`).
+- **État de la configuration** : pour chaque réglage de `.env` (Claude, SMTP, Google, Turnstile, `APP_SECRET`, `ADMIN_EMAIL`), « Renseigné » ou « Manquant ». **Aucune valeur n'est jamais renvoyée.** Un bouton envoie un mail de test à l'admin.
+- **Corrections d'éligibilité PEA** (voir [Éligibilité](eligibilite.md)) et lien vers cette documentation.
+
+## Assistant : Premium et limite de coût
+
+- La clé Claude ne se règle que dans `.env` (`ANTHROPIC_API_KEY`) : aucun secret n'est stocké en base ni affiché dans l'interface.
+- Le **modèle** et la **limite mensuelle par utilisateur** (5 $ par défaut) sont communs à tous et se règlent dans l'onglet Admin. Ils sont stockés dans `app_settings` (une seule ligne, lue par `get_app_settings()`).
+- Le coût de chaque réponse est ajouté par `add_cost()` dans `ai_usage` (utilisateur × mois). Il n'est jamais recalculé depuis les conversations : supprimer une conversation ne rend pas de budget.
+- Le mois est celui de **Paris** : la limite repart le 1er à minuit. Les admins sont comptés comme les autres.
+- La limite est vérifiée **avant** chaque question. La dernière réponse du mois peut donc la dépasser de son propre coût.
+- Le coût est enregistré **avant** le message : une conversation supprimée pendant la réponse est quand même comptée.
+- `GET /api/assistant/status` dit à l'interface si l'assistant est disponible, et sinon pourquoi : « Réservé aux membres Premium », « Assistant pas encore configuré » ou « Limite du mois atteinte ».
+
+## Documentation protégée
+
+`/documentation/` (cette documentation) est servie par nginx, hors de l'application React. Avant chaque fichier, nginx demande à l'API si la session est admin (`auth_request` vers `GET /api/auth/admin-check`, qui répond `204` ou `401`). Un visiteur ou un membre est renvoyé vers `/connexion?suite=%2Fdocumentation%2F`, et la connexion le ramène ici par une navigation complète. Les réponses portent `Cache-Control: no-store`.
+
+Le guide utilisateur (`/guide/`) et les fichiers Docsify communs (`/docsify/`) restent publics.
+
 ## Étape suivante
 
-Le lot `comptes-admin` ajoutera l'onglet Admin (utilisateurs, rôles, Premium), la clé Claude uniquement dans `.env` avec une limite de coût, l'état de la configuration, la protection de `/documentation/` et la réorganisation des réglages (profil, appareils).
+Le lot `comptes-rgpd` ajoutera les pages légales, l'acceptation et la version des CGU, l'export des données, la suppression du compte par son titulaire, les durées de conservation et le registre des traitements.

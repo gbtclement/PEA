@@ -1,6 +1,13 @@
+import pytest
+
 from app.models import ChatMessage, Conversation
 from app.repositories.assistant import claude_history
 from tests.factories import make_security, make_user
+
+
+@pytest.fixture(autouse=True)
+def premium(user):
+    user.is_premium = True
 
 
 def test_create_list_get_delete_conversation(client, db):

@@ -7,7 +7,7 @@ from app.api.cookies import clear_auth_cookies, set_auth_cookies, set_device_coo
 from app.api.deps import get_breach_checker, get_captcha, get_google_client
 from app.api.origin import check_origin
 from app.core.config import get_settings
-from app.core.current_user import get_auth_session, get_now
+from app.core.current_user import get_auth_session, get_now, get_optional_user
 from app.core.db import get_db
 from app.core.security import normalize_email, password_problem
 from app.models import AuthSession, User
@@ -76,7 +76,7 @@ def start_session(db: Session, user: User, request: Request, response: Response,
     set_device_cookie(response, device_token, settings)
 
 
-def _mail_allowed(db: Session, email: str, ip: str, now: datetime) -> bool:
+def mail_allowed(db: Session, email: str, ip: str, now: datetime) -> bool:
     """Compte une demande de code ou de lien. 429 si l'IP abuse ; False (sans rien dire) si l'adresse a assez reçu."""
     if ratelimit.over(db, "mail_ip", ip, now):
         raise fail(429, *TOO_MANY)
@@ -122,7 +122,7 @@ def verify_email(payload: VerifyEmailIn, request: Request, response: Response, d
 def resend_code(payload: EmailIn, request: Request, db: Session = Depends(get_db),
                 now: datetime = Depends(get_now)) -> NoticeOut:
     email = normalize_email(payload.email)
-    if _mail_allowed(db, email, client_ip(request) or "inconnue", now):
+    if mail_allowed(db, email, client_ip(request) or "inconnue", now):
         accounts.resend_code(db, email, now)
     db.commit()
     return CODE_SENT
@@ -183,7 +183,7 @@ def forgot_password(payload: EmailIn, request: Request, db: Session = Depends(ge
     ip, email = client_ip(request) or "inconnue", normalize_email(payload.email)
     if not captcha.verify(payload.captcha, ip):
         raise fail(400, *CAPTCHA)
-    if _mail_allowed(db, email, ip, now):
+    if mail_allowed(db, email, ip, now):
         accounts.request_password_reset(db, email, now)
     db.commit()
     return RESET_SENT
@@ -218,3 +218,11 @@ def not_me(payload: TokenIn, request: Request, db: Session = Depends(get_db),
 @router.get("/config", response_model=AuthConfigOut)
 def auth_config(google: GoogleClient | None = Depends(get_google_client)) -> AuthConfigOut:
     return AuthConfigOut(google=google is not None, turnstile_site_key=get_settings().turnstile_site_key or None)
+
+
+@router.get("/admin-check", status_code=204)
+def admin_check(user: User | None = Depends(get_optional_user)) -> Response:
+    """Pour `auth_request` de nginx (/documentation/) : 204 pour un admin connecté, 401 sinon."""
+    if user is None or user.role != "admin":
+        return Response(status_code=401)
+    return Response(status_code=204)

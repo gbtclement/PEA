@@ -9,7 +9,8 @@ from app.models import SecurityEvent
 
 EVENT_KINDS = frozenset({
     "signup", "email_verified", "login_ok", "login_failed", "locked", "logout", "password_reset",
-    "google_linked", "google_signup", "not_me",
+    "google_linked", "google_signup", "not_me", "admin_user_updated", "admin_user_deleted", "admin_settings_updated",
+    "password_changed", "email_changed", "session_revoked",
 })
 RETENTION = timedelta(days=365)
 

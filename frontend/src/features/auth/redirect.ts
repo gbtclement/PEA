@@ -7,3 +7,8 @@ export function safeNext(value: string | null): string {
 export function loginPath({ pathname, search }: { pathname: string; search: string }): string {
   return `/connexion?suite=${encodeURIComponent(pathname + search)}`;
 }
+
+/** Sites Docsify servis par nginx hors du routeur React : il faut une navigation complète pour les ouvrir. */
+export function isExternalSuite(path: string): boolean {
+  return /^\/(documentation|guide)\//.test(path);
+}

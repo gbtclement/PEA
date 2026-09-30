@@ -20,7 +20,9 @@ PostgreSQL 16, conteneur `db`, données dans le volume Docker `pgdata`. Modèles
 | `scores` | Dernier score : total, technique, fondamental, détail JSON, liquidité, montant moyen échangé, données incomplètes, entrée dans le top | non |
 | `favorites` | Titres favoris | **oui** |
 | `orders` | Ordres : date, sens, quantité, prix unitaire, frais, note | **oui** |
-| `user_settings` | Clé API chiffrée, modèle IA, ordres minimum, frais de non-respect, grille de courtage (JSON) | **oui** |
+| `user_settings` | Ordres minimum, frais de non-respect, grille de courtage (JSON) | **oui** |
+| `app_settings` | Une seule ligne (`id = 1`) : modèle de l'assistant et limite mensuelle par utilisateur, réglés dans l'onglet Admin | non |
+| `ai_usage` | Coût de l'assistant cumulé par utilisateur et par mois (`AAAA-MM`, heure de Paris). Indépendant des conversations | **oui** |
 | `conversations` | Conversations de l'assistant (titre, titre-sujet optionnel) | **oui** |
 | `messages` | Messages : contenu, outils utilisés, tokens, coût estimé | **oui** (via la conversation) |
 | `forecast_runs` | Calculs complets des prévisions : statistiques, test, coupure, frais (JSON) | non |

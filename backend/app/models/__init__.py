@@ -1,3 +1,4 @@
+from app.models.app_settings import AiUsage, AppSettings
 from app.models.assistant import ChatMessage, Conversation
 from app.models.audit import RateLimitHit, SecurityEvent
 from app.models.auth import AuthSession, EmailCode, KnownDevice
@@ -13,7 +14,7 @@ from app.models.security import Security
 from app.models.user import User
 
 __all__ = [
-    "AuthSession", "Base", "ChatMessage", "Conversation", "DataStatus", "DailyPrice", "EmailCode", "EmailLog", "Favorite",
+    "AiUsage", "AppSettings", "AuthSession", "Base", "ChatMessage", "Conversation", "DataStatus", "DailyPrice", "EmailCode", "EmailLog", "Favorite",
     "Forecast", "ForecastRun", "KnownDevice", "Order", "RateLimitHit", "Security", "SecurityEvent", "SecurityFundamentals", "SecurityQuote",
     "SecurityScore", "User", "UserSettings",
 ]

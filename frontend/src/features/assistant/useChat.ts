@@ -41,6 +41,7 @@ export function useChat({ conversationId, securityId, onConversationCreated }: O
       const aborted = err instanceof DOMException && err.name === "AbortError";
       setPending((p) => p && { ...p, interrupted: true, error: aborted ? null : (err as Error).message });
     } finally {
+      queryClient.invalidateQueries({ queryKey: ["assistant-status"] });  // coût du mois, limite éventuellement atteinte
       setStreaming(false);
       controller.current = null;
     }

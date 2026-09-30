@@ -23,9 +23,14 @@ test("portefeuille et compteur d'ordres", async ({ page }) => {
   await expect(page.getByRole("dialog")).toContainText("Nouvel ordre");
 });
 
-test("assistant : page et réglages", async ({ page }) => {
+test("assistant, réglages du compte et onglet Admin", async ({ page }) => {
   await page.goto("/assistant");
   await expect(page.getByRole("heading", { level: 1, name: "Assistant IA" })).toBeVisible();
   await page.goto("/reglages");
-  await expect(page.getByText("Assistant IA (Claude)")).toBeVisible();
+  await expect(page.getByText("Appareils connectés", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Cet appareil")).toBeVisible();
+  await page.getByRole("link", { name: "Admin" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Admin" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "e2e@example.com" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "État de la configuration" })).toBeVisible();
 });

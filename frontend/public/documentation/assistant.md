@@ -46,11 +46,12 @@ Catalogue dans `catalog.py`, avec les prix servant à estimer le coût :
 - Le **repli côté serveur** en cas de refus n'est activé que pour Opus 5. Chaque tentative est alors comptée dans le coût.
 - Coût estimé = tokens d'entrée, de sortie et de cache + 0,01 $ par recherche web. Il est enregistré par message, même quand un tour échoue.
 
-## Clé API
+## Clé API, Premium et limite
 
-- Stockée **chiffrée** (Fernet, clé dérivée de `APP_SECRET`) dans `user_settings`, par `services/secrets.py`. À défaut, lue dans `ANTHROPIC_API_KEY`.
-- **Jamais renvoyée au navigateur ni écrite dans les journaux.** L'API indique seulement si une clé est configurée.
-- Changer `APP_SECRET` rend la clé enregistrée illisible : il faut alors la ressaisir.
+- La clé est lue **uniquement** dans `ANTHROPIC_API_KEY` (`.env`). Elle n'est ni en base, ni renvoyée au navigateur, ni écrite dans les journaux. L'onglet Admin indique seulement si elle est renseignée.
+- Les routes de l'assistant sont réservées aux membres Premium et aux admins (`require_premium()`).
+- Le modèle et la limite mensuelle par utilisateur viennent de `app_settings` (onglet Admin). La migration a repris le modèle choisi avant les comptes (sinon `claude-opus-5`) ; `ASSISTANT_MODEL` ne sert que si cette ligne manque.
+- Chaque réponse ajoute son coût dans `ai_usage` par `add_cost()`. La limite est vérifiée avant la question (`429 ai_limit_reached`). Détails dans [Comptes utilisateurs](comptes.md#assistant--premium-et-limite-de-coût).
 
 ## Erreurs
 

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { ApiError, apiSend, type Me } from "@/lib/api/client";
 import { GoogleButton } from "./GoogleButton";
 import { PasswordField } from "./PasswordField";
-import { safeNext } from "./redirect";
+import { isExternalSuite, safeNext } from "./redirect";
 import { Turnstile } from "./Turnstile";
 import { useAuthConfig } from "./useAuthConfig";
 
@@ -32,7 +32,9 @@ export function SignInForm() {
     onSuccess: (me) => {
       // Le compte renvoyé remplace tout de suite le « visiteur » en cache : RequireAuth ne doit pas le relire
       queryClient.setQueryData(["me"], me);
-      navigate(safeNext(params.get("suite")), { replace: true });
+      const suite = safeNext(params.get("suite"));
+      if (isExternalSuite(suite)) window.location.assign(suite);
+      else navigate(suite, { replace: true });
     },
     onError: (error) => {
       setCaptcha(null);

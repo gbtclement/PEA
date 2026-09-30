@@ -30,3 +30,16 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    @property
+    def has_password(self) -> bool:
+        return self.password_hash is not None
+
+    @property
+    def has_google(self) -> bool:
+        return self.google_sub is not None
+
+    @property
+    def has_premium(self) -> bool:
+        """Accès à l'assistant : Premium, ou admin (toujours considéré comme Premium)."""
+        return self.is_premium or self.role == "admin"

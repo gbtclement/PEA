@@ -3,22 +3,6 @@ from types import SimpleNamespace
 import pytest
 
 from app.services.assistant.catalog import MODELS, Usage, estimate_cost, get_model
-from app.services.secrets import MissingSecretError, decrypt_secret, encrypt_secret
-
-
-def test_encrypt_roundtrip_and_ciphertext_differs():
-    token = encrypt_secret("sk-ant-abc", "secret-1")
-    assert token != "sk-ant-abc" and "sk-ant" not in token
-    assert decrypt_secret(token, "secret-1") == "sk-ant-abc"
-
-
-def test_decrypt_with_other_secret_returns_none():
-    assert decrypt_secret(encrypt_secret("sk-ant-abc", "secret-1"), "secret-2") is None
-
-
-def test_encrypt_without_secret_raises():
-    with pytest.raises(MissingSecretError):
-        encrypt_secret("sk-ant-abc", "")
 
 
 def test_get_model_defaults_to_opus_5():

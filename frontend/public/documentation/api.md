@@ -37,7 +37,15 @@ Détails dans [Comptes utilisateurs](comptes.md).
 | GET | `/auth/google/callback` | Retour de Google : ouvre la session et redirige vers `suite`, ou vers `/finaliser-inscription` pour un nouveau compte, ou vers `/connexion?erreur=google\|google_email` |
 | GET | `/auth/google/pending` | Nouveau compte Google en attente : `{email, first_name, last_name}`, ou `404 google_expired` |
 | POST | `/auth/google/complete` | `{first_name, last_name, accept_terms}` : crée le compte Google et ouvre la session. `400 google_expired` après 30 min |
-| GET | `/me` | Le compte connecté (`id`, `email`, `first_name`, `last_name`, `role`, `is_premium`), ou `401` |
+| GET | `/auth/admin-check` | `204` pour un admin connecté, `401` sinon. Appelée par nginx (`auth_request`) avant de servir `/documentation/` |
+| GET | `/me` | Le compte connecté (`id`, `email`, `first_name`, `last_name`, `role`, `is_premium`, `has_premium`, `has_password`, `has_google`), ou `401` |
+| PATCH | `/me` | `{first_name, last_name}` : modifier son profil |
+| POST | `/me/password` | `{current_password, new_password}` : change le mot de passe et ferme les **autres** sessions. `current_password` n'est pas demandé à un compte Google sans mot de passe (« Ajouter un mot de passe ») |
+| POST | `/me/email` | `{new_email, password}` : envoie un code à la nouvelle adresse. Toujours `202`, même si l'adresse est déjà prise |
+| POST | `/me/email/verify` | `{code}` : valide la nouvelle adresse et ferme les **autres** sessions ; l'ancienne adresse reçoit une alerte |
+| GET | `/me/sessions` | Appareils connectés : `[{id, device, ip, created_at, last_seen_at, current}]` |
+| DELETE | `/me/sessions/{id}` | Déconnecter un appareil |
+| DELETE | `/me/sessions` | Déconnecter tous les autres appareils |
 
 Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_not_verified` et des erreurs de code ou de lien :
 
@@ -51,6 +59,12 @@ Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_no
 | `bad_origin` | 403 | En-tête `Origin` étranger |
 | `google_disabled` | 404 | Google n'est pas configuré |
 | `google_expired` | 400 / 404 | Inscription Google en attente depuis plus de 30 min |
+| `wrong_password` | 400 | Mot de passe actuel faux (`/me/password`, `/me/email`) |
+| `email_taken` | 409 | Adresse prise par un autre compte : entre la demande et la validation du code, ou choisie par l'admin |
+| `self_demotion` | 400 | Un admin retire son propre rôle d'administrateur |
+| `last_admin` | 400 | Le dernier admin perdrait son rôle |
+| `self_delete` | 400 | Un admin supprime son propre compte depuis l'onglet Admin |
+| `confirm_mismatch` | 400 | Adresse retapée différente de celle du compte à supprimer |
 
 ## État
 
@@ -104,17 +118,32 @@ Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_no
 | Méthode | Route | Rôle |
 |---|---|---|
 | GET / PUT | `/settings` | Ordres minimum par an, frais de non-respect, grille de courtage |
-| GET / PUT | `/assistant/settings` | Modèle IA, clé API (en écriture seulement : la lecture indique juste si elle est configurée) |
 
 ## Assistant
 
+Toutes les routes, sauf `/assistant/status`, sont réservées aux membres **Premium** (les admins le sont toujours) : `403 premium_required` sinon.
+
 | Méthode | Route | Rôle |
 |---|---|---|
+| GET | `/assistant/status` | `{available, reason, spent_usd, limit_usd, model}`. Quand `available` est faux, `reason` vaut `premium`, `not_configured` ou `limit_reached` |
 | GET | `/assistant/conversations` | Liste avec le coût de chaque conversation |
 | POST | `/assistant/conversations` | Nouvelle conversation (titre sujet optionnel) |
 | GET | `/assistant/conversations/{id}` | Messages d'une conversation |
 | DELETE | `/assistant/conversations/{id}` | Supprimer une conversation |
-| POST | `/assistant/conversations/{id}/messages` | Envoyer un message. **Réponse en flux SSE** |
+| POST | `/assistant/conversations/{id}/messages` | Envoyer un message. **Réponse en flux SSE**. `409 ai_not_configured` sans `ANTHROPIC_API_KEY`, `429 ai_limit_reached` quand la limite du mois est atteinte |
+
+## Admin
+
+Toutes ces routes sont **admin** (`require_admin()`).
+
+| Méthode | Route | Rôle |
+|---|---|---|
+| GET | `/admin/users?q=&sort=&order=&page=` | Inscrits, 50 par page. `q` cherche dans le mail, le prénom et le nom, sans tenir compte des accents. `sort` : `email`, `first_name`, `last_name`, `role`, `is_premium`, `verified`, `created_at` (par défaut), `last_login_at` |
+| PATCH | `/admin/users/{id}` | `{first_name, last_name, email, role, is_premium}`, tous facultatifs. Un changement de rôle ou d'adresse ferme les sessions du compte. Refus `self_demotion`, `last_admin`, `email_taken` |
+| DELETE | `/admin/users/{id}` | `{confirm_email}` : supprime le compte et ses données. Refus `self_delete`, `confirm_mismatch` |
+| GET / PUT | `/admin/settings` | `{ai_model, ai_monthly_cost_limit_usd}` ; la lecture ajoute la liste `models` |
+| GET | `/admin/config-status` | Ce qui est renseigné dans `.env` : `{claude, smtp, google, turnstile, app_secret, admin_email}`, des booléens, **jamais les valeurs** |
+| POST | `/admin/test-email` | Met un mail de test en file d'attente pour l'admin connecté |
 
 ## Prévisions
 

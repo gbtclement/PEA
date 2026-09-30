@@ -20,7 +20,9 @@ Ouvrez `.env` et remplacez `APP_SECRET=change-me` par une longue chaîne aléato
 node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 ```
 
-?> `APP_SECRET` chiffre votre clé API Claude dans la base. **Ne la changez plus ensuite** : la clé déjà enregistrée deviendrait illisible et il faudrait la ressaisir.
+?> `APP_SECRET` signe les cookies temporaires de la connexion Google. Le changer interrompt seulement les connexions Google en cours.
+
+La **clé Claude** de l'assistant se met dans `ANTHROPIC_API_KEY`, et nulle part ailleurs. Une clé saisie autrefois dans les Réglages a été effacée par la mise à jour des comptes : recopiez-la dans `.env`, puis `docker compose up -d api`. L'onglet Admin affiche « Renseigné » en face de Claude quand elle est lue.
 
 Renseignez aussi les comptes et les mails :
 
@@ -75,6 +77,8 @@ Au démarrage, le compte `ADMIN_EMAIL` devient administrateur. Il n'a pas encore
 - Lien expiré ? Utilisez **Mot de passe oublié ?** sur l'écran de connexion.
 
 Les autres personnes créent leur compte elles-mêmes avec **Créer un compte**. Détails dans [Comptes utilisateurs](comptes.md).
+
+L'onglet **Admin** de la barre latérale n'apparaît que pour ce compte (et les autres admins). On y active **Premium** sur un compte (accès à l'assistant IA), on règle le modèle et la limite mensuelle de l'assistant, et on vérifie ce qui est renseigné dans `.env` (sans jamais afficher les valeurs), avec un bouton pour envoyer un mail de test.
 
 ## Mettre à jour une installation d'avant les comptes
 

@@ -40,3 +40,9 @@ def require_admin(user: User = Depends(get_current_user)) -> User:
     if user.role != "admin":
         raise HTTPException(403, detail={"code": "forbidden", "message": "Réservé aux administrateurs."})
     return user
+
+
+def require_premium(user: User = Depends(get_current_user)) -> User:
+    if not user.has_premium:
+        raise HTTPException(403, detail={"code": "premium_required", "message": "Réservé aux membres Premium."})
+    return user

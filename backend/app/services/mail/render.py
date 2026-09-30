@@ -13,6 +13,8 @@ SUBJECTS = {
     "reset_password": "Choisir un nouveau mot de passe PEA Radar",
     "security_alert": "Alerte de sécurité sur votre compte PEA Radar",
     "new_device": "Nouvelle connexion à votre compte PEA Radar",
+    "account_deleted": "Votre compte PEA Radar a été supprimé",
+    "test": "Mail de test PEA Radar",
 }
 KINDS = frozenset(SUBJECTS)
 
@@ -21,6 +23,13 @@ SECURITY_EVENTS = {
     "google_linked": ("Un compte Google vient d'être associé à votre compte PEA Radar : vous pouvez maintenant vous "
                       "connecter avec Google. Si ce n'était pas vous, choisissez un nouveau mot de passe."),
     "password_reset": "Le mot de passe de votre compte vient d'être réinitialisé.",
+    "admin_updated": "Un administrateur de PEA Radar vient de modifier votre compte (nom, adresse ou rôle).",
+    "email_changed_by_admin": ("Un administrateur de PEA Radar vient de changer l'adresse mail de votre compte. "
+                               "Les prochains mails iront à la nouvelle adresse."),
+    "password_changed": ("Le mot de passe de votre compte vient d'être changé depuis les réglages. Vos autres "
+                         "appareils ont été déconnectés."),
+    "email_changed": ("L'adresse mail de votre compte vient d'être changée depuis les réglages. Les prochains mails "
+                      "iront à la nouvelle adresse."),
     "signup_attempt": ("Quelqu'un vient d'essayer de créer un compte PEA Radar avec votre adresse. Vous avez déjà un "
                        "compte : si c'était vous, connectez-vous ou choisissez un nouveau mot de passe."),
 }
