@@ -12,13 +12,14 @@ from app.core.config import get_settings
 from app.core.current_user import get_auth_session, get_account_user, get_now
 from app.core.db import get_db
 from app.core.security import normalize_email
-from app.models import AuthSession, User
+from app.models import AuthSession, DataExport, User
 from app.schemas.auth import MeOut, NoticeOut
-from app.schemas.me import AcceptTermsIn, CodeIn, DeleteAccountIn, EmailChangeIn, PasswordChangeIn, ProfileIn, SessionOut
+from app.schemas.me import AcceptTermsIn, CodeIn, DeleteAccountIn, ExportOut, EmailChangeIn, PasswordChangeIn, ProfileIn, SessionOut
 from app.services.auth import accounts, profile
 from app.services.auth.breach import BreachChecker
 from app.services.auth.codes import CodeCheck
 from app.services.auth.sessions import revoke_session
+from app.services.privacy import export
 from app.services.privacy.erasure import erase_account
 from app.services.security_log import log_event
 
@@ -143,3 +144,32 @@ def delete_account(payload: DeleteAccountIn, response: Response, db: Session = D
     clear_auth_cookies(response, get_settings())
     response.status_code = 204
     return response
+
+
+@router.post("/me/export", response_model=ExportOut, status_code=202)
+def request_data_export(request: Request, db: Session = Depends(get_db), user: User = Depends(get_account_user),
+                        now: datetime = Depends(get_now)) -> ExportOut:
+    try:
+        row = export.request_export(db, user, now)
+    except export.ExportRefused as refused:
+        raise fail(refused.status, refused.code, refused.message)
+    log_event(db, "data_export", now=now, user_id=user.id, ip=client_ip(request))
+    db.commit()
+    return ExportOut.model_validate(row)
+
+
+@router.get("/me/export", response_model=ExportOut | None)
+def latest_data_export(db: Session = Depends(get_db), user: User = Depends(get_account_user)) -> ExportOut | None:
+    row = export.latest_export(db, user)
+    return ExportOut.model_validate(row) if row else None
+
+
+@router.get("/me/export/{export_id}")
+def download_data_export(export_id: uuid.UUID, db: Session = Depends(get_db), user: User = Depends(get_account_user),
+                         now: datetime = Depends(get_now)) -> Response:
+    row = db.get(DataExport, export_id)
+    if row is None or row.user_id != user.id or row.status != "ready" or row.expires_at <= now:
+        raise fail(404, "not_found", "Export introuvable ou expiré : demandez-en un nouveau.")
+    name = f"pea-radar-mes-donnees-{row.ready_at:%Y-%m-%d}.json"
+    return Response(row.content, media_type="application/json",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"', "Cache-Control": "no-store"})

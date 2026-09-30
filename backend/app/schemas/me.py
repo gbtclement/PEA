@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class ProfileIn(BaseModel):
@@ -54,3 +54,12 @@ class AcceptTermsIn(BaseModel):
         if not value:
             raise ValueError("Acceptez les CGU et la politique de confidentialité pour continuer.")
         return value
+
+
+class ExportOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    status: str  # pending | ready
+    created_at: datetime
+    expires_at: datetime | None
