@@ -7,6 +7,7 @@ from app.services.cache import TTLCache
 
 INTRADAY_CACHE = TTLCache(60)
 NEWS_CACHE = TTLCache(900)
+PLANS_CACHE = TTLCache(3600)  # prix Stripe (spec 3.1)
 
 
 @lru_cache

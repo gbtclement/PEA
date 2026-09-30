@@ -74,10 +74,11 @@ def fake_billing():
 def _build_app(db, fake_market, fake_llm, fake_captcha, fake_breach, fake_google, fake_billing):
     from contextlib import nullcontext
 
-    from app.api.deps import INTRADAY_CACHE, NEWS_CACHE, get_llm_factory, get_market_provider, get_session_maker
+    from app.api.deps import INTRADAY_CACHE, NEWS_CACHE, PLANS_CACHE, get_llm_factory, get_market_provider, get_session_maker
 
     INTRADAY_CACHE.clear()
     NEWS_CACHE.clear()
+    PLANS_CACHE.clear()
     app = create_app()
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_market_provider] = lambda: fake_market

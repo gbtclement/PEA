@@ -17,6 +17,7 @@ LIMITS: dict[str, tuple[int, timedelta]] = {
     "mail_ip": (20, ONE_HOUR),               # demandes de code ou de lien par IP
     "oauth_state": (1, timedelta(minutes=10)),  # un « state » Google ne sert qu'une fois
     "password_check": (10, FIFTEEN_MINUTES),  # mots de passe actuels faux par compte (réglages, suppression)
+    "checkout_user": (10, ONE_HOUR),  # passages en caisse Stripe par compte
 }
 CAPTCHA_AFTER = 3  # échecs de connexion (compte ou IP) avant de demander le captcha
 KEEP = timedelta(days=1)
