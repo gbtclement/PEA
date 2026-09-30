@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { ForecastCard } from "./ForecastCard";
 import { FundamentalsCard } from "./FundamentalsCard";
 import { NewsCard } from "./NewsCard";
+import { PriceAlertButton } from "./PriceAlertButton";
 import { PriceChartPanel } from "./PriceChartPanel";
 import { ScoreCard } from "./ScoreCard";
 import { SimulatorCard } from "./SimulatorCard";
@@ -76,6 +77,7 @@ export function SecurityPage() {
               <>
                 <Button variant="outline" size="sm" className="ml-2" onClick={() => (me === null ? navigate(loginPath(location)) : setOrdering(true))}>+ J'ai acheté</Button>
                 <AskAiButton security={{ id: data.id, name: data.name }} label />
+                <PriceAlertButton security={{ id: data.id, name: data.name, price: data.price, currency: data.currency }} />
               </>
             )}
           </div>
