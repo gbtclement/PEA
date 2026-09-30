@@ -51,3 +51,8 @@ class PriceAlertOut(BaseModel):
     active: bool
     triggered_at: datetime | None
     created_at: datetime
+
+
+class UnsubscribeOut(BaseModel):
+    kind: str | None
+    label: str | None
