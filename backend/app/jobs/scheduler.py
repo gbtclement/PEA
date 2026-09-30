@@ -14,7 +14,7 @@ from app.jobs.privacy import build_pending_exports
 from app.jobs.forecasts import refresh_forecast_stats, refresh_forecasts, stats_are_stale
 from app.jobs.cleanup import purge_security_data
 from app.jobs.mail import send_pending_emails
-from app.jobs.notifications import run_price_alerts
+from app.jobs.notifications import run_price_alerts, run_price_moves
 from app.jobs.market import refresh_daily_history, refresh_fundamentals, refresh_quotes
 from app.jobs.runner import run_job
 from app.jobs.scoring import refresh_scores
@@ -49,6 +49,10 @@ def quotes_job(ctx: JobContext, tier: int) -> None:
         _quietly(ctx, run_price_alerts)  # N2 : après chaque mise à jour des cours
         if tier == 2:
             _refresh_scores(ctx)
+
+
+def price_moves_job(ctx: JobContext) -> None:
+    _quietly(ctx, run_price_moves)
 
 
 def universe_job(ctx: JobContext) -> None:
@@ -153,6 +157,7 @@ def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> 
     for tier, minutes in intervals.items():
         scheduler.add_job(quotes_job, IntervalTrigger(minutes=minutes, timezone=tz), args=[ctx, tier],
                           id=f"quotes_t{tier}", **common)
+    scheduler.add_job(price_moves_job, IntervalTrigger(minutes=15, timezone=tz), args=[ctx], id="price_moves", **common)
     scheduler.add_job(exports_job, IntervalTrigger(seconds=15, timezone=tz), args=[ctx], id="exports", **common)
     if ctx.mailer is not None:
         scheduler.add_job(mail_job, IntervalTrigger(seconds=5, timezone=tz), args=[ctx], id="emails", **common)
