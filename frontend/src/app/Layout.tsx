@@ -7,10 +7,13 @@ import { MarketStatus } from "./MarketStatus";
 import { Sidebar } from "./Sidebar";
 import { SignUpBanner } from "./SignUpBanner";
 
+// Lisibles avant d'accepter : on ne consent pas à un texte qu'on ne peut pas ouvrir.
+const LEGAL_PAGES = ["/cgu", "/confidentialite", "/mentions-legales"];
+
 export function Layout() {
   const { me } = useMe();
   const location = useLocation();
-  if (me?.terms_outdated) {  // nouvelle version des CGU : l'accepter avant toute page
+  if (me?.terms_outdated && !LEGAL_PAGES.includes(location.pathname)) {  // nouvelle version des CGU : l'accepter avant toute page
     return <Navigate to={`/accepter-cgu?suite=${encodeURIComponent(location.pathname + location.search)}`} replace />;
   }
   return (

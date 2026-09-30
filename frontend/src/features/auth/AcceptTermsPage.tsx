@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
 import { apiSend, type Me } from "@/lib/api/client";
+import { DataCard } from "@/features/settings/DataCard";
 import { usePageMeta } from "@/seo/usePageMeta";
 import { AuthCard } from "./AuthCard";
 import { isExternalSuite, safeNext } from "./redirect";
@@ -16,6 +17,13 @@ export function AcceptTermsPage() {
   return (
     <AuthCard title="Nos conditions ont changé">
       {me && <AcceptForm />}
+      {me && (
+        <details className="mt-6 text-sm">
+          <summary className="cursor-pointer text-muted-foreground">Vous ne souhaitez pas les accepter ?</summary>
+          <p className="my-3 text-muted-foreground">Vous pouvez récupérer vos données, puis supprimer votre compte.</p>
+          <DataCard />
+        </details>
+      )}
     </AuthCard>
   );
 }

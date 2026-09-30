@@ -38,8 +38,9 @@ def request_email_change(db: Session, user: User, new_email: str, now: datetime)
     if new_email == user.email or email_in_use(db, new_email):
         return
     recent = select(EmailCode.id).where(EmailCode.user_id == user.id, EmailCode.purpose == "change_email",
-                                        EmailCode.used_at.is_(None), EmailCode.created_at > now - RESEND_DELAY)
-    if db.scalar(recent.limit(1)) is not None:  # un code vient de partir : pas de rafale de mails
+                                        EmailCode.new_email == new_email, EmailCode.used_at.is_(None),
+                                        EmailCode.created_at > now - RESEND_DELAY)
+    if db.scalar(recent.limit(1)) is not None:  # un code vient de partir vers cette adresse : pas de rafale de mails
         return
     code = issue_code(db, user, "change_email", now, new_email=new_email)
     enqueue(db, "verify_code", to=new_email, user_id=user.id, context={"first_name": user.first_name, "code": code})

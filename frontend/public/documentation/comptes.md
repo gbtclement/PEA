@@ -241,7 +241,8 @@ Le guide utilisateur (`/guide/`) et les fichiers Docsify communs (`/docsify/`) r
 
 - `get_current_user()`, utilisé par toutes les pages privées, répond `403 terms_outdated` si la version du compte n'est pas la bonne.
 - `get_account_user()` sert aux routes du compte lui-même (`/me`, appareils, export, suppression, `POST /me/accept-terms`) : elles restent ouvertes, pour pouvoir accepter, exporter ou partir.
-- `GET /api/me` renvoie `terms_outdated`. L'interface envoie alors toute page vers `/accepter-cgu?suite=<page>` : une case à cocher, puis retour à la page demandée.
+- `GET /api/me` renvoie `terms_outdated`. L'interface envoie alors toute page vers `/accepter-cgu?suite=<page>` : une case à cocher, puis retour à la page demandée. Les pages légales restent lisibles, et l'écran propose, sous « Vous ne souhaitez pas les accepter ? », l'export et la suppression du compte.
+- Une page restée ouverte au changement reçoit `403 terms_outdated` : le client relit alors le compte (`createQueryClient()`, `frontend/src/lib/queryClient.ts`), ce qui déclenche la redirection.
 
 **Quand les CGU changent** : mettre à jour le texte (`frontend/src/features/legal/content.tsx`, avec `LEGAL_UPDATED`), puis la date de `TERMS_VERSION`. Chacun devra accepter à sa prochaine visite.
 

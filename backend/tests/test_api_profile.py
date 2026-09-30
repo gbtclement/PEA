@@ -128,6 +128,12 @@ def test_email_change_code_is_not_resent_within_60_seconds(client, db, user):
     assert len(mails(db, "verify_code")) == 1
 
 
+def test_corrected_address_gets_its_code_right_away(client, db, user):
+    client.post("/api/me/email", json={"new_email": "nouvaeu@example.com", "password": PASSWORD})  # faute de frappe
+    client.post("/api/me/email", json={"new_email": "nouveau@example.com", "password": PASSWORD})
+    assert sorted(m.recipient for m in mails(db, "verify_code")) == ["nouvaeu@example.com", "nouveau@example.com"]
+
+
 def test_email_change_cancels_pending_reset_links(client, db, user):
     reset = issue_code(db, user, "reset_password", NOW)
     code = issue_code(db, user, "change_email", NOW, new_email="nouveau@example.com")

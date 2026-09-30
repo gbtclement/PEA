@@ -78,7 +78,7 @@ Sur la fiche d'un titre, les boutons ⭐, **+ J'ai acheté** et ✨ **Demander �
 
 ## Nouvelles conditions d'utilisation
 
-Quand les CGU changent, un écran **Nos conditions ont changé** s'affiche à votre prochaine visite. Lisez les [CGU](/cgu ':ignore') et la [politique de confidentialité](/confidentialite ':ignore'), cochez la case, puis cliquez sur **Accepter et continuer** : vous revenez sur la page que vous vouliez ouvrir. Si vous ne voulez pas les accepter, vous pouvez vous déconnecter, exporter vos données ou supprimer votre compte depuis les Réglages.
+Quand les CGU changent, un écran **Nos conditions ont changé** s'affiche à votre prochaine visite. Lisez les [CGU](/cgu ':ignore') et la [politique de confidentialité](/confidentialite ':ignore'), cochez la case, puis cliquez sur **Accepter et continuer** : vous revenez sur la page que vous vouliez ouvrir. Si vous ne voulez pas les accepter, ouvrez **Vous ne souhaitez pas les accepter ?** sur ce même écran : vous pouvez y exporter vos données, puis supprimer votre compte. Vous pouvez aussi simplement vous déconnecter.
 
 ## Récupérer ou supprimer vos données
 

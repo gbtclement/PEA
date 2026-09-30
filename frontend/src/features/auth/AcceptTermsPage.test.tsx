@@ -42,3 +42,19 @@ test("liens vers les CGU et la politique de confidentialité", async () => {
   expect(within(label).getByRole("link", { name: "CGU" })).toHaveAttribute("href", "/cgu");
   expect(within(label).getByRole("link", { name: "politique de confidentialité" })).toHaveAttribute("href", "/confidentialite");
 });
+
+test("CGU périmées : les pages légales restent lisibles", async () => {
+  mockFetch((url) => ({ body: url === "/api/me" ? { ...ME, terms_outdated: true }
+    : url === "/api/status" ? { market_open: false, jobs: [] } : {} }));
+  const router = renderAt("/cgu");
+  expect(await screen.findByRole("heading", { level: 1, name: "Conditions générales d'utilisation" })).toBeInTheDocument();
+  await screen.findByText("Moi Dupont");  // compte chargé : la redirection aurait eu lieu
+  expect(router.state.location.pathname).toBe("/cgu");
+});
+
+test("refuser les CGU : exporter ses données ou supprimer son compte reste possible", async () => {
+  mockFetch((url) => ({ body: url === "/api/me" ? { ...ME, terms_outdated: true } : null }));
+  renderAt("/accepter-cgu");
+  expect(await screen.findByRole("button", { name: "Exporter mes données" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Supprimer mon compte" })).toBeInTheDocument();
+});
