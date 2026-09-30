@@ -40,6 +40,11 @@ class SessionOut(BaseModel):
     current: bool
 
 
+class DeleteAccountIn(BaseModel):
+    confirm_email: str = Field(max_length=254)
+    password: str | None = Field(default=None, max_length=200)
+
+
 class AcceptTermsIn(BaseModel):
     accept_terms: bool
 

@@ -1,8 +1,8 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request, Response
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.api.cookies import clear_auth_cookies
@@ -14,11 +14,12 @@ from app.core.db import get_db
 from app.core.security import normalize_email
 from app.models import AuthSession, User
 from app.schemas.auth import MeOut, NoticeOut
-from app.schemas.me import AcceptTermsIn, CodeIn, EmailChangeIn, PasswordChangeIn, ProfileIn, SessionOut
+from app.schemas.me import AcceptTermsIn, CodeIn, DeleteAccountIn, EmailChangeIn, PasswordChangeIn, ProfileIn, SessionOut
 from app.services.auth import accounts, profile
 from app.services.auth.breach import BreachChecker
 from app.services.auth.codes import CodeCheck
 from app.services.auth.sessions import revoke_session
+from app.services.privacy.erasure import erase_account
 from app.services.security_log import log_event
 
 router = APIRouter(tags=["account"])
@@ -119,3 +120,26 @@ def accept_terms(payload: AcceptTermsIn, request: Request, db: Session = Depends
     log_event(db, "terms_accepted", now=now, user_id=user.id, ip=client_ip(request), details={"version": user.terms_version})
     db.commit()
     return MeOut.model_validate(user)
+
+
+REAUTH_WINDOW = timedelta(minutes=5)  # compte sans mot de passe : reconnexion Google récente exigée (spec 4.1)
+
+
+@router.delete("/me", status_code=204)
+def delete_account(payload: DeleteAccountIn, response: Response, db: Session = Depends(get_db),
+                   user: User = Depends(get_account_user), auth: AuthSession = Depends(get_auth_session),
+                   now: datetime = Depends(get_now)) -> Response:
+    if normalize_email(payload.confirm_email) != user.email:
+        raise fail(400, "confirm_mismatch", "L'adresse retapée ne correspond pas à votre compte.")
+    if user.has_password:
+        if not profile.password_ok(user, payload.password):
+            raise fail(400, *WRONG_PASSWORD)
+    elif now - auth.created_at > REAUTH_WINDOW:
+        raise fail(403, "reauth_required", "Reconnectez-vous avec Google, puis confirmez dans les 5 minutes.")
+    if user.role == "admin" and db.scalar(select(func.count()).select_from(User).where(User.role == "admin")) <= 1:
+        raise fail(400, "last_admin", "Vous êtes le seul administrateur : nommez-en un autre avant de supprimer votre compte.")
+    erase_account(db, user, now=now)
+    db.commit()
+    clear_auth_cookies(response, get_settings())
+    response.status_code = 204
+    return response

@@ -9,6 +9,7 @@ from app.core.security import normalize_email
 from app.models import User
 from app.services.auth.sessions import revoke_user_sessions
 from app.services.mail.outbox import enqueue
+from app.services.privacy.erasure import erase_account
 from app.services.security_log import log_event
 
 PAGE_SIZE = 50
@@ -100,10 +101,4 @@ def delete_user(db: Session, *, actor: User, target: User, confirm_email: str, n
         raise AdminError(400, "self_delete", "Vous ne pouvez pas supprimer votre propre compte ici.")
     if normalize_email(confirm_email) != target.email:
         raise AdminError(400, "confirm_mismatch", "L'adresse retapée ne correspond pas au compte.")
-    email, first_name = target.email, target.first_name
-    # Écrite avant la suppression : son user_id passera à NULL (ON DELETE SET NULL), l'acteur reste.
-    log_event(db, "admin_user_deleted", now=now, user_id=target.id, actor_id=actor.id)
-    db.flush()
-    db.delete(target)  # les données liées suivent par ON DELETE CASCADE
-    db.flush()
-    enqueue(db, "account_deleted", to=email, user_id=None, context={"first_name": first_name})
+    erase_account(db, target, now=now, actor=actor)
