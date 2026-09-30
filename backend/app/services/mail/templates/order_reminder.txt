@@ -1,0 +1,9 @@
+Bonjour {{ first_name }},
+
+En {{ year }}, vous avez passé {{ count }} ordre(s) sur les {{ min_orders }} prévus par vos réglages de frais : il vous en manque {{ remaining }} d'ici le 31 décembre.
+
+Sans eux, votre banque risque de prélever environ {{ penalty_fee|eur }} de frais.
+
+Voir mon portefeuille : {{ base_url }}/portefeuille
+
+{% include "_footer.txt" %}

@@ -1,0 +1,11 @@
+Bonjour {{ first_name }},
+
+{{ items|length }} titre(s) que vous suivez bougent aujourd'hui d'au moins {{ threshold|short }} % :
+
+{% for item in items %}
+- {{ item.name }} : {{ item.change_pct|pct }} ({{ item.price|price(item.currency) }}) — {{ base_url }}/titres/{{ item.security_id }}
+{% endfor %}
+
+Vous ne recevrez pas d'autre mail pour ces titres aujourd'hui.
+
+{% include "_footer.txt" %}

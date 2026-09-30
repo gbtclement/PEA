@@ -1,0 +1,23 @@
+{% extends "_layout.html" %}
+{% block body %}
+<p>Voici votre récap de la séance du {{ day|day }}.</p>
+{% if has_portfolio %}
+<p>Valeur de votre portefeuille : <strong>{{ total_value|eur }}</strong><br>Variation du jour : <strong>{{ day_change|eur }}</strong> ({{ day_change_pct|pct }})</p>
+{% endif %}
+{% if gainers %}
+<p style="margin-bottom:4px"><strong>Plus fortes hausses de vos favoris</strong></p>
+<ul style="margin-top:0">
+{% for item in gainers %}
+  <li><a href="{{ base_url }}/titres/{{ item.security_id }}" style="color:#4f46e5">{{ item.name }}</a> : {{ item.change_pct|pct }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if losers %}
+<p style="margin-bottom:4px"><strong>Plus fortes baisses de vos favoris</strong></p>
+<ul style="margin-top:0">
+{% for item in losers %}
+  <li><a href="{{ base_url }}/titres/{{ item.security_id }}" style="color:#4f46e5">{{ item.name }}</a> : {{ item.change_pct|pct }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "_layout.html" %}
+{% block body %}
+<p>Le score de certains de vos favoris a changé après la séance :</p>
+<ul>
+{% for item in items %}
+  <li><a href="{{ base_url }}/titres/{{ item.security_id }}" style="color:#4f46e5">{{ item.name }}</a> : {% if item.change == "entered" %}entre dans le top 10{% elif item.change == "left" %}sort du top 10{% elif item.change == "up" %}gagne {{ item.after - item.before }} points{% else %}perd {{ item.before - item.after }} points{% endif %} ({{ item.before }} → {{ item.after }})</li>
+{% endfor %}
+</ul>
+{% endblock %}

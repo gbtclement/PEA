@@ -1,0 +1,26 @@
+Bonjour {{ first_name }},
+
+Voici votre récap de la semaine qui se termine le {{ week_end|day }}.
+
+{% if has_portfolio %}
+Valeur de votre portefeuille : {{ total_value|eur }}
+Sur les 5 dernières séances : {{ week_change|eur }} ({{ week_change_pct|pct }})
+
+{% endif %}
+{% if entered or left %}
+Top 10 des actions éligibles :
+{% for item in entered %}
+- Entrée : {{ item.name }}
+{% endfor %}
+{% for item in left %}
+- Sortie : {{ item.name }}
+{% endfor %}
+{% else %}
+Le top 10 n'a pas changé cette semaine.
+{% endif %}
+
+{% if forecasts_checked %}
+Prévisions à une semaine vérifiées : {{ forecasts_right }} sur {{ forecasts_checked }} dans le bon sens.
+
+{% endif %}
+{% include "_footer.txt" %}
