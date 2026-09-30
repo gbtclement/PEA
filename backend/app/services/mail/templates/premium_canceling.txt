@@ -1,0 +1,7 @@
+Bonjour {{ first_name }},
+
+Votre demande de résiliation est bien prise en compte. Vous gardez Premium jusqu'au {{ ends_on | day }} ; aucun autre prélèvement n'aura lieu.
+
+Vous changez d'avis ? Vous pouvez annuler la résiliation avant cette date : {{ manage_url }}
+
+{% include "_footer.txt" %}

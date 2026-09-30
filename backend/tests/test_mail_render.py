@@ -5,6 +5,8 @@ import pytest
 from app.services.mail.render import KINDS, render
 
 BASE = "https://pea-radar.example"
+PREMIUM = {"first_name": "Jean", "interval_label": "annuel", "period_end": date(2026, 11, 1), "ends_on": date(2026, 11, 1),
+                "renews_on": "01/11/2026", "amount": "49,00 €", "manage_url": "m", "premium_url": "p"}
 CONTEXTS = {
     "verify_code": {"first_name": "Jean", "code": "042917"},
     "welcome": {"first_name": "Jean"},
@@ -31,6 +33,7 @@ CONTEXTS = {
                        "penalty_fee": 96.0, "unsubscribe_url": "u", "manage_url": "m"},
     "score_change": {"first_name": "Jean", "unsubscribe_url": "u", "manage_url": "m",
                      "items": [{"security_id": 1, "name": "LVMH", "before": 58, "after": 71, "change": "entered"}]},
+    **{kind: PREMIUM for kind in ("premium_started", "payment_failed", "premium_canceling", "premium_ended", "renewal_reminder")},
 }
 
 

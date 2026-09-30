@@ -1,0 +1,11 @@
+{% extends "_layout.html" %}
+{% block body %}
+<p>Merci ! Votre abonnement Premium {{ interval_label }} est actif. Vous avez maintenant accès à :</p>
+<ul>
+  <li>l'assistant IA, pour poser vos questions sur vos titres et votre PEA ;</li>
+  <li>la liste des prévisions court terme et le bloc prévision de chaque fiche.</li>
+</ul>
+{% if period_end %}<p>Prochaine échéance : {{ period_end | day }}.</p>{% endif %}
+<p><a href="{{ manage_url }}" style="color:#4f46e5">Gérer mon abonnement</a> (carte, factures, résiliation).</p>
+<p>PEA Radar reste un outil d'aide à la décision, et non un conseil en investissement.</p>
+{% endblock %}

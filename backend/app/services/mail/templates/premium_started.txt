@@ -1,0 +1,14 @@
+Bonjour {{ first_name }},
+
+Merci ! Votre abonnement Premium {{ interval_label }} est actif. Vous avez maintenant accès à :
+- l'assistant IA, pour poser vos questions sur vos titres et votre PEA ;
+- la liste des prévisions court terme et le bloc prévision de chaque fiche.
+{% if period_end %}
+Prochaine échéance : {{ period_end | day }}.
+{% endif %}
+
+Gérer mon abonnement (carte, factures, résiliation) : {{ manage_url }}
+
+PEA Radar reste un outil d'aide à la décision, et non un conseil en investissement.
+
+{% include "_footer.txt" %}
