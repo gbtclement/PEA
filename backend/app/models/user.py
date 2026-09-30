@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Uuid, false, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
@@ -30,6 +30,7 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    subscription: Mapped["Subscription | None"] = relationship(lazy="select", passive_deletes=True)  # noqa: F821
 
     @property
     def has_password(self) -> bool:
@@ -47,5 +48,11 @@ class User(Base):
 
     @property
     def has_premium(self) -> bool:
-        """Accès à l'assistant : Premium, ou admin (toujours considéré comme Premium)."""
-        return self.is_premium or self.role == "admin"
+        """Accès à l'assistant et aux prévisions : admin, Premium offert ou abonnement actif (spec 1.5)."""
+        return self.premium_source != "none"
+
+    @property
+    def premium_source(self) -> str:
+        from app.services.billing.access import premium_source
+
+        return premium_source(self)

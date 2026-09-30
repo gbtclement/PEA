@@ -77,3 +77,16 @@ def make_quote(db: Session, security: Security, price: float, *, change_pct: flo
     db.merge(quote)
     db.flush()
     return db.get(SecurityQuote, security.id)
+
+
+def make_subscription(db: Session, user: User, *, status: str = "active", interval: str = "month",
+                      period_end: datetime | None = None, cancel: bool = False, sub_id: str | None = None,
+                      customer_id: str | None = None) -> "Subscription":  # noqa: F821
+    from app.models import Subscription
+
+    row = Subscription(user_id=user.id, stripe_customer_id=customer_id or f"cus_{user.id.hex[:12]}",
+                       stripe_subscription_id=sub_id or f"sub_{user.id.hex[:12]}", status=status, interval=interval,
+                       current_period_end=period_end or datetime(2026, 11, 1, tzinfo=UTC), cancel_at_period_end=cancel)
+    db.add(row)
+    db.flush()
+    return row
