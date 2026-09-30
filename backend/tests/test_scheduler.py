@@ -1,8 +1,10 @@
 from datetime import UTC, date, datetime
+from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import func, select
 
+import app.jobs.scheduler as scheduler_module
 from app.jobs.scheduler import bootstrap_job, build_scheduler, quotes_job
 from app.models import DataStatus, ForecastRun, Security
 from app.providers.base import DailyBar, ListedSecurity, Quote
@@ -205,3 +207,12 @@ def test_scheduler_sends_emails_only_with_a_mailer(make_ctx):
     scheduler = build_scheduler(make_ctx(mailer=FakeMailer()), BackgroundScheduler(timezone="Europe/Paris"))
     job = scheduler.get_job("emails")
     assert job is not None and job.trigger.interval.total_seconds() == 5
+
+
+def test_quotes_job_checks_price_alerts(make_ctx, monkeypatch):
+    calls = []
+    monkeypatch.setattr(scheduler_module, "_refresh_tier", lambda ctx, tier: None)
+    monkeypatch.setattr(scheduler_module, "_refresh_scores", lambda ctx: None)
+    monkeypatch.setattr(scheduler_module, "run_price_alerts", lambda ctx: calls.append(ctx) or 0)
+    scheduler_module.quotes_job(make_ctx(now=datetime(2026, 9, 29, 10, 0, tzinfo=ZoneInfo("Europe/Paris"))), 1)
+    assert len(calls) == 1

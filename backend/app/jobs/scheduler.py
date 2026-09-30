@@ -14,6 +14,7 @@ from app.jobs.privacy import build_pending_exports
 from app.jobs.forecasts import refresh_forecast_stats, refresh_forecasts, stats_are_stale
 from app.jobs.cleanup import purge_security_data
 from app.jobs.mail import send_pending_emails
+from app.jobs.notifications import run_price_alerts
 from app.jobs.market import refresh_daily_history, refresh_fundamentals, refresh_quotes
 from app.jobs.runner import run_job
 from app.jobs.scoring import refresh_scores
@@ -34,9 +35,18 @@ def _refresh_scores(ctx: JobContext) -> None:
     run_job(ctx, "scores", refresh_scores)
 
 
+def _quietly(ctx: JobContext, fn) -> None:
+    """Notifications : une panne est journalisée, sans bloquer la tâche qui les déclenche."""
+    try:
+        fn(ctx)
+    except Exception:
+        logging.getLogger(__name__).exception("Échec d'une tâche de notification (%s)", fn.__name__)
+
+
 def quotes_job(ctx: JobContext, tier: int) -> None:
     if is_market_open(ctx.now()):
         _refresh_tier(ctx, tier)
+        _quietly(ctx, run_price_alerts)  # N2 : après chaque mise à jour des cours
         if tier == 2:
             _refresh_scores(ctx)
 
