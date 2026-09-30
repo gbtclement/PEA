@@ -1,0 +1,6 @@
+{% extends "_layout.html" %}
+{% block body %}
+<p>Vous ne vous êtes pas connecté à PEA Radar depuis 3 ans. Sans nouvelle connexion, votre compte et ses données seront supprimés le {{ delete_on | paris }}.</p>
+<p><a href="{{ base_url }}/connexion">Me connecter pour garder mon compte</a></p>
+<p>Si vous ne souhaitez plus utiliser PEA Radar, vous n'avez rien à faire.</p>
+{% endblock %}

@@ -12,6 +12,7 @@ CONTEXTS = {
     "security_alert": {"first_name": "Jean", "event": "password_reset"},
     "new_device": {"first_name": "Jean", "device": "Chrome sur Windows", "when": datetime(2026, 9, 28, 12, 5, tzinfo=UTC), "token": "tok"},
     "account_deleted": {"first_name": "Jean"},
+    "inactivity_warning": {"first_name": "Jean", "delete_on": datetime(2029, 12, 31, 3, 30, tzinfo=UTC)},
     "data_export_ready": {"first_name": "Jean", "expires_at": datetime(2026, 10, 8, 8, 0, tzinfo=UTC)},
     "test": {"first_name": "Jean"},
 }

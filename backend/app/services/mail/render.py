@@ -15,6 +15,7 @@ SUBJECTS = {
     "new_device": "Nouvelle connexion à votre compte PEA Radar",
     "account_deleted": "Votre compte PEA Radar a été supprimé",
     "data_export_ready": "Vos données PEA Radar sont prêtes",
+    "inactivity_warning": "Votre compte PEA Radar sera supprimé dans 30 jours",
     "test": "Mail de test PEA Radar",
 }
 KINDS = frozenset(SUBJECTS)
