@@ -1,13 +1,14 @@
 import { useState } from "react";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { SignalStat } from "@/lib/api/client";
+import type { SignalStat, SignalStatsRow } from "@/lib/api/client";
 import { formatNumber, formatRatioPct } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { FirstRunNotice, HORIZONS, ReliabilityBadge, roundPct, signedPct, tone, useSignalStats, type HorizonKey } from "./shared";
 
+type SignalRow = SignalStatsRow;
 type Metric = "n" | "hit_rate" | "mean" | "median" | "after_fees" | "beat_index";
 
 const METRICS: { key: Metric; label: string; hint: string }[] = [
@@ -20,6 +21,36 @@ const METRICS: { key: Metric; label: string; hint: string }[] = [
 ];
 
 const value = (stat: SignalStat, metric: Metric, cost: number) => (metric === "after_fees" ? stat.mean - cost : stat[metric]);
+
+type SortKey = Metric | "label" | "reliability";
+type Sort = { key: SortKey; desc: boolean };
+const RELIABILITY_RANK: Record<string, number> = { faible: 0, moyenne: 1, elevee: 2 };
+
+/** Ordre croissant de deux signaux ; ceux sans statistique à cet horizon restent en bas quel que soit le sens. */
+function compare(a: SignalRow, b: SignalRow, horizon: HorizonKey, sort: Sort, cost: number): number {
+  if (sort.key === "label") return a.label.localeCompare(b.label, "fr", { sensitivity: "base" });
+  const sa = a.horizons[horizon];
+  const sb = b.horizons[horizon];
+  if (!sa || !sb) return 0;
+  return sort.key === "reliability"
+    ? (RELIABILITY_RANK[sa.reliability] ?? 0) - (RELIABILITY_RANK[sb.reliability] ?? 0)
+    : value(sa, sort.key, cost) - value(sb, sort.key, cost);
+}
+
+function SortButton({ label, sortKey, sort, onSort, className }: {
+  label: string; sortKey: SortKey; sort: Sort; onSort: (key: SortKey) => void; className?: string;
+}) {
+  const active = sort.key === sortKey;
+  return (
+    <button type="button" onClick={() => onSort(sortKey)}
+            className={cn("inline-flex items-center gap-1 whitespace-nowrap hover:text-foreground", active && "text-foreground", className)}>
+      {label}
+      {active && (sort.desc ? <ArrowDown className="size-3" aria-hidden /> : <ArrowUp className="size-3" aria-hidden />)}
+    </button>
+  );
+}
+
+const ariaSort = (sort: Sort, key: SortKey) => (sort.key === key ? (sort.desc ? "descending" : "ascending") : undefined);
 
 function Cells({ stat, cost, reference = false }: { stat: SignalStat | null | undefined; cost: number; reference?: boolean }) {
   if (!stat) {
@@ -41,7 +72,9 @@ function Cells({ stat, cost, reference = false }: { stat: SignalStat | null | un
 export function SignalStatsView() {
   const { data, isPending, isError } = useSignalStats();
   const [horizon, setHorizon] = useState<HorizonKey>("1w");
-  const [sortBy, setSortBy] = useState<Metric>("mean");
+  const [sort, setSort] = useState<Sort>({ key: "mean", desc: true });
+  // Même colonne : on inverse le sens. Nouvelle colonne : le signal par ordre alphabétique, les chiffres du plus grand au plus petit.
+  const onSort = (key: SortKey) => setSort((s) => (s.key === key ? { key, desc: !s.desc } : { key, desc: key !== "label" }));
 
   if (isPending) return <Skeleton className="h-96 w-full" />;
   if (isError) return <p role="alert" className="text-sm text-down">Impossible de charger les statistiques.</p>;
@@ -49,10 +82,11 @@ export function SignalStatsView() {
 
   const cost = data.round_trip_cost ?? 0;
   const rows = [...data.signals].sort((a, b) => {
-    const sa = a.horizons[horizon];
-    const sb = b.horizons[horizon];
-    if (!sa || !sb) return sa ? -1 : sb ? 1 : 0;
-    return value(sb, sortBy, cost) - value(sa, sortBy, cost);
+    if (sort.key !== "label" && (!a.horizons[horizon] || !b.horizons[horizon])) {
+      return a.horizons[horizon] ? -1 : b.horizons[horizon] ? 1 : 0;
+    }
+    const order = compare(a, b, horizon, sort, cost);
+    return sort.desc ? -order : order;
   });
   const horizonLabel = HORIZONS.find((h) => h.key === horizon)!;
 
@@ -70,16 +104,17 @@ export function SignalStatsView() {
           <table aria-label="Statistiques des signaux" className="w-full text-sm tabular-nums">
             <thead>
               <tr className="border-b border-border text-xs text-muted-foreground">
-                <th scope="col" className="px-3 py-2 text-left font-medium">Signal</th>
+                <th scope="col" className="px-3 py-2 text-left font-medium" aria-sort={ariaSort(sort, "label")}>
+                  <SortButton label="Signal" sortKey="label" sort={sort} onSort={onSort} />
+                </th>
                 {METRICS.map((m) => (
-                  <th key={m.key} scope="col" className="px-3 py-2 text-right font-medium" title={m.hint}>
-                    <button type="button" onClick={() => setSortBy(m.key)}
-                            className={cn("inline-flex items-center gap-1 whitespace-nowrap hover:text-foreground", sortBy === m.key && "text-foreground")}>
-                      {m.label}{sortBy === m.key && <ArrowDown className="size-3" aria-label="trié" />}
-                    </button>
+                  <th key={m.key} scope="col" className="px-3 py-2 text-right font-medium" title={m.hint} aria-sort={ariaSort(sort, m.key)}>
+                    <SortButton label={m.label} sortKey={m.key} sort={sort} onSort={onSort} />
                   </th>
                 ))}
-                <th scope="col" className="px-3 py-2 text-right font-medium">Fiabilité</th>
+                <th scope="col" className="px-3 py-2 text-right font-medium" aria-sort={ariaSort(sort, "reliability")}>
+                  <SortButton label="Fiabilité" sortKey="reliability" sort={sort} onSort={onSort} />
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
