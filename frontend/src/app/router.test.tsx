@@ -13,7 +13,7 @@ function body(url: string): unknown {
   if (url.includes("/api/status")) return { market_open: false, jobs: [], indices: [] };
   if (url.startsWith("/api/rankings/movers")) return { gainers: [], losers: [] };
   if (url === "/api/assistant/status") return { available: false, reason: "premium", spent_usd: 0, limit_usd: 5, model: "Claude Opus 5" };
-  if (url === "/api/assistant/conversations" || url === "/api/me/sessions") return [];
+  if (url === "/api/assistant/conversations" || url === "/api/me/sessions" || url === "/api/me/price-alerts") return [];
   if (url === "/api/forecasts") return { as_of: null, round_trip_cost: null, rows: [] };
   if (url === "/api/settings") return { min_orders_per_year: 12, penalty_fee: 96, fee_grid: [{ up_to: null, rate: 0.0012 }] };
   if (url.startsWith("/api/rankings/top") || url.startsWith("/api/market/heatmap") || url.startsWith("/api/screener")) return [];
