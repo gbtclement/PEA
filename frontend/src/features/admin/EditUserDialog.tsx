@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -22,9 +22,13 @@ export function EditUserDialog({ user, onClose }: { user: AdminUser | null; onCl
 function EditUserForm({ user, onDone }: { user: AdminUser; onDone: () => void }) {
   const [form, setForm] = useState({ first_name: user.first_name, last_name: user.last_name, email: user.email, role: user.role,
                                      is_premium: user.is_premium });
+  const queryClient = useQueryClient();
   const save = useMutation({
     mutationFn: () => apiSend("PATCH", `/api/admin/users/${user.id}`, form),
-    onSuccess: onDone,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["me"] });  // l'admin a pu se modifier lui-même
+      onDone();
+    },
   });
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm({ ...form, [key]: e.target.type === "checkbox" ? (e.target as HTMLInputElement).checked : e.target.value });

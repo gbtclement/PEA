@@ -1,4 +1,5 @@
 import { usePageMeta } from "@/seo/usePageMeta";
+import { DataCard } from "./DataCard";
 import { DevicesCard } from "./DevicesCard";
 import { EmailCard } from "./EmailCard";
 import { FeeSettingsCard } from "./FeeSettingsCard";
@@ -17,6 +18,7 @@ export function SettingsPage() {
       <PasswordCard />
       <EmailCard />
       <DevicesCard />
+      <DataCard />
       <FeeSettingsCard />
     </section>
   );

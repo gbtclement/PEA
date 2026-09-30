@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ME, mockFetch, renderWithProviders } from "@/test/utils";
+import { useMe } from "@/features/auth/useMe";
 import { AdminPage } from "./AdminPage";
 
 vi.mock("./EligibilityOverridesCard", () => ({ EligibilityOverridesCard: () => null }));
@@ -45,18 +46,26 @@ test("bascule Premium dans le tableau", async () => {
   await waitFor(() => expect(bodyOf(fetchMock, "/api/admin/users/u2", "PATCH")).toEqual({ is_premium: true }));
 });
 
+function WithSidebar() {
+  useMe();  // comme la barre latérale du Layout, qui affiche le compte connecté
+  return <AdminPage />;
+}
+
 test("modifie un compte", async () => {
   const fetchMock = api({ "/api/admin/users/u2": PAUL });
-  renderWithProviders(<AdminPage />);
+  renderWithProviders(<WithSidebar />);
   await userEvent.click(await screen.findByRole("button", { name: "Modifier Paul Martin" }));
   const dialog = await screen.findByRole("dialog");
   const last = within(dialog).getByLabelText("Nom");
   await userEvent.clear(last);
   await userEvent.type(last, "Durand");
   await userEvent.selectOptions(within(dialog).getByLabelText("Rôle"), "admin");
+  const meReads = () => fetchMock.mock.calls.filter(([u]) => String(u) === "/api/me").length;
+  const before = meReads();
   await userEvent.click(within(dialog).getByRole("button", { name: "Enregistrer" }));
   await waitFor(() => expect(bodyOf(fetchMock, "/api/admin/users/u2", "PATCH"))
     .toEqual({ first_name: "Paul", last_name: "Durand", email: "paul@example.com", role: "admin", is_premium: false }));
+  await waitFor(() => expect(meReads()).toBeGreaterThan(before));  // la barre latérale suit un admin qui se modifie lui-même
 });
 
 test("supprime seulement après avoir retapé le mail", async () => {
