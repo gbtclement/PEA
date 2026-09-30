@@ -4,14 +4,17 @@ from datetime import datetime, timedelta
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from app.models import AuthSession, DataExport, EmailCode, EmailLog, User
+from app.models import AuthSession, DataExport, EmailCode, EmailLog, MoveNotice, ScoreSnapshot, User
 from app.services.mail.outbox import enqueue
+from app.services.market_calendar import PARIS
 from app.services.privacy.erasure import erase_account
 
 UNVERIFIED_TTL = timedelta(days=7)
 EMAIL_LOG_TTL = timedelta(days=90)
 INACTIVITY = timedelta(days=3 * 365)
 INACTIVITY_GRACE = timedelta(days=30)
+SNAPSHOT_TTL = timedelta(days=14)
+MOVE_NOTICE_TTL = timedelta(days=7)
 
 
 def _activity():
@@ -30,6 +33,10 @@ def run_retention(db: Session, now: datetime) -> dict[str, int]:
         "exports": db.execute(delete(DataExport).where(DataExport.expires_at < now)).rowcount,
         "email_log": db.execute(delete(EmailLog).where(EmailLog.created_at < now - EMAIL_LOG_TTL,
                                                        EmailLog.status != "pending")).rowcount,
+        "score_snapshots": db.execute(delete(ScoreSnapshot).where(
+            ScoreSnapshot.day < now.astimezone(PARIS).date() - SNAPSHOT_TTL)).rowcount,
+        "move_notices": db.execute(delete(MoveNotice).where(
+            MoveNotice.day < now.astimezone(PARIS).date() - MOVE_NOTICE_TTL)).rowcount,
     }
     return counts | _inactivity(db, now)
 

@@ -6,7 +6,8 @@ from sqlalchemy import inspect, select
 from sqlalchemy.orm import Session
 
 from app.models import (
-    AiUsage, AuthSession, ChatMessage, Conversation, DataExport, Favorite, Order, Security, User, UserSettings,
+    AiUsage, AuthSession, ChatMessage, Conversation, DataExport, Favorite, NotificationPrefs, Order, PriceAlert, Security,
+    User, UserSettings,
 )
 
 EXPORT_TTL = timedelta(days=7)
@@ -35,7 +36,8 @@ def _row(obj) -> dict:
 def build_export(db: Session, user: User, now: datetime) -> dict:
     orders = db.scalars(select(Order).where(Order.user_id == user.id).order_by(Order.id)).all()
     favorites = db.scalars(select(Favorite).where(Favorite.user_id == user.id)).all()
-    ids = {o.security_id for o in orders} | {f.security_id for f in favorites}
+    alerts = db.scalars(select(PriceAlert).where(PriceAlert.user_id == user.id).order_by(PriceAlert.created_at)).all()
+    ids = {o.security_id for o in orders} | {f.security_id for f in favorites} | {a.security_id for a in alerts}
     securities = {s.id: {"symbol": s.symbol, "name": s.name, "isin": s.isin}
                   for s in db.scalars(select(Security).where(Security.id.in_(ids)))} if ids else {}
     settings = db.get(UserSettings, user.id)
@@ -46,6 +48,8 @@ def build_export(db: Session, user: User, now: datetime) -> dict:
         "reglages": _row(settings) if settings else None,
         "ordres": [{**_row(o), "titre": securities.get(o.security_id)} for o in orders],
         "favoris": [{**_row(f), "titre": securities.get(f.security_id)} for f in favorites],
+        "notifications": _row(prefs) if (prefs := db.get(NotificationPrefs, user.id)) else None,
+        "alertes_prix": [{**_row(a), "titre": securities.get(a.security_id)} for a in alerts],
         "conversations": [{**_row(c), "messages": [_row(m) for m in db.scalars(
             select(ChatMessage).where(ChatMessage.conversation_id == c.id).order_by(ChatMessage.id))]} for c in conversations],
         "usage_assistant": [_row(u) for u in db.scalars(select(AiUsage).where(AiUsage.user_id == user.id))],
