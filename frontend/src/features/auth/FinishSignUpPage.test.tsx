@@ -11,6 +11,7 @@ function renderPage() {
   const router = createMemoryRouter([
     { path: "/finaliser-inscription", element: <FinishSignUpPage /> },
     { path: "/", element: <h1>Accueil</h1> },
+    { path: "/portefeuille", element: <h1>Portefeuille</h1> },
     { path: "/inscription", element: <h1>Créer un compte</h1> },
   ], { initialEntries: ["/finaliser-inscription"] });
   render(<QueryClientProvider client={new QueryClient()}><RouterProvider router={router} /></QueryClientProvider>);
@@ -36,4 +37,13 @@ test("sans connexion Google en cours, retour à l'inscription", async () => {
   mockFetch(() => ({ status: 404, body: { detail: { code: "google_expired", message: "Recommencez la connexion avec Google." } } }));
   const router = renderPage();
   await waitFor(() => expect(router.state.location.pathname).toBe("/inscription"));
+});
+
+test("après l'inscription Google, retour à la page demandée au départ", async () => {
+  mockFetch((url) => ({ body: url === "/api/auth/google/pending"
+    ? { email: "jean@gmail.com", first_name: "Jean", last_name: "Dupont", suite: "/portefeuille" } : ME }));
+  const router = renderPage();
+  await userEvent.click(await screen.findByRole("checkbox"));
+  await userEvent.click(screen.getByRole("button", { name: "Terminer mon inscription" }));
+  await waitFor(() => expect(router.state.location.pathname).toBe("/portefeuille"));
 });

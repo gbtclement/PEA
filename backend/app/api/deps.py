@@ -34,11 +34,13 @@ def get_session_maker():
 
 
 def get_captcha():
-    """Turnstile si la clé secrète est configurée, sinon captcha désactivé ; remplacé en test."""
+    """Turnstile si les deux clés sont configurées, sinon désactivé : un captcha exigé sans widget bloquerait la
+    connexion. Remplacé en test."""
     from app.services.auth.captcha import DisabledCaptcha, TurnstileVerifier
 
-    secret = get_settings().turnstile_secret_key
-    return TurnstileVerifier(secret) if secret else DisabledCaptcha()
+    settings = get_settings()
+    secret = settings.turnstile_secret_key
+    return TurnstileVerifier(secret) if secret and settings.turnstile_site_key else DisabledCaptcha()
 
 
 def get_breach_checker():

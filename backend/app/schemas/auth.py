@@ -81,6 +81,7 @@ class GooglePendingOut(BaseModel):
     email: str
     first_name: str
     last_name: str
+    suite: str = "/"
 
 
 class GoogleCompleteIn(BaseModel):

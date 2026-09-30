@@ -273,7 +273,8 @@ export interface paths {
         get: operations["read_me_api_me_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Account */
+        delete: operations["delete_account_api_me_delete"];
         options?: never;
         head?: never;
         /** Update Me */
@@ -361,6 +362,58 @@ export interface paths {
         post?: never;
         /** Revoke One Session */
         delete: operations["revoke_one_session_api_me_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/accept-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept Terms */
+        post: operations["accept_terms_api_me_accept_terms_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest Data Export */
+        get: operations["latest_data_export_api_me_export_get"];
+        put?: never;
+        /** Request Data Export */
+        post: operations["request_data_export_api_me_export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/export/{export_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Data Export */
+        get: operations["download_data_export_api_me_export__export_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -976,6 +1029,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AcceptTermsIn */
+        AcceptTermsIn: {
+            /** Accept Terms */
+            accept_terms: boolean;
+        };
         /** AdminSettingsIn */
         AdminSettingsIn: {
             /** Ai Model */
@@ -1223,6 +1281,13 @@ export interface components {
             /** Penalty Fee */
             penalty_fee: number;
         };
+        /** DeleteAccountIn */
+        DeleteAccountIn: {
+            /** Confirm Email */
+            confirm_email: string;
+            /** Password */
+            password?: string | null;
+        };
         /** DeleteUserIn */
         DeleteUserIn: {
             /** Confirm Email */
@@ -1252,6 +1317,23 @@ export interface components {
             email: string;
             /** Captcha */
             captcha?: string | null;
+        };
+        /** ExportOut */
+        ExportOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Expires At */
+            expires_at: string | null;
         };
         /** FeeEstimate */
         FeeEstimate: {
@@ -1345,6 +1427,11 @@ export interface components {
             first_name: string;
             /** Last Name */
             last_name: string;
+            /**
+             * Suite
+             * @default /
+             */
+            suite: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1492,6 +1579,8 @@ export interface components {
             has_google: boolean;
             /** Has Premium */
             has_premium: boolean;
+            /** Terms Outdated */
+            terms_outdated: boolean;
         };
         /** MessageIn */
         MessageIn: {
@@ -2587,6 +2676,37 @@ export interface operations {
             };
         };
     };
+    delete_account_api_me_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteAccountIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_me_api_me_patch: {
         parameters: {
             query?: never;
@@ -2774,6 +2894,110 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_terms_api_me_accept_terms_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptTermsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    latest_data_export_api_me_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportOut"] | null;
+                };
+            };
+        };
+    };
+    request_data_export_api_me_export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportOut"];
+                };
+            };
+        };
+    };
+    download_data_export_api_me_export__export_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                export_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
             };
             /** @description Validation Error */
             422: {

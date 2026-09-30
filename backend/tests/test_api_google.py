@@ -58,7 +58,7 @@ def test_new_google_account_is_created_only_after_finishing(anon_client, db, fak
     assert back.headers["location"] == "/finaliser-inscription"
     assert db.scalars(select(User)).all() == []
     assert anon_client.get("/api/auth/google/pending").json() == {"email": "jean@gmail.com", "first_name": "Jean",
-                                                                   "last_name": "Dupont"}
+                                                                   "last_name": "Dupont", "suite": "/portefeuille"}
     refused = anon_client.post("/api/auth/google/complete", json={"first_name": "Jean", "last_name": "Dupont",
                                                                   "accept_terms": False})
     assert refused.status_code == 422
@@ -131,3 +131,13 @@ def test_pending_google_sign_up_is_404_when_google_is_off(anon_client, db):
     finish = anon_client.post("/api/auth/google/complete", json={"first_name": "A", "last_name": "B", "accept_terms": True})
     assert finish.status_code == 404
     assert db.scalar(select(User).where(User.email == "chef@example.com")) is None
+
+
+def test_google_sign_in_replaces_the_previous_session(anon_client, db):
+    from tests.auth_helpers import sign_in
+
+    user = make_user(db, "jean@gmail.com")
+    user.google_sub = "google-123"
+    old = sign_in(anon_client, db, user)
+    _callback(anon_client, _start(anon_client))
+    assert db.get(type(old.session), old.session.id) is None
