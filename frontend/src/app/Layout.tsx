@@ -1,4 +1,4 @@
-import { Outlet } from "react-router";
+import { Navigate, Outlet, useLocation } from "react-router";
 import { Toaster } from "sonner";
 import { AssistantPanelProvider } from "@/features/assistant/AssistantPanel";
 import { useMe } from "@/features/auth/useMe";
@@ -9,6 +9,10 @@ import { SignUpBanner } from "./SignUpBanner";
 
 export function Layout() {
   const { me } = useMe();
+  const location = useLocation();
+  if (me?.terms_outdated) {  // nouvelle version des CGU : l'accepter avant toute page
+    return <Navigate to={`/accepter-cgu?suite=${encodeURIComponent(location.pathname + location.search)}`} replace />;
+  }
   return (
     <AssistantPanelProvider>
       <div className="min-h-screen min-w-[1024px] bg-background text-foreground">

@@ -77,9 +77,9 @@ test("ce n'était pas moi : rien ne se passe sans clic", async () => {
   expect(await screen.findByRole("status")).toHaveTextContent("déconnectés");
 });
 
-test("CGU provisoires avec l'avertissement", () => {
+test("CGU en brouillon avec l'avertissement", () => {
   renderAt("/cgu");
   expect(screen.getByRole("heading", { level: 1, name: "Conditions générales d'utilisation" })).toBeInTheDocument();
-  expect(screen.getByText(/Version provisoire/)).toBeInTheDocument();
-  expect(screen.getByText(/pas un conseil en investissement/)).toBeInTheDocument();
+  expect(screen.getByRole("note")).toHaveTextContent(/Brouillon/);
+  expect(screen.getAllByText(/pas un conseil en investissement/).length).toBeGreaterThan(0);
 });
