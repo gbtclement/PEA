@@ -1,9 +1,10 @@
-"""Abonnement Premium (spec 3) : prix, résumé, passage en caisse. Le webhook et /sync, /portal suivent (Tasks 6 et 7)."""
+"""Abonnement Premium (spec 3 et 4.1) : prix, résumé, passage en caisse, retour de paiement, portail et webhook."""
 from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from starlette.concurrency import run_in_threadpool
 
 from app.api.deps import PLANS_CACHE, get_billing_gateway
 from app.api.routes.auth import client_ip, fail
@@ -16,8 +17,9 @@ from app.models import BillingConsent, User
 from app.schemas.billing import CheckoutIn, PlanOut, PlansOut, RedirectOut, SubscriptionOut, SyncIn
 from app.services import ratelimit
 from app.services.billing.access import premium_source
-from app.services.billing.gateway import BillingGateway, BillingUnavailable
+from app.services.billing.gateway import BillingGateway, BillingUnavailable, InvalidSignature
 from app.services.billing.state import apply_subscription
+from app.services.billing.webhook import handle_event
 from app.services.security_log import log_event
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -126,3 +128,26 @@ def billing_portal(gateway: GatewayDep, user: User = Depends(get_current_user)) 
         return RedirectOut(url=gateway.portal(user.subscription.stripe_customer_id, f"{_base_url()}/reglages#abonnement"))
     except BillingUnavailable:
         raise unavailable()
+
+
+@router.post("/webhook")
+async def billing_webhook(request: Request, gateway: GatewayDep, db: Session = Depends(get_db),
+                          now: datetime = Depends(get_now)) -> dict:
+    """Appelé par Stripe (pas de cookie, pas de CSRF) : seule la signature compte (spec 4.1)."""
+    gateway = require_gateway(gateway)
+    payload = await request.body()
+    try:
+        event = gateway.parse_event(payload, request.headers.get("Stripe-Signature"))
+    except InvalidSignature:
+        raise fail(400, "bad_signature", "Signature Stripe invalide.")
+
+    def process() -> None:
+        try:
+            handle_event(db, gateway, event, now=now)
+            db.commit()
+        except BillingUnavailable:
+            db.rollback()
+            raise fail(500, "billing_unavailable", "Stripe injoignable : l'événement sera renvoyé.")
+
+    await run_in_threadpool(process)
+    return {"received": True}
