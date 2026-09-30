@@ -14,7 +14,7 @@ Si vous avez créé votre compte avec Google, vous n'avez pas de mot de passe : 
 
 ## Adresse mail
 
-Saisissez la nouvelle adresse et votre mot de passe. Un **code à 6 chiffres** est envoyé à la nouvelle adresse : tapez-le pour valider le changement. L'ancienne adresse reçoit un mail de prévention.
+Saisissez la nouvelle adresse et votre mot de passe. Un **code à 6 chiffres** est envoyé à la nouvelle adresse : tapez-le pour valider le changement : vos autres appareils sont alors déconnectés, et l'ancienne adresse reçoit un mail de prévention.
 
 ## Appareils connectés
 

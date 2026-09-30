@@ -90,6 +90,15 @@ def test_email_verify_switches_address_and_alerts_the_old_one(client, db, user, 
     assert [m.recipient for m in mails(db, "security_alert")] == ["moi@example.com"]
 
 
+def test_email_verify_signs_out_other_devices(client, db, user):
+    current = db.scalar(select(AuthSession).where(AuthSession.user_id == user.id))
+    open_session(db, user, persistent=True, ip="198.51.100.1", user_agent="autre", now=NOW, settings=get_settings())
+    code = issue_code(db, user, "change_email", NOW, new_email="nouveau@example.com")
+    assert client.post("/api/me/email/verify", json={"code": code}).status_code == 200
+    remaining = db.scalars(select(AuthSession).where(AuthSession.user_id == user.id)).all()
+    assert [s.id for s in remaining] == [current.id]
+
+
 def test_email_verify_refuses_an_address_taken_meanwhile(client, db, user):
     code = issue_code(db, user, "change_email", NOW, new_email="course@example.com")
     make_user(db, "course@example.com")

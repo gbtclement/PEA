@@ -64,9 +64,10 @@ def request_email_change(payload: EmailChangeIn, request: Request, db: Session =
 
 @router.post("/me/email/verify", response_model=MeOut)
 def confirm_email_change(payload: CodeIn, request: Request, db: Session = Depends(get_db),
-                         user: User = Depends(get_current_user), now: datetime = Depends(get_now)) -> MeOut:
+                         user: User = Depends(get_current_user), auth: AuthSession = Depends(get_auth_session),
+                         now: datetime = Depends(get_now)) -> MeOut:
     try:
-        result = profile.confirm_email_change(db, user, payload.code, now, client_ip(request))
+        result = profile.confirm_email_change(db, user, payload.code, now, client_ip(request), keep_session=auth)
     except profile.EmailTaken:
         db.commit()  # le code est consommé : il faudra en redemander un
         raise fail(409, "email_taken", "Cette adresse vient d'être prise par un autre compte.")

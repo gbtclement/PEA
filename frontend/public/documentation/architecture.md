@@ -128,7 +128,7 @@ Toutes les valeurs sont dans `backend/app/core/config.py` (`Settings`, pydantic-
 | `TEST_DATABASE_URL` | `…/pea_radar_test` | Base des tests (créée par `backend/docker/initdb`) |
 | `APP_SECRET` | *(vide)* | Signe les cookies temporaires de la connexion Google (obligatoire pour Google) |
 | `ANTHROPIC_API_KEY` | *(vide)* | Clé Claude de l'assistant. Seul endroit où elle est lue ; sans elle, l'assistant est « pas encore configuré » |
-| `ASSISTANT_MODEL` | `claude-opus-5` | Modèle initial de `app_settings` ; ensuite, il se change dans l'onglet Admin |
+| `ASSISTANT_MODEL` | `claude-opus-5` | Modèle de secours si la ligne `app_settings` manque. Le modèle se change dans l'onglet Admin |
 | `HISTORY_YEARS` | `5` | Profondeur de l'historique journalier |
 | `YAHOO_CHUNK_SIZE` / `YAHOO_PAUSE_SECONDS` | `50` / `1.0` | Taille des paquets et pause entre deux requêtes Yahoo |
 | `TIER2_SIZE` | `150` | Nombre de titres du palier T2 |

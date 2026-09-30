@@ -38,7 +38,8 @@ class EmailTaken(Exception):
     """La nouvelle adresse a été prise entre la demande et la validation."""
 
 
-def confirm_email_change(db: Session, user: User, code: str, now: datetime, ip: str | None) -> CodeCheck:
+def confirm_email_change(db: Session, user: User, code: str, now: datetime, ip: str | None, *,
+                         keep_session: AuthSession) -> CodeCheck:
     new_email = pending_new_email(db, user)
     result = check_code(db, user, "change_email", code, now)
     if result != CodeCheck.OK:
@@ -47,6 +48,7 @@ def confirm_email_change(db: Session, user: User, code: str, now: datetime, ip: 
         raise EmailTaken
     old_email = user.email
     user.email = new_email
+    db.execute(delete(AuthSession).where(AuthSession.user_id == user.id, AuthSession.id != keep_session.id))
     log_event(db, "email_changed", now=now, user_id=user.id, ip=ip)
     enqueue(db, "security_alert", to=old_email, user_id=user.id,
             context={"first_name": user.first_name, "event": "email_changed"})

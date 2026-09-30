@@ -201,7 +201,7 @@ Les Réglages (`/reglages`) regroupent ce qui concerne le compte connecté (rout
 
 - **Profil** : prénom et nom.
 - **Mot de passe** : l'actuel est demandé. Le changement ferme toutes les **autres** sessions et envoie un mail `security_alert`. Un compte créé avec Google, sans mot de passe, voit « Ajouter un mot de passe » et n'a rien à confirmer.
-- **Adresse mail** : un code à 6 chiffres part vers la nouvelle adresse (même quota que les autres codes). La réponse est la même si l'adresse est déjà prise, pour ne pas révéler les comptes existants. Une fois le code validé, l'ancienne adresse reçoit une alerte.
+- **Adresse mail** : un code à 6 chiffres part vers la nouvelle adresse (même quota que les autres codes). La réponse est la même si l'adresse est déjà prise, pour ne pas révéler les comptes existants. Une fois le code validé, les **autres** sessions sont fermées et l'ancienne adresse reçoit une alerte.
 - **Appareils connectés** : chaque session ouverte, avec l'appareil déduit du navigateur, l'IP et la dernière activité. On peut en déconnecter une, ou toutes les autres.
 
 ## Onglet Admin
@@ -209,7 +209,7 @@ Les Réglages (`/reglages`) regroupent ce qui concerne le compte connecté (rout
 `/admin` n'apparaît dans la barre latérale que pour un admin ; un autre compte qui ouvre l'adresse voit la page introuvable. Côté API, toutes les routes `/api/admin/*` passent par `require_admin()`.
 
 - **Utilisateurs** : 50 comptes par page, recherche (mail, prénom, nom, sans tenir compte des accents), tri sur chaque colonne, interrupteur **Premium** sur chaque ligne.
-- **Modifier** : prénom, nom, adresse, rôle, Premium. Une adresse changée par l'admin est considérée comme validée ; l'ancienne et la nouvelle adresse sont prévenues par mail. Tout autre changement, sauf la bascule Premium, prévient le titulaire (`security_alert`).
+- **Modifier** : prénom, nom, adresse, rôle, Premium. Une adresse changée par l'admin est considérée comme validée ; l'ancienne et la nouvelle adresse sont prévenues par mail. Tout autre changement, sauf la bascule Premium, prévient le titulaire (`security_alert`). Un changement de **rôle** ou d'**adresse** ferme toutes ses sessions.
 - **Supprimer** : il faut retaper l'adresse du compte. Toutes ses données partent avec lui (`ON DELETE CASCADE`) et un mail `account_deleted` lui est envoyé.
 - **Garde-fous** : un admin ne peut ni retirer son propre rôle (`self_demotion`), ni supprimer son propre compte ici (`self_delete`), et il reste toujours au moins un admin (`last_admin`).
 - **État de la configuration** : pour chaque réglage de `.env` (Claude, SMTP, Google, Turnstile, `APP_SECRET`, `ADMIN_EMAIL`), « Renseigné » ou « Manquant ». **Aucune valeur n'est jamais renvoyée.** Un bouton envoie un mail de test à l'admin.
@@ -222,6 +222,7 @@ Les Réglages (`/reglages`) regroupent ce qui concerne le compte connecté (rout
 - Le coût de chaque réponse est ajouté par `add_cost()` dans `ai_usage` (utilisateur × mois). Il n'est jamais recalculé depuis les conversations : supprimer une conversation ne rend pas de budget.
 - Le mois est celui de **Paris** : la limite repart le 1er à minuit. Les admins sont comptés comme les autres.
 - La limite est vérifiée **avant** chaque question. La dernière réponse du mois peut donc la dépasser de son propre coût.
+- Le coût est enregistré **avant** le message : une conversation supprimée pendant la réponse est quand même comptée.
 - `GET /api/assistant/status` dit à l'interface si l'assistant est disponible, et sinon pourquoi : « Réservé aux membres Premium », « Assistant pas encore configuré » ou « Limite du mois atteinte ».
 
 ## Documentation protégée

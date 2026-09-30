@@ -1,9 +1,12 @@
 import uuid
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import select
 
-from app.models import EmailLog, Favorite, SecurityEvent, User
+from app.core.config import get_settings
+from app.models import AuthSession, EmailLog, Favorite, SecurityEvent, User
+from app.services.auth.sessions import open_session
 from tests.factories import make_security, make_user
 
 
@@ -75,6 +78,21 @@ def test_edit_email_marks_verified_and_alerts_both_addresses(admin_client, db):
     body = admin_client.patch(f"/api/admin/users/{user.id}", json={"email": "New@Example.com"}).json()
     assert body["email"] == "new@example.com" and body["verified"] is True
     assert sorted(m.recipient for m in mails(db, "security_alert")) == ["new@example.com", "old@example.com"]
+
+
+@pytest.mark.parametrize("change", [{"role": "admin"}, {"email": "autre@example.com"}])
+def test_role_or_email_change_signs_the_user_out(admin_client, db, change):
+    user = make_user(db, "p@example.com")
+    open_session(db, user, persistent=True, ip=None, user_agent="x", now=datetime.now(UTC), settings=get_settings())
+    assert admin_client.patch(f"/api/admin/users/{user.id}", json=change).status_code == 200
+    assert db.scalars(select(AuthSession).where(AuthSession.user_id == user.id)).all() == []
+
+
+def test_premium_or_name_change_keeps_the_sessions(admin_client, db):
+    user = make_user(db, "p@example.com")
+    open_session(db, user, persistent=True, ip=None, user_agent="x", now=datetime.now(UTC), settings=get_settings())
+    admin_client.patch(f"/api/admin/users/{user.id}", json={"is_premium": True, "first_name": "Paul"})
+    assert len(db.scalars(select(AuthSession).where(AuthSession.user_id == user.id)).all()) == 1
 
 
 def test_edit_email_to_a_taken_address_is_409(admin_client, db):

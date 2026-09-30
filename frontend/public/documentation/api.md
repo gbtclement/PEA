@@ -42,7 +42,7 @@ Détails dans [Comptes utilisateurs](comptes.md).
 | PATCH | `/me` | `{first_name, last_name}` : modifier son profil |
 | POST | `/me/password` | `{current_password, new_password}` : change le mot de passe et ferme les **autres** sessions. `current_password` n'est pas demandé à un compte Google sans mot de passe (« Ajouter un mot de passe ») |
 | POST | `/me/email` | `{new_email, password}` : envoie un code à la nouvelle adresse. Toujours `202`, même si l'adresse est déjà prise |
-| POST | `/me/email/verify` | `{code}` : valide la nouvelle adresse ; l'ancienne reçoit une alerte |
+| POST | `/me/email/verify` | `{code}` : valide la nouvelle adresse et ferme les **autres** sessions ; l'ancienne adresse reçoit une alerte |
 | GET | `/me/sessions` | Appareils connectés : `[{id, device, ip, created_at, last_seen_at, current}]` |
 | DELETE | `/me/sessions/{id}` | Déconnecter un appareil |
 | DELETE | `/me/sessions` | Déconnecter tous les autres appareils |
@@ -139,7 +139,7 @@ Toutes ces routes sont **admin** (`require_admin()`).
 | Méthode | Route | Rôle |
 |---|---|---|
 | GET | `/admin/users?q=&sort=&order=&page=` | Inscrits, 50 par page. `q` cherche dans le mail, le prénom et le nom, sans tenir compte des accents. `sort` : `email`, `first_name`, `last_name`, `role`, `is_premium`, `verified`, `created_at` (par défaut), `last_login_at` |
-| PATCH | `/admin/users/{id}` | `{first_name, last_name, email, role, is_premium}`, tous facultatifs. Refus `self_demotion`, `last_admin`, `email_taken` |
+| PATCH | `/admin/users/{id}` | `{first_name, last_name, email, role, is_premium}`, tous facultatifs. Un changement de rôle ou d'adresse ferme les sessions du compte. Refus `self_demotion`, `last_admin`, `email_taken` |
 | DELETE | `/admin/users/{id}` | `{confirm_email}` : supprime le compte et ses données. Refus `self_delete`, `confirm_mismatch` |
 | GET / PUT | `/admin/settings` | `{ai_model, ai_monthly_cost_limit_usd}` ; la lecture ajoute la liste `models` |
 | GET | `/admin/config-status` | Ce qui est renseigné dans `.env` : `{claude, smtp, google, turnstile, app_secret, admin_email}`, des booléens, **jamais les valeurs** |

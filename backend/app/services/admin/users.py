@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import normalize_email
 from app.models import User
+from app.services.auth.sessions import revoke_user_sessions
 from app.services.mail.outbox import enqueue
 from app.services.security_log import log_event
 
@@ -81,6 +82,8 @@ def update_user(db: Session, *, actor: User, target: User, changes: dict, now: d
         changed.append("email")
     if not changed:
         return target
+    if {"role", "email"} & set(changed):  # comme après un changement de mot de passe : tout est à rouvrir
+        revoke_user_sessions(db, target.id)
     log_event(db, "admin_user_updated", now=now, user_id=target.id, actor_id=actor.id, details={"fields": changed})
     context = {"first_name": target.first_name}
     if new_email:

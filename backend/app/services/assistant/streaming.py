@@ -49,19 +49,25 @@ def tool_executor(db: Session, user: User) -> Callable[[str, dict, str], dict]:
     return execute
 
 
-def save_reply(db: Session, conversation_id: int, model: AssistantModel, run: ChatRun) -> tuple[ChatMessage, Conversation]:
+def save_reply(db: Session, conversation_id: int, user_id: uuid.UUID, model: AssistantModel,
+               run: ChatRun) -> tuple[ChatMessage, Conversation] | None:
+    """Enregistre la réponse. Renvoie None si la conversation a été supprimée pendant la réponse."""
     cost = estimate_cost(model, run.usage)
+    # Le coût d'abord, et à part : supprimer la conversation en cours de réponse ne doit pas la rendre gratuite.
+    add_cost(db, user_id, cost, datetime.now(UTC))
+    db.commit()
+    conv = db.get(Conversation, conversation_id)
+    if conv is None:
+        return None
     msg = ChatMessage(conversation_id=conversation_id, role="assistant", content=run.text,
                       tools=list(dict.fromkeys(run.tools)), input_tokens=run.usage.input_tokens,
                       output_tokens=run.usage.output_tokens, cost_usd=cost, model=model.id,
                       interrupted=not run.completed, error=run.error)
     db.add(msg)
-    conv = db.get(Conversation, conversation_id)
     conv.input_tokens += run.usage.input_tokens
     conv.output_tokens += run.usage.output_tokens
     conv.cost_usd += cost
     conv.updated_at = func.now()
-    add_cost(db, conv.user_id, cost, datetime.now(UTC))
     db.commit()
     return msg, conv
 
@@ -87,9 +93,13 @@ def start_chat(run: ChatRun, session_maker: SessionMaker, conversation_id: int, 
                     if run.error:
                         events.put(sse({"type": "error", "message": run.error}))
                 finally:
-                    msg, conv = save_reply(db, conversation_id, model, run)
-                    events.put(sse({"type": "done", "message": message_out(msg).model_dump(mode="json"),
-                                    "conversation": conversation_out(db, conv).model_dump(mode="json")}))
+                    saved = save_reply(db, conversation_id, user_id, model, run)
+                    if saved is None:
+                        events.put(sse({"type": "error", "message": "La conversation a été supprimée pendant la réponse."}))
+                    else:
+                        msg, conv = saved
+                        events.put(sse({"type": "done", "message": message_out(msg).model_dump(mode="json"),
+                                        "conversation": conversation_out(db, conv).model_dump(mode="json")}))
         except Exception:
             logger.exception("Assistant reply could not be saved")
             events.put(sse({"type": "error", "message": "Impossible d'enregistrer la réponse."}))
