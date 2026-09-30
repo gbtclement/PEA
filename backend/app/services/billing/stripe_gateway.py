@@ -96,3 +96,11 @@ class StripeGateway:
         except stripe.SignatureVerificationError as error:
             raise InvalidSignature(str(error)) from error
         return event_from_dict(json.loads(payload))
+
+
+def gateway_from_settings(settings) -> "StripeGateway | None":
+    """Stripe si les quatre variables sont renseignées, sinon None (spec 7)."""
+    if not settings.stripe_configured:
+        return None
+    return StripeGateway(secret_key=settings.stripe_secret_key, webhook_secret=settings.stripe_webhook_secret,
+                         price_monthly=settings.stripe_price_monthly, price_yearly=settings.stripe_price_yearly)

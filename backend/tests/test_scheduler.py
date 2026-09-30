@@ -44,7 +44,8 @@ def test_build_scheduler_registers_jobs(make_ctx):
     scheduler = build_scheduler(make_ctx(), BackgroundScheduler(timezone="Europe/Paris"))
     assert {job.id for job in scheduler.get_jobs()} == {
         "bootstrap", "universe", "daily", "evening", "quotes_t1", "quotes_t2", "quotes_t3", "cleanup", "exports",
-        "price_moves", "daily_recap", "order_reminders", "weekly_recap",
+        "price_moves", "daily_recap", "order_reminders", "weekly_recap", "billing_sync", "renewal_notices",
+        "stripe_cancellations",
     }
 
 

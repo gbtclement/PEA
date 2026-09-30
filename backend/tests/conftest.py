@@ -158,7 +158,7 @@ def session_factory(db):
 
 @pytest.fixture
 def make_ctx(session_factory):
-    def _make(market=None, listing=None, now: datetime | None = None, mailer=None, **settings_overrides) -> JobContext:
+    def _make(market=None, listing=None, now: datetime | None = None, mailer=None, billing=None, **settings_overrides) -> JobContext:
         return JobContext(
             session_factory=session_factory,
             market=market or FakeMarket(),
@@ -166,6 +166,7 @@ def make_ctx(session_factory):
             settings=Settings(**settings_overrides),
             now=(lambda: now) if now else (lambda: datetime.now(UTC)),
             mailer=mailer,
+            billing=billing,
         )
 
     return _make

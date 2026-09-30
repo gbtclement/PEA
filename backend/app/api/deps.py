@@ -63,10 +63,6 @@ def get_google_client():
 
 def get_billing_gateway():
     """Stripe si les quatre variables sont renseignées, sinon None (spec 7) ; remplacé en test."""
-    from app.services.billing.stripe_gateway import StripeGateway
+    from app.services.billing.stripe_gateway import gateway_from_settings
 
-    s = get_settings()
-    if not s.stripe_configured:
-        return None
-    return StripeGateway(secret_key=s.stripe_secret_key, webhook_secret=s.stripe_webhook_secret,
-                         price_monthly=s.stripe_price_monthly, price_yearly=s.stripe_price_yearly)
+    return gateway_from_settings(get_settings())
