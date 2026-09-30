@@ -126,7 +126,7 @@ export function PRIVACY() {
       <Section title="Données collectées">
         <List>
           <li>Compte : prénom, nom, adresse mail, mot de passe (enregistré uniquement sous forme hachée).</li>
-          <li>Données que vous saisissez : ordres, favoris, réglages, conversations avec l'assistant.</li>
+          <li>Données que vous saisissez : ordres, favoris, réglages, préférences de notification, alertes de prix, conversations avec l'assistant.</li>
           <li>Données techniques : appareils connectés, adresse IP tronquée, journal de sécurité, historique des mails envoyés.</li>
         </List>
       </Section>
@@ -135,6 +135,7 @@ export function PRIVACY() {
           ["Fournir le service (compte, portefeuille, assistant)", "Exécution du contrat (CGU)"],
           ["Sécurité et prévention des abus", "Intérêt légitime"],
           ["Mails liés au compte (validation, alertes de sécurité)", "Exécution du contrat (CGU)"],
+          ["Notifications par mail que vous avez choisies", "Exécution du contrat (désactivables à tout moment)"],
         ]} />
       </Section>
       <Section title="Durées de conservation">

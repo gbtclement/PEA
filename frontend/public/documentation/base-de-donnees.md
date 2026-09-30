@@ -12,7 +12,7 @@ PostgreSQL 16, conteneur `db`, données dans le volume Docker `pgdata`. Modèles
 | `email_codes` | Codes à 6 chiffres et liens (nouveau mot de passe, « Ce n'était pas moi ») : empreinte, usage, expiration, essais | **oui** |
 | `email_log` | File d'envoi et historique des mails : type, destinataire, contenu, statut `pending`/`sent`/`failed`, essais, erreur. Le contenu des mails à code ou à lien est effacé une fois envoyé | **oui** (peut être vide) |
 | `security_events` | Journal de sécurité : type d'événement, IP, détails (JSON), date. Gardé 12 mois | **oui** (peut être vide) |
-| `data_exports` | Exports des données demandés depuis les Réglages : statut `pending`/`ready`, contenu JSON, dates de demande, de préparation et d'expiration (7 jours) | **oui** |
+| `data_exports` | Exports des données demandés depuis les Réglages : statut `pending`/`ready`/`failed` (un seul `pending` par compte), contenu JSON, dates de demande, de préparation et d'expiration (7 jours) | **oui** |
 | `rate_limit_hits` | Tentatives comptées par les limites anti-abus : compteur, empreinte de l'adresse ou de l'IP, date. Gardé 1 jour | non |
 | `securities` | Univers : ISIN, ticker Yahoo, nom, type `stock`/`etf`/`index`, place, pays, secteur, éligibilité automatique et correction, actif | non |
 | `quotes` | Dernier cours connu de chaque titre : prix, variation du jour, volume, horodatage | non |
@@ -20,6 +20,10 @@ PostgreSQL 16, conteneur `db`, données dans le volume Docker `pgdata`. Modèles
 | `fundamentals` | PER, BPA, croissances, dette/capitaux propres, marge, dividende, capitalisation | non |
 | `scores` | Dernier score : total, technique, fondamental, détail JSON, liquidité, montant moyen échangé, données incomplètes, entrée dans le top | non |
 | `favorites` | Titres favoris | **oui** |
+| `notification_prefs` | Préférences des notifications N1 à N6 et seuil de forte variation. Pas de ligne tant que le membre n'a rien changé | **oui** |
+| `price_alerts` | Alertes de prix : titre, sens, prix, active, date de déclenchement | **oui** |
+| `move_notices` | Titres déjà signalés par N1 ce jour-là (un mail par titre et par jour). Gardé 7 jours | **oui** |
+| `score_snapshots` | Score de chaque titre chaque soir, pour comparer à la veille (N6). Gardé 14 jours | non |
 | `orders` | Ordres : date, sens, quantité, prix unitaire, frais, note | **oui** |
 | `user_settings` | Ordres minimum, frais de non-respect, grille de courtage (JSON) | **oui** |
 | `app_settings` | Une seule ligne (`id = 1`) : modèle de l'assistant et limite mensuelle par utilisateur, réglés dans l'onglet Admin | non |
