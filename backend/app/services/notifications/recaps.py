@@ -1,13 +1,14 @@
-"""N3 récap du soir (et N4, Task 8). Pas de commit ici."""
+"""N3 récap du soir et N4 récap de la semaine. Pas de commit ici."""
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models import Favorite, Security, SecurityQuote
+from app.models import Favorite, Forecast, ScoreSnapshot, Security, SecurityQuote, SecurityScore
 from app.services.market_calendar import PARIS, is_trading_day
 from app.services.notifications.prefs import recipients
+from app.services.notifications.scores import previous_day, snapshot
 from app.services.notifications.send import notify
 from app.services.portfolio_value import value_portfolio
 
@@ -41,5 +42,40 @@ def send_daily_recaps(db: Session, now: datetime) -> int:
                    "day_change": valued.day_change, "day_change_pct": valued.day_change_pct,
                    "gainers": gainers, "losers": losers},
                   dedupe_key=f"daily_recap:{user.id}:{today}") is not None:
+            sent += 1
+    return sent
+
+
+def _names(db: Session, ids: set[int]) -> list[dict]:
+    rows = db.execute(select(Security.id, Security.name).where(Security.id.in_(ids)).order_by(Security.name)).all()
+    return [{"security_id": sid, "name": name} for sid, name in rows]
+
+
+def send_weekly_recaps(db: Session, now: datetime) -> int:
+    """N4, le samedi : performance sur 5 séances, top 10 entrées et sorties, prévisions à une semaine vérifiées."""
+    today = now.astimezone(PARIS).date()
+    latest = db.scalar(select(func.max(ScoreSnapshot.day)).where(ScoreSnapshot.day <= today))
+    start = previous_day(db, latest - timedelta(days=6)) if latest else None
+    top_now = {sid for sid, row in snapshot(db, latest).items() if row.top_rank} if latest else set()
+    top_before = {sid for sid, row in snapshot(db, start).items() if row.top_rank} if start else top_now
+    entered, left = _names(db, top_now - top_before), _names(db, top_before - top_now)
+    checked = db.scalars(select(Forecast).where(Forecast.horizon == "1w", Forecast.rank <= 10,
+                                                Forecast.actual_return.is_not(None),
+                                                Forecast.resolved_on > today - timedelta(days=7))).all()
+    right = sum(1 for f in checked if (f.actual_return > 0) == (f.expected_return > 0))
+    sent = 0
+    for user, _ in recipients(db, "weekly_recap"):
+        valued = value_portfolio(db, user.id, today)
+        week_change = 0.0
+        for v in valued.positions:
+            score = db.get(SecurityScore, v.security.id)
+            if score is not None and score.perf_1w is not None:
+                week_change += v.value * score.perf_1w / (100 + score.perf_1w)  # Ruling 5
+        base = valued.total - week_change
+        if notify(db, user, "weekly_recap",
+                  {"week_end": today, "has_portfolio": bool(valued.positions), "total_value": valued.total,
+                   "week_change": round(week_change, 2), "week_change_pct": round(week_change / base * 100, 2) if base else None,
+                   "entered": entered, "left": left, "forecasts_checked": len(checked), "forecasts_right": right},
+                  dedupe_key=f"weekly_recap:{user.id}:{today:%G-W%V}") is not None:
             sent += 1
     return sent

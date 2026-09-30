@@ -44,7 +44,7 @@ def test_build_scheduler_registers_jobs(make_ctx):
     scheduler = build_scheduler(make_ctx(), BackgroundScheduler(timezone="Europe/Paris"))
     assert {job.id for job in scheduler.get_jobs()} == {
         "bootstrap", "universe", "daily", "evening", "quotes_t1", "quotes_t2", "quotes_t3", "cleanup", "exports",
-        "price_moves", "daily_recap", "order_reminders",
+        "price_moves", "daily_recap", "order_reminders", "weekly_recap",
     }
 
 
@@ -217,3 +217,12 @@ def test_quotes_job_checks_price_alerts(make_ctx, monkeypatch):
     monkeypatch.setattr(scheduler_module, "run_price_alerts", lambda ctx: calls.append(ctx) or 0)
     scheduler_module.quotes_job(make_ctx(now=datetime(2026, 9, 29, 10, 0, tzinfo=ZoneInfo("Europe/Paris"))), 1)
     assert len(calls) == 1
+
+
+def test_evening_job_snapshots_scores_then_notifies(make_ctx, monkeypatch):
+    calls = []
+    monkeypatch.setattr(scheduler_module, "run_job", lambda ctx, name, fn: calls.append(name))
+    monkeypatch.setattr(scheduler_module, "_refresh_forecasts", lambda ctx: calls.append("forecasts"))
+    monkeypatch.setattr(scheduler_module, "run_score_notifications", lambda ctx: calls.append("score_notifications"))
+    scheduler_module.evening_job(make_ctx())
+    assert calls[-1] == "score_notifications"

@@ -14,7 +14,9 @@ from app.jobs.privacy import build_pending_exports
 from app.jobs.forecasts import refresh_forecast_stats, refresh_forecasts, stats_are_stale
 from app.jobs.cleanup import purge_security_data
 from app.jobs.mail import send_pending_emails
-from app.jobs.notifications import run_daily_recaps, run_order_reminders, run_price_alerts, run_price_moves
+from app.jobs.notifications import (
+    run_daily_recaps, run_order_reminders, run_price_alerts, run_price_moves, run_score_notifications, run_weekly_recaps,
+)
 from app.jobs.market import refresh_daily_history, refresh_fundamentals, refresh_quotes
 from app.jobs.runner import run_job
 from app.jobs.scoring import refresh_scores
@@ -63,6 +65,10 @@ def order_reminders_job(ctx: JobContext) -> None:
     _quietly(ctx, run_order_reminders)
 
 
+def weekly_recap_job(ctx: JobContext) -> None:
+    _quietly(ctx, run_weekly_recaps)
+
+
 def universe_job(ctx: JobContext) -> None:
     with HEAVY_JOBS_LOCK:
         run_job(ctx, "universe", refresh_universe)
@@ -82,6 +88,7 @@ def evening_job(ctx: JobContext) -> None:
         run_job(ctx, "daily_history", refresh_daily_history)
         _refresh_scores(ctx)
         _refresh_forecasts(ctx)
+        _quietly(ctx, run_score_notifications)  # photo des scores du soir, puis N6
 
 
 def _refresh_forecasts(ctx: JobContext) -> None:
@@ -164,6 +171,8 @@ def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> 
                       args=[ctx], id="daily_recap", **daily)
     scheduler.add_job(order_reminders_job, CronTrigger(month="10-12", day=1, hour=9, minute=0, timezone=tz),
                       args=[ctx], id="order_reminders", **daily)
+    scheduler.add_job(weekly_recap_job, CronTrigger(day_of_week="sat", hour=9, minute=0, timezone=tz),
+                      args=[ctx], id="weekly_recap", **daily)
     scheduler.add_job(cleanup_job, CronTrigger(hour=3, minute=30, timezone=tz), args=[ctx], id="cleanup", **daily)
     intervals = {1: ctx.settings.quotes_t1_minutes, 2: ctx.settings.quotes_t2_minutes, 3: ctx.settings.quotes_t3_minutes}
     for tier, minutes in intervals.items():
