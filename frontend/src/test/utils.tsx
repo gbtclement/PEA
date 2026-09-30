@@ -3,6 +3,9 @@ import { render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router";
 
+export const ME = { id: "0b6f7c1e-0000-4000-8000-000000000001", email: "moi@example.com", first_name: "Moi",
+                    last_name: "Dupont", role: "user", is_premium: false };
+
 export function renderWithProviders(ui: ReactElement, { route = "/" }: { route?: string } = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const Wrapper = ({ children }: { children: ReactNode }) => (

@@ -1,3 +1,4 @@
+import logging
 import threading
 from datetime import datetime, timedelta
 
@@ -10,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.jobs.context import JobContext
 from app.jobs.forecasts import refresh_forecast_stats, refresh_forecasts, stats_are_stale
+from app.jobs.mail import send_pending_emails
 from app.jobs.market import refresh_daily_history, refresh_fundamentals, refresh_quotes
 from app.jobs.runner import run_job
 from app.jobs.scoring import refresh_scores
@@ -102,6 +104,14 @@ def bootstrap_job(ctx: JobContext) -> None:
             _refresh_scores(ctx)
 
 
+def mail_job(ctx: JobContext) -> None:
+    # Toutes les 5 s : pas de trace dans data_status (run_job) pour ne pas noyer le suivi des données.
+    try:
+        send_pending_emails(ctx)
+    except Exception:
+        logging.getLogger(__name__).exception("Échec de la file d'envoi des mails")
+
+
 def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> BaseScheduler:
     tz = ctx.settings.timezone
     scheduler = scheduler or BlockingScheduler(timezone=tz)
@@ -118,4 +128,8 @@ def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> 
     for tier, minutes in intervals.items():
         scheduler.add_job(quotes_job, IntervalTrigger(minutes=minutes, timezone=tz), args=[ctx, tier],
                           id=f"quotes_t{tier}", **common)
+    if ctx.mailer is not None:
+        scheduler.add_job(mail_job, IntervalTrigger(seconds=5, timezone=tz), args=[ctx], id="emails", **common)
+    else:
+        logging.getLogger(__name__).warning("SMTP_HOST vide : les mails restent en file d'attente.")
     return scheduler

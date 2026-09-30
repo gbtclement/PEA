@@ -1,6 +1,6 @@
-from app.models import ChatMessage, Conversation, User
+from app.models import ChatMessage, Conversation
 from app.repositories.assistant import claude_history
-from tests.factories import make_security
+from tests.factories import make_security, make_user
 
 
 def test_create_list_get_delete_conversation(client, db):
@@ -23,10 +23,7 @@ def test_unknown_security_is_404(client):
 
 
 def test_other_user_conversation_is_404(client, db):
-    client.get("/api/assistant/conversations")  # crée l'utilisateur par défaut
-    other = User(name="Autre")
-    db.add(other)
-    db.flush()
+    other = make_user(db, "autre@example.com")
     conv = Conversation(user_id=other.id, title="Secret")
     db.add(conv)
     db.flush()

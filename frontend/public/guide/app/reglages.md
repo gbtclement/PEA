@@ -21,4 +21,4 @@ Cette grille sert partout : frais proposés à la saisie d'un ordre, simulateur,
 
 ## Corrections d'éligibilité
 
-Si un badge d'éligibilité est faux, par exemple si votre banque refuse une action marquée « Éligible » ou accepte une action « À vérifier », corrigez-le ici. Votre correction est **toujours prioritaire** et n'est jamais écrasée par les mises à jour automatiques.
+Les badges d'éligibilité sont communs à tous les membres : seul l'**administrateur** du site peut les corriger, et cette partie n'apparaît que dans ses réglages. Si un badge vous semble faux, par exemple si votre banque refuse une action marquée « Éligible », signalez-le à l'administrateur. Sa correction est **toujours prioritaire** et n'est jamais écrasée par les mises à jour automatiques.

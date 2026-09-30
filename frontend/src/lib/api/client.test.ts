@@ -21,3 +21,18 @@ test("apiSend garde un message générique pour les erreurs de validation", asyn
     expect.objectContaining({ status: 422, message: "Erreur 422 sur /api/orders" }));
   await expect(apiSend("POST", "/api/orders", {})).rejects.toBeInstanceOf(ApiError);
 });
+
+test("apiSend envoie le jeton CSRF lu dans le cookie", async () => {
+  document.cookie = "pea_csrf=jeton-123; path=/";
+  const fetchMock = mockFetch(() => ({ body: { ok: true } }));
+  await apiSend("POST", "/api/test", {});
+  expect(new Headers(fetchMock.mock.calls[0][1]!.headers).get("X-CSRF-Token")).toBe("jeton-123");
+  document.cookie = "pea_csrf=; max-age=0; path=/";
+});
+
+test("les erreurs de l'API gardent leur code et leur message", async () => {
+  mockFetch(() => ({ status: 401, body: { detail: { code: "invalid_credentials", message: "Adresse mail ou mot de passe incorrect." } } }));
+  await expect(apiSend("POST", "/api/auth/login", {})).rejects.toMatchObject({
+    status: 401, code: "invalid_credentials", message: "Adresse mail ou mot de passe incorrect.",
+  });
+});

@@ -31,5 +31,6 @@ Navigateur ─► web (nginx : React, /guide, /documentation) ─► api (FastAP
 | http://localhost:8095/guide/ | Le guide utilisateur |
 | http://localhost:8095/documentation/ | Cette documentation admin |
 | http://localhost:8000/docs | La doc interactive de l'API (mode développement uniquement) |
+| http://localhost:8025 | Mailpit : les mails envoyés en local |
 
 Le code source est sur https://github.com/gbtclement/PEA.

@@ -1,0 +1,11 @@
+Bonjour {{ first_name }},
+
+Votre compte est prêt. Trois premiers pas :
+
+- explorez le top 10 des actions éligibles au PEA ;
+- ajoutez vos favoris avec l'étoile ;
+- enregistrez vos ordres dans Portefeuille.
+
+Lire le guide : {{ base_url }}/guide/
+
+{% include "_footer.txt" %}

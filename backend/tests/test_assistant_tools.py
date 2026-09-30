@@ -2,15 +2,14 @@ from datetime import UTC, date, datetime, timedelta
 
 import pytest
 
-from app.core.current_user import ensure_default_user
 from app.models import DailyPrice, SecurityQuote
 from app.services.assistant.tools import TOOL_LABELS, TOOL_SPECS, ToolError, run_tool
-from tests.factories import make_security
+from tests.factories import make_security, make_user
 
 
 @pytest.fixture
 def user(db):
-    return ensure_default_user(db)
+    return make_user(db)
 
 
 def closes(db, security, n=260, start=100.0):

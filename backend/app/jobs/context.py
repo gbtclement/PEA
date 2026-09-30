@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import Settings
 from app.providers.base import ListingProvider, MarketDataProvider
+from app.services.mail.smtp import Mailer
 
 
 def utcnow() -> datetime:
@@ -20,3 +21,4 @@ class JobContext:
     listing: ListingProvider
     settings: Settings
     now: Callable[[], datetime] = utcnow
+    mailer: Mailer | None = None

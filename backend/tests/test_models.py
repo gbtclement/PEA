@@ -2,17 +2,8 @@ from datetime import UTC, date, datetime
 
 from sqlalchemy import func, select
 
-from app.core.current_user import ensure_default_user
 from app.models import DailyPrice, SecurityQuote, User
 from tests.factories import make_security
-
-
-def test_ensure_default_user_is_idempotent(db):
-    first = ensure_default_user(db)
-    second = ensure_default_user(db)
-    assert first.id == second.id
-    assert db.scalar(select(func.count(User.id))) == 1
-    assert first.name == "Moi"
 
 
 def test_security_with_quote_and_prices(db):

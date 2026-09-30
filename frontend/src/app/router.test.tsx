@@ -1,13 +1,14 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryRouter } from "react-router";
-import { mockFetch } from "@/test/utils";
+import { ME, mockFetch } from "@/test/utils";
 import { routes } from "./router";
 
 vi.mock("@/components/charts/EChart", () => ({ EChart: () => null }));
 afterEach(() => vi.unstubAllGlobals());
 
 function body(url: string): unknown {
+  if (url === "/api/me") return ME;
   if (url.includes("/api/status")) return { market_open: false, jobs: [], indices: [] };
   if (url.startsWith("/api/rankings/movers")) return { gainers: [], losers: [] };
   if (url === "/api/assistant/settings") return { configured: false, source: null, model: "claude-opus-5", models: [] };
@@ -78,7 +79,7 @@ test("pied de page avec l'avertissement et titres de cartes en h2", async () => 
   renderRoute("/reglages");
   await screen.findByRole("heading", { level: 1, name: "Réglages" }, { timeout: 5000 });
   expect(screen.getByRole("contentinfo")).toHaveTextContent(/pas un conseil en investissement/);
-  expect(screen.getByRole("heading", { level: 2, name: "Éligibilité PEA — corrections manuelles" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 2, name: "Frais et obligations de la caisse régionale" })).toBeInTheDocument();
 });
 
 test("adresse inconnue : page introuvable dans la mise en page, jamais indexée", async () => {
@@ -88,4 +89,46 @@ test("adresse inconnue : page introuvable dans la mise en page, jamais indexée"
   expect(screen.getByRole("link", { name: "Retour à l'accueil" })).toHaveAttribute("href", "/");
   await waitFor(() => expect(robots()).toBe("noindex, nofollow"));
   expect(document.title).toBe("Page introuvable | PEA Radar");
+});
+
+const ANONYMOUS = { status: 401, body: { detail: { code: "not_authenticated", message: "…" } } };
+
+test("un visiteur qui ouvre le portefeuille arrive sur la connexion", async () => {
+  mockFetch((url) => (url === "/api/me" ? ANONYMOUS : { body: body(url) }));
+  const router = createMemoryRouter(routes, { initialEntries: ["/portefeuille"] });
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByRole("heading", { level: 1, name: "Se connecter" }, { timeout: 5000 })).toBeInTheDocument();
+  expect(router.state.location.search).toBe("?suite=%2Fportefeuille");
+});
+
+test("un visiteur voit l'explorateur et le bandeau d'inscription", async () => {
+  mockFetch((url) => (url === "/api/me" ? ANONYMOUS : { body: body(url) }));
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <RouterProvider router={createMemoryRouter(routes, { initialEntries: ["/explorer"] })} />
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByRole("heading", { level: 1, name: "Explorer" }, { timeout: 5000 })).toBeInTheDocument();
+  expect(await screen.findByRole("link", { name: "Créer un compte gratuit" })).toHaveAttribute("href", "/inscription");
+});
+
+test.each([["/connexion", "Se connecter"], ["/inscription", "Créer un compte"]])("%s est indexable", async (path, title) => {
+  renderRoute(path);
+  await screen.findByRole("heading", { level: 1, name: title }, { timeout: 5000 });
+  expect(robots()).toBeNull();
+});
+
+test("les pages légales sont publiques", async () => {
+  mockFetch((url) => (url === "/api/me" ? ANONYMOUS : { body: body(url) }));
+  render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <RouterProvider router={createMemoryRouter(routes, { initialEntries: ["/confidentialite"] })} />
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByRole("heading", { level: 1, name: "Politique de confidentialité" }, { timeout: 5000 })).toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Créer un compte gratuit" })).toBeNull();
 });

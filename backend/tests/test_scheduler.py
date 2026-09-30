@@ -197,3 +197,11 @@ def test_evening_job_runs_after_the_close_on_weekdays(make_ctx):
     scheduler = build_scheduler(make_ctx(), BackgroundScheduler(timezone="Europe/Paris"))
     trigger = str(scheduler.get_job("evening").trigger)
     assert "day_of_week='mon-fri'" in trigger and "hour='18'" in trigger and "minute='15'" in trigger
+
+
+def test_scheduler_sends_emails_only_with_a_mailer(make_ctx):
+    from tests.fake_mailer import FakeMailer
+
+    scheduler = build_scheduler(make_ctx(mailer=FakeMailer()), BackgroundScheduler(timezone="Europe/Paris"))
+    job = scheduler.get_job("emails")
+    assert job is not None and job.trigger.interval.total_seconds() == 5

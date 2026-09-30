@@ -1,0 +1,9 @@
+Bonjour {{ first_name }},
+
+{{ event_text }}
+
+Si ce n'était pas vous, choisissez tout de suite un nouveau mot de passe :
+
+{{ base_url }}/mot-de-passe-oublie
+
+{% include "_footer.txt" %}

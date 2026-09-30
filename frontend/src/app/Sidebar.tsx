@@ -13,7 +13,7 @@ export const NAV_ITEMS = [
   { to: "/reglages", label: "Réglages", icon: Settings, end: false },
 ];
 
-export function Sidebar({ footer }: { footer?: ReactNode }) {
+export function Sidebar({ footer, account }: { footer?: ReactNode; account?: ReactNode }) {
   return (
     <aside className="fixed inset-y-0 left-0 flex w-60 flex-col border-r border-border bg-white">
       <div className="flex items-center gap-2.5 px-6 py-5">
@@ -42,6 +42,7 @@ export function Sidebar({ footer }: { footer?: ReactNode }) {
       </nav>
       {/* Le guide est servi par nginx hors de l'application : lien classique, pas NavLink.
           La documentation admin (/documentation/) n'est volontairement pas liée. */}
+      {account && <div className="border-t border-border px-4 py-3">{account}</div>}
       <div className="px-3 pb-3">
         <a
           href="/guide/"

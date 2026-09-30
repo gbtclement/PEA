@@ -34,7 +34,7 @@ Ce sont les frais de courtage calculés avec la grille de vos Réglages. La **ta
 
 ## Une action « Éligible » peut-elle être refusée par ma banque ?
 
-C'est possible : l'éligibilité est déduite du pays du siège, pas d'une liste officielle. Vérifiez avant un achat important, et corrigez le badge dans les [Réglages](app/reglages.md) si besoin.
+C'est possible : l'éligibilité est déduite du pays du siège, pas d'une liste officielle. Vérifiez avant un achat important, et signalez un badge faux à l'administrateur du site (voir [Réglages](app/reglages.md)).
 
 ## Combien coûte l'assistant IA ?
 

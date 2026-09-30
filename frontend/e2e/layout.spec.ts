@@ -31,7 +31,7 @@ for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 900 });
     const security = await firstSecurityPath(page);
     for (const path of ["/", "/explorer", "/etf", "/previsions", "/previsions?vue=statistiques", "/previsions?vue=bulletin",
-                        "/portefeuille", "/assistant", "/reglages", security]) {
+                        "/portefeuille", "/assistant", "/reglages", "/connexion", "/inscription", security]) {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
       await page.waitForLoadState("networkidle");
@@ -43,3 +43,13 @@ for (const width of WIDTHS) {
     }
   });
 }
+
+test("écrans de compte sans défilement horizontal sur mobile (390 px)", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const path of ["/connexion", "/inscription"]) {
+    await page.goto(path);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow, `${path} à 390 px`).toBeLessThanOrEqual(0);
+  }
+});

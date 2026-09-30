@@ -18,3 +18,11 @@ test("hors provider, le bouton ne plante pas", async () => {
   renderWithProviders(<AskAiButton security={{ id: 1, name: "LVMH" }} />);
   await userEvent.click(screen.getByRole("button", { name: "Demander à l'IA à propos de LVMH" }));
 });
+
+test("un visiteur qui clique sur ✨ passe par la connexion", async () => {
+  mockFetch((url) => (url === "/api/me" ? { status: 401, body: { detail: { code: "not_authenticated", message: "…" } } } : { body: {} }));
+  renderWithProviders(<AssistantPanelProvider><AskAiButton security={{ id: 1, name: "LVMH" }} label /></AssistantPanelProvider>);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  await userEvent.click(screen.getByRole("button", { name: "Demander à l'IA à propos de LVMH" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
+});

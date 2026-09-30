@@ -133,3 +133,10 @@
 body {
   font-variant-numeric: tabular-nums;
 }
+
+/* Écran de connexion : le panneau indigo glisse d'une moitié à l'autre, le formulaire apparaît en fondu */
+.auth-panel { transition: transform 600ms cubic-bezier(0.65, 0, 0.35, 1); }
+.auth-form { transition: opacity 400ms ease 200ms; }
+@media (prefers-reduced-motion: reduce) {
+  .auth-panel, .auth-form { transition: none; }
+}

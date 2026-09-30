@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
+from app.core.current_user import get_current_user
 from app.core.db import get_db
-from app.models import Forecast, Security, SecurityQuote
+from app.models import Forecast, Security, SecurityQuote, User
 from app.repositories.forecasts import forecasts_for, latest_as_of, latest_run
 from app.schemas.forecasts import (
     BacktestOut, ForecastListOut, ForecastRowOut, ForecastSecurityOut, HorizonForecastOut, RealTrackOut,
@@ -39,7 +40,7 @@ def _signals_of(items: list[Forecast]) -> list[str]:
 
 
 @router.get("/forecasts", response_model=ForecastListOut)
-def list_forecasts(db: DbDep) -> ForecastListOut:
+def list_forecasts(db: DbDep, _user: User = Depends(get_current_user)) -> ForecastListOut:
     run = latest_run(db)
     cost = run.round_trip_cost if run else None
     as_of = latest_as_of(db)
@@ -68,7 +69,7 @@ def _stat_out(stat: dict | None) -> SignalStatOut | None:
 
 
 @router.get("/forecasts/signals", response_model=SignalStatsOut)
-def signal_statistics(db: DbDep) -> SignalStatsOut:
+def signal_statistics(db: DbDep, _user: User = Depends(get_current_user)) -> SignalStatsOut:
     run = latest_run(db)
     if run is None:
         return SignalStatsOut(as_of=None, computed_at=None, round_trip_cost=None, signals=[], baseline=_no_horizons())
@@ -106,7 +107,7 @@ def _real_track(db: Session, horizon: str, cost: float) -> RealTrackOut | None:
 
 
 @router.get("/forecasts/track-record", response_model=TrackRecordOut)
-def track_record(db: DbDep) -> TrackRecordOut:
+def track_record(db: DbDep, _user: User = Depends(get_current_user)) -> TrackRecordOut:
     run = latest_run(db)
     if run is None:
         return TrackRecordOut(cutoff=None, round_trip_cost=None, simulated=_no_horizons(), real=_no_horizons())
@@ -116,7 +117,7 @@ def track_record(db: DbDep) -> TrackRecordOut:
 
 
 @router.get("/securities/{security_id}/forecast", response_model=SecurityForecastOut)
-def security_forecast(security_id: int, db: DbDep) -> SecurityForecastOut:
+def security_forecast(security_id: int, db: DbDep, _user: User = Depends(get_current_user)) -> SecurityForecastOut:
     if db.get(Security, security_id) is None:
         raise HTTPException(status_code=404, detail="Titre introuvable")
     as_of = latest_as_of(db)

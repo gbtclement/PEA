@@ -47,5 +47,12 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Attrape tous les mails en local : http://localhost:8025. À la mise en ligne, SMTP_* vise Brevo.
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+    restart: unless-stopped
+
 volumes:
   pgdata:

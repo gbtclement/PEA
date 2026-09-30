@@ -1,3 +1,4 @@
+import uuid
 from dataclasses import asdict, replace
 from datetime import date, datetime
 
@@ -102,7 +103,7 @@ def delete_order(order_id: int, db: Session = Depends(get_db), user: User = Depe
     return Response(status_code=204)
 
 
-def counter_for(db: Session, user_id: int) -> CounterOut:
+def counter_for(db: Session, user_id: uuid.UUID) -> CounterOut:
     settings = get_user_settings(db, user_id)
     counter = order_counter((line.trade_date for line in order_lines(db, user_id)), paris_today(),
                             settings.min_orders_per_year)

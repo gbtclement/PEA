@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router";
-import { mockFetch, renderWithProviders } from "@/test/utils";
+import { ME, mockFetch, renderWithProviders } from "@/test/utils";
 import { SecurityPage } from "./SecurityPage";
 
 vi.mock("./PriceChartPanel", () => ({ PriceChartPanel: () => <div data-testid="chart" /> }));
@@ -26,8 +26,9 @@ const FORECAST = {
               "1w": { expected_return: 0.003, prob_up: 0.53, reliability: "elevee", rank: 12 }, "1m": null },
 };
 
-function renderPage(detailStatus = 200, detail: object = DETAIL, forecast: object = FORECAST) {
+function renderPage(detailStatus = 200, detail: object = DETAIL, forecast: object = FORECAST, me: { status?: number; body: unknown } = { body: ME }) {
   const fetchMock = mockFetch((url) => {
+    if (url === "/api/me") return me;
     if (url.startsWith("/api/securities/1/forecast")) return { body: forecast };
     if (url.startsWith("/api/securities/1/news")) return { body: [{ title: "LVMH accélère", url: "https://ex.com/a", publisher: "Reuters", published_at: null }] };
     if (url.startsWith("/api/securities/1/simulate")) return { body: { start_date: "2026-08-25", start_price: 368, current_price: 400, shares: 2, invested: 736, buy_fee: 1.32, sell_fee: 1.44, current_value: 800, gain: 61.24, gain_pct: 8.3, message: null } };
@@ -127,4 +128,26 @@ test("carte des prévisions : aucun signal aujourd'hui", async () => {
 test("carte des prévisions : avertissement", async () => {
   renderPage();
   expect(await screen.findByText(/Estimation statistique, pas une certitude ni un conseil/)).toBeInTheDocument();
+});
+
+test("carte des prévisions : un visiteur est invité à se connecter", async () => {
+  const fetchMock = renderPage(200, DETAIL, FORECAST, { status: 401, body: { detail: { code: "not_authenticated", message: "…" } } });
+  const link = await screen.findByRole("link", { name: "Connectez-vous" });
+  expect(link).toHaveAttribute("href", "/connexion?suite=%2Ftitres%2F1");
+  expect(screen.getByText(/réservées aux membres connectés/)).toBeInTheDocument();
+  expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/forecast"))).toBe(false);
+});
+
+test("favori : un visiteur est envoyé vers la connexion", async () => {
+  const fetchMock = renderPage(200, DETAIL, FORECAST, { status: 401, body: { detail: { code: "not_authenticated", message: "…" } } });
+  await screen.findByRole("link", { name: "Connectez-vous" });
+  await userEvent.click(screen.getByRole("button", { name: "Ajouter aux favoris" }));
+  expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/favorites"))).toBe(false);
+});
+
+test("« + J'ai acheté » : un visiteur passe par la connexion au lieu du formulaire", async () => {
+  renderPage(200, DETAIL, FORECAST, { status: 401, body: { detail: { code: "not_authenticated", message: "…" } } });
+  await screen.findByRole("link", { name: "Connectez-vous" });
+  await userEvent.click(screen.getByRole("button", { name: "+ J'ai acheté" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
 });

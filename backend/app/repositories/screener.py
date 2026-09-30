@@ -1,19 +1,24 @@
-from sqlalchemy import Row, select
+import uuid
+
+from sqlalchemy import Row, literal, select
 from sqlalchemy.orm import Session
 
 from app.models import Favorite, Security, SecurityFundamentals, SecurityQuote, SecurityScore
 
 
 def screener_rows(
-    session: Session, user_id: int, *, kind: str | None = None, only_top: bool = False, limit: int | None = None,
+    session: Session, user_id: uuid.UUID | None, *, kind: str | None = None, only_top: bool = False, limit: int | None = None,
     security_id: int | None = None,
 ) -> list[Row]:
-    is_favorite = (
-        select(Favorite.security_id)
-        .where(Favorite.user_id == user_id, Favorite.security_id == Security.id)
-        .exists()
-        .label("is_favorite")
-    )
+    if user_id is None:
+        is_favorite = literal(False).label("is_favorite")  # visiteur sans compte
+    else:
+        is_favorite = (
+            select(Favorite.security_id)
+            .where(Favorite.user_id == user_id, Favorite.security_id == Security.id)
+            .exists()
+            .label("is_favorite")
+        )
     stmt = (
         select(Security, SecurityQuote, SecurityScore, SecurityFundamentals, is_favorite)
         .outerjoin(SecurityQuote, SecurityQuote.security_id == Security.id)

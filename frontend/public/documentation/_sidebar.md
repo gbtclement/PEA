@@ -5,6 +5,7 @@
   - [Architecture](architecture.md)
 
 - **Fonctionnement**
+  - [Comptes utilisateurs](comptes.md)
   - [Données et worker](donnees.md)
   - [Éligibilité PEA](eligibilite.md)
   - [Score mixte](score.md)

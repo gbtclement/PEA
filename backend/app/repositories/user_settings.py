@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -5,7 +7,7 @@ from app.models import UserSettings
 from app.services.fees import DEFAULT_GRID_JSON, FeeTier, grid_from_json
 
 
-def get_user_settings(session: Session, user_id: int) -> UserSettings:
+def get_user_settings(session: Session, user_id: uuid.UUID) -> UserSettings:
     settings = session.get(UserSettings, user_id)
     if settings is None:
         # Deux requêtes simultanées au premier lancement peuvent créer la ligne en même temps.
@@ -17,5 +19,7 @@ def get_user_settings(session: Session, user_id: int) -> UserSettings:
     return settings
 
 
-def user_fee_grid(session: Session, user_id: int) -> tuple[FeeTier, ...]:
+def user_fee_grid(session: Session, user_id: uuid.UUID | None) -> tuple[FeeTier, ...]:
+    if user_id is None:  # visiteur : grille par défaut (Invest Store Intégral)
+        return grid_from_json(DEFAULT_GRID_JSON)
     return grid_from_json(get_user_settings(session, user_id).fee_grid)

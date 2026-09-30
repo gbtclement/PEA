@@ -21,9 +21,11 @@ Code : `frontend/src/`. Application monopage React construite avec Vite.
 
 ```text
 src/
-├── app/                  # Layout, Sidebar, MarketStatus, router, NotFoundPage
+├── app/                  # Layout, Sidebar, AccountMenu, SignUpBanner, MarketStatus, router, NotFoundPage
 ├── components/           # DataTable, ScoreGauge, Sparkline, FavoriteButton, charts/EChart, ui/
 ├── features/
+│   ├── auth/             # Écrans de compte, useMe, RequireAuth
+│   ├── legal/            # CGU, confidentialité, mentions légales
 │   ├── home/             # Accueil
 │   ├── screener/         # Explorer et ETF (filtres dans l'URL)
 │   ├── security/         # Fiche d'un titre et ses cartes
@@ -54,6 +56,11 @@ Chaque dossier `features/<domaine>/` contient la page, ses composants et leurs t
 | `/assistant` | Assistant IA |
 | `/titres/:id` | Fiche d'un titre |
 | `/reglages` | Réglages |
+| `/connexion`, `/inscription` | Écran de compte à panneau glissant, hors de la mise en page (`?suite=` : page où revenir) |
+| `/verifier-email`, `/mot-de-passe-oublie`, `/reinitialiser`, `/ce-n-etait-pas-moi` | Code, mot de passe oublié, nouveau mot de passe, « Ce n'était pas moi » |
+| `/cgu`, `/confidentialite`, `/mentions-legales` | Pages légales (textes provisoires) |
+
+`/previsions`, `/portefeuille`, `/assistant` et `/reglages` sont enveloppées par `RequireAuth` : un visiteur est renvoyé vers `/connexion?suite=…`. `useMe()` donne le compte connecté, ou `null` pour un visiteur.
 | `/guide/` | Guide utilisateur (lien en bas de la barre latérale). Fichiers statiques servis par nginx, **hors** du routeur React |
 | `/documentation/` | Cette documentation admin, **non liée** dans la navigation. Même fonctionnement |
 
