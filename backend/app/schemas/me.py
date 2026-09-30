@@ -38,3 +38,14 @@ class SessionOut(BaseModel):
     created_at: datetime
     last_seen_at: datetime
     current: bool
+
+
+class AcceptTermsIn(BaseModel):
+    accept_terms: bool
+
+    @field_validator("accept_terms")
+    @classmethod
+    def must_accept(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("Acceptez les CGU et la politique de confidentialité pour continuer.")
+        return value

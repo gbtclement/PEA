@@ -40,6 +40,12 @@ class User(Base):
         return self.google_sub is not None
 
     @property
+    def terms_outdated(self) -> bool:
+        from app.core.terms import TERMS_VERSION
+
+        return self.terms_version != TERMS_VERSION
+
+    @property
     def has_premium(self) -> bool:
         """Accès à l'assistant : Premium, ou admin (toujours considéré comme Premium)."""
         return self.is_premium or self.role == "admin"

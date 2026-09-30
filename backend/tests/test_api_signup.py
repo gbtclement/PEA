@@ -2,6 +2,7 @@ import re
 
 from sqlalchemy import select
 
+from app.core.terms import TERMS_VERSION
 from app.models import EmailLog, User
 from app.services.auth.sessions import SESSION_COOKIE
 from tests.factories import make_user
@@ -20,7 +21,7 @@ def test_signup_then_verify_opens_a_session(anon_client, db):
     response = anon_client.post("/api/auth/register", json=FORM)
     assert response.status_code == 202 and SESSION_COOKIE not in response.cookies
     user = db.scalar(select(User).where(User.email == "jean@example.com"))
-    assert user.email_verified_at is None and user.terms_version == "2026-09-28"
+    assert user.email_verified_at is None and user.terms_version == TERMS_VERSION
     verified = anon_client.post("/api/auth/verify-email", json={"email": "jean@example.com", "code": _last_code(db)})
     assert verified.status_code == 200 and verified.json()["email"] == "jean@example.com"
     assert SESSION_COOKIE in verified.cookies and "pea_csrf" in verified.cookies

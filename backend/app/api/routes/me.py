@@ -9,13 +9,13 @@ from app.api.cookies import clear_auth_cookies
 from app.api.deps import get_breach_checker
 from app.api.routes.auth import CODE_ERRORS, check_password_rules, client_ip, fail, mail_allowed
 from app.core.config import get_settings
-from app.core.current_user import get_auth_session, get_current_user, get_now
+from app.core.current_user import get_auth_session, get_account_user, get_now
 from app.core.db import get_db
 from app.core.security import normalize_email
 from app.models import AuthSession, User
 from app.schemas.auth import MeOut, NoticeOut
-from app.schemas.me import CodeIn, EmailChangeIn, PasswordChangeIn, ProfileIn, SessionOut
-from app.services.auth import profile
+from app.schemas.me import AcceptTermsIn, CodeIn, EmailChangeIn, PasswordChangeIn, ProfileIn, SessionOut
+from app.services.auth import accounts, profile
 from app.services.auth.breach import BreachChecker
 from app.services.auth.codes import CodeCheck
 from app.services.auth.sessions import revoke_session
@@ -27,12 +27,12 @@ WRONG_PASSWORD = ("wrong_password", "Mot de passe actuel incorrect.")
 
 
 @router.get("/me", response_model=MeOut)
-def read_me(user: User = Depends(get_current_user)) -> MeOut:
+def read_me(user: User = Depends(get_account_user)) -> MeOut:
     return MeOut.model_validate(user)
 
 
 @router.patch("/me", response_model=MeOut)
-def update_me(payload: ProfileIn, db: Session = Depends(get_db), user: User = Depends(get_current_user)) -> MeOut:
+def update_me(payload: ProfileIn, db: Session = Depends(get_db), user: User = Depends(get_account_user)) -> MeOut:
     user.first_name, user.last_name = payload.first_name, payload.last_name
     db.commit()
     return MeOut.model_validate(user)
@@ -40,7 +40,7 @@ def update_me(payload: ProfileIn, db: Session = Depends(get_db), user: User = De
 
 @router.post("/me/password", response_model=NoticeOut)
 def change_password(payload: PasswordChangeIn, request: Request, db: Session = Depends(get_db),
-                    user: User = Depends(get_current_user), auth: AuthSession = Depends(get_auth_session),
+                    user: User = Depends(get_account_user), auth: AuthSession = Depends(get_auth_session),
                     now: datetime = Depends(get_now), breach: BreachChecker = Depends(get_breach_checker)) -> NoticeOut:
     if not profile.password_ok(user, payload.current_password):
         raise fail(400, *WRONG_PASSWORD)  # avant Have I Been Pwned : pas de relais gratuit
@@ -52,7 +52,7 @@ def change_password(payload: PasswordChangeIn, request: Request, db: Session = D
 
 @router.post("/me/email", response_model=NoticeOut, status_code=202)
 def request_email_change(payload: EmailChangeIn, request: Request, db: Session = Depends(get_db),
-                         user: User = Depends(get_current_user), now: datetime = Depends(get_now)) -> NoticeOut:
+                         user: User = Depends(get_account_user), now: datetime = Depends(get_now)) -> NoticeOut:
     if not profile.password_ok(user, payload.password):
         raise fail(400, *WRONG_PASSWORD)
     new_email = normalize_email(payload.new_email)
@@ -64,7 +64,7 @@ def request_email_change(payload: EmailChangeIn, request: Request, db: Session =
 
 @router.post("/me/email/verify", response_model=MeOut)
 def confirm_email_change(payload: CodeIn, request: Request, db: Session = Depends(get_db),
-                         user: User = Depends(get_current_user), auth: AuthSession = Depends(get_auth_session),
+                         user: User = Depends(get_account_user), auth: AuthSession = Depends(get_auth_session),
                          now: datetime = Depends(get_now)) -> MeOut:
     try:
         result = profile.confirm_email_change(db, user, payload.code, now, client_ip(request), keep_session=auth)
@@ -80,7 +80,7 @@ def confirm_email_change(payload: CodeIn, request: Request, db: Session = Depend
 
 @router.get("/me/sessions", response_model=list[SessionOut])
 def list_sessions(db: Session = Depends(get_db), auth: AuthSession = Depends(get_auth_session),
-                  user: User = Depends(get_current_user), now: datetime = Depends(get_now)) -> list[SessionOut]:
+                  user: User = Depends(get_account_user), now: datetime = Depends(get_now)) -> list[SessionOut]:
     rows = db.scalars(select(AuthSession).where(AuthSession.user_id == user.id, AuthSession.expires_at > now)
                       .order_by(AuthSession.last_seen_at.desc()))
     return [SessionOut(id=r.id, device=r.device, ip=r.ip, created_at=r.created_at, last_seen_at=r.last_seen_at,
@@ -89,7 +89,7 @@ def list_sessions(db: Session = Depends(get_db), auth: AuthSession = Depends(get
 
 @router.delete("/me/sessions/{session_id}", status_code=204)
 def revoke_one_session(session_id: uuid.UUID, request: Request, response: Response, db: Session = Depends(get_db),
-                       auth: AuthSession = Depends(get_auth_session), user: User = Depends(get_current_user),
+                       auth: AuthSession = Depends(get_auth_session), user: User = Depends(get_account_user),
                        now: datetime = Depends(get_now)) -> Response:
     row = db.get(AuthSession, session_id)
     if row is None or row.user_id != user.id:
@@ -105,8 +105,17 @@ def revoke_one_session(session_id: uuid.UUID, request: Request, response: Respon
 
 @router.delete("/me/sessions", status_code=204)
 def revoke_other_sessions(request: Request, db: Session = Depends(get_db), auth: AuthSession = Depends(get_auth_session),
-                          user: User = Depends(get_current_user), now: datetime = Depends(get_now)) -> Response:
+                          user: User = Depends(get_account_user), now: datetime = Depends(get_now)) -> Response:
     db.execute(delete(AuthSession).where(AuthSession.user_id == user.id, AuthSession.id != auth.id))
     log_event(db, "session_revoked", now=now, user_id=user.id, ip=client_ip(request), details={"all_others": True})
     db.commit()
     return Response(status_code=204)
+
+
+@router.post("/me/accept-terms", response_model=MeOut)
+def accept_terms(payload: AcceptTermsIn, request: Request, db: Session = Depends(get_db),
+                 user: User = Depends(get_account_user), now: datetime = Depends(get_now)) -> MeOut:
+    accounts.accept_terms(user, now)
+    log_event(db, "terms_accepted", now=now, user_id=user.id, ip=client_ip(request), details={"version": user.terms_version})
+    db.commit()
+    return MeOut.model_validate(user)
