@@ -5,7 +5,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.core.security import token_hash
-from app.models import EmailLog, User
+from app.models import EmailLog, StripeCancellation, Subscription, User
 from app.services.mail.outbox import enqueue
 from app.services.security_log import log_event
 
@@ -21,6 +21,8 @@ def erase_account(db: Session, user: User, *, now: datetime, actor: User | None 
     """Supprime le compte et toutes ses données (ON DELETE CASCADE), puis met le mail C6 en file. Pas de commit ici.
 
     Le journal de sécurité et l'historique des mails gardent leurs lignes, sans lien vers le compte ni adresse en clair.
+    L'abonnement Stripe vivant est mis en file de résiliation ; les lignes subscriptions et billing_consents partent avec
+    le compte.
     """
     email, first_name = user.email, user.first_name
     # Écrite avant la suppression : son user_id passera à NULL (ON DELETE SET NULL), l'acteur éventuel reste.
@@ -33,6 +35,10 @@ def erase_account(db: Session, user: User, *, now: datetime, actor: User | None 
         if not row.recipient.startswith("supprimé:"):
             row.recipient = email_fingerprint(row.recipient)
         row.html = row.text = ERASED_ACCOUNT  # montants, titres et prénom ne restent pas
+    sub = db.get(Subscription, user.id)
+    if sub is not None and sub.stripe_subscription_id and sub.status not in ("canceled", "incomplete_expired"):
+        # Résilié par le worker dès que Stripe répond (Ruling 1) : plus aucun prélèvement après la suppression.
+        db.merge(StripeCancellation(subscription_id=sub.stripe_subscription_id))
     db.flush()
     db.delete(user)
     db.flush()
