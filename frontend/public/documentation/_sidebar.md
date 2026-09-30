@@ -16,6 +16,7 @@
 - **Référence**
   - [API REST](api.md)
   - [Base de données](base-de-donnees.md)
+  - [Registre des traitements](registre.md)
   - [Frontend](frontend.md)
 
 - **Maintenance**

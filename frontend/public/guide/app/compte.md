@@ -75,3 +75,16 @@ Quand quelqu'un se connecte à votre compte depuis un appareil ou un navigateur 
 | Accueil, Explorer, ETF, fiche de chaque titre, guide | En plus : prévisions, portefeuille, favoris ⭐, assistant IA, réglages |
 
 Sur la fiche d'un titre, les boutons ⭐, **+ J'ai acheté** et ✨ **Demander à l'IA** vous proposent de vous connecter, puis vous ramènent sur la fiche.
+
+## Nouvelles conditions d'utilisation
+
+Quand les CGU changent, un écran **Nos conditions ont changé** s'affiche à votre prochaine visite. Lisez les [CGU](/cgu ':ignore') et la [politique de confidentialité](/confidentialite ':ignore'), cochez la case, puis cliquez sur **Accepter et continuer** : vous revenez sur la page que vous vouliez ouvrir. Si vous ne voulez pas les accepter, vous pouvez vous déconnecter, exporter vos données ou supprimer votre compte depuis les Réglages.
+
+## Récupérer ou supprimer vos données
+
+Tout se fait dans les Réglages, carte **Mes données** (voir [Réglages](app/reglages.md#mes-données)) :
+
+- **Exporter mes données** : un fichier avec votre profil, vos réglages, vos ordres, vos favoris et vos conversations. Un mail vous prévient quand il est prêt, en général en moins d'une minute. Il reste téléchargeable **7 jours**. Un export par jour au plus.
+- **Supprimer mon compte** : tout est effacé immédiatement et définitivement. Un mail confirme la suppression.
+
+?> Un compte que vous n'utilisez plus pendant **3 ans** est supprimé automatiquement. Un mail vous prévient 30 jours avant : il suffit de vous reconnecter pour le garder.

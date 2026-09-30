@@ -6,12 +6,13 @@ PostgreSQL 16, conteneur `db`, données dans le volume Docker `pgdata`. Modèles
 
 | Table | Contenu | Personnelle (`user_id`) |
 |---|---|---|
-| `users` | Comptes : identifiant **UUID**, adresse mail, prénom, nom, empreinte du mot de passe (Argon2, vide pour un compte Google seul), identifiant Google (`google_sub`), blocage (`locked_until`), rôle `user`/`admin`, `is_premium`, date de validation de l'adresse, version des CGU acceptée | — |
+| `users` | Comptes : identifiant **UUID**, adresse mail, prénom, nom, empreinte du mot de passe (Argon2, vide pour un compte Google seul), identifiant Google (`google_sub`), blocage (`locked_until`), rôle `user`/`admin`, `is_premium`, date de validation de l'adresse, version des CGU acceptée, dernière activité (`last_seen_at`) et date de l'avertissement d'inactivité (`inactivity_warned_at`) | — |
 | `sessions` | Sessions ouvertes : empreinte du jeton, jeton CSRF, « rester connecté », expiration, dernière activité, appareil | **oui** |
 | `known_devices` | Appareils déjà utilisés par chaque compte, pour le mail « nouvelle connexion » | **oui** |
 | `email_codes` | Codes à 6 chiffres et liens (nouveau mot de passe, « Ce n'était pas moi ») : empreinte, usage, expiration, essais | **oui** |
 | `email_log` | File d'envoi et historique des mails : type, destinataire, contenu, statut `pending`/`sent`/`failed`, essais, erreur. Le contenu des mails à code ou à lien est effacé une fois envoyé | **oui** (peut être vide) |
 | `security_events` | Journal de sécurité : type d'événement, IP, détails (JSON), date. Gardé 12 mois | **oui** (peut être vide) |
+| `data_exports` | Exports des données demandés depuis les Réglages : statut `pending`/`ready`, contenu JSON, dates de demande, de préparation et d'expiration (7 jours) | **oui** |
 | `rate_limit_hits` | Tentatives comptées par les limites anti-abus : compteur, empreinte de l'adresse ou de l'IP, date. Gardé 1 jour | non |
 | `securities` | Univers : ISIN, ticker Yahoo, nom, type `stock`/`etf`/`index`, place, pays, secteur, éligibilité automatique et correction, actif | non |
 | `quotes` | Dernier cours connu de chaque titre : prix, variation du jour, volume, horodatage | non |

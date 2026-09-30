@@ -14,7 +14,7 @@ Le client du frontend en fait une `ApiError(status, message, code)`.
 
 ## Accès
 
-- Les routes personnelles (ordres, portefeuille, favoris, réglages, assistant, prévisions) demandent une session : `401` avec le code `not_authenticated` sinon.
+- Les routes personnelles (ordres, portefeuille, favoris, réglages, assistant, prévisions) demandent une session : `401` avec le code `not_authenticated` sinon. Elles répondent `403 terms_outdated` tant que le compte n'a pas accepté la version en vigueur des CGU ; les routes `/me…` restent ouvertes (voir [Comptes](comptes.md#cgu-versionnées)).
 - Les requêtes qui modifient quelque chose (`POST`, `PUT`, `PATCH`, `DELETE`) avec une session doivent porter l'en-tête `X-CSRF-Token` : `403` avec le code `csrf` sinon.
 - Les routes marquées **admin** renvoient `403` aux autres comptes.
 
@@ -38,7 +38,7 @@ Détails dans [Comptes utilisateurs](comptes.md).
 | GET | `/auth/google/pending` | Nouveau compte Google en attente : `{email, first_name, last_name}`, ou `404 google_expired` |
 | POST | `/auth/google/complete` | `{first_name, last_name, accept_terms}` : crée le compte Google et ouvre la session. `400 google_expired` après 30 min |
 | GET | `/auth/admin-check` | `204` pour un admin connecté, `401` sinon. Appelée par nginx (`auth_request`) avant de servir `/documentation/` |
-| GET | `/me` | Le compte connecté (`id`, `email`, `first_name`, `last_name`, `role`, `is_premium`, `has_premium`, `has_password`, `has_google`), ou `401` |
+| GET | `/me` | Le compte connecté (`id`, `email`, `first_name`, `last_name`, `role`, `is_premium`, `has_premium`, `has_password`, `has_google`, `terms_outdated`), ou `401` |
 | PATCH | `/me` | `{first_name, last_name}` : modifier son profil |
 | POST | `/me/password` | `{current_password, new_password}` : change le mot de passe et ferme les **autres** sessions. `current_password` n'est pas demandé à un compte Google sans mot de passe (« Ajouter un mot de passe ») |
 | POST | `/me/email` | `{new_email, password}` : envoie un code à la nouvelle adresse. Toujours `202`, même si l'adresse est déjà prise |
@@ -46,6 +46,11 @@ Détails dans [Comptes utilisateurs](comptes.md).
 | GET | `/me/sessions` | Appareils connectés : `[{id, device, ip, created_at, last_seen_at, current}]` |
 | DELETE | `/me/sessions/{id}` | Déconnecter un appareil |
 | DELETE | `/me/sessions` | Déconnecter tous les autres appareils |
+| POST | `/me/accept-terms` | `{accept_terms: true}` : accepter la version en vigueur des CGU. Renvoie le compte |
+| POST | `/me/export` | Demander l'export de ses données (`202`, `{id, status, created_at, expires_at}`). Préparé par le worker, mail quand il est prêt |
+| GET | `/me/export` | Le dernier export (`pending` ou `ready`), ou `null` |
+| GET | `/me/export/{id}` | Télécharger le fichier JSON, 7 jours. `404` après, ou pour un autre compte |
+| DELETE | `/me` | `{confirm_email, password}` : supprimer son compte et toutes ses données. `204` et cookies effacés. `password` est ignoré pour un compte Google sans mot de passe, qui doit s'être reconnecté depuis moins de 5 min |
 
 Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_not_verified` et des erreurs de code ou de lien :
 
@@ -55,11 +60,16 @@ Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_no
 | `weak_password` | 400 | Mot de passe trop court (moins de 12 caractères) ou trop long |
 | `pwned_password` | 400 | Mot de passe connu dans les fuites (Have I Been Pwned) |
 | `account_locked` | 429 | 10 mots de passe faux en 15 min pour cette adresse |
-| `too_many_requests` | 429 | Trop de tentatives depuis cette IP (voir [Comptes](comptes.md#limites-anti-abus)) |
+| `too_many_requests` | 429 | Trop de tentatives depuis cette IP, ou 10 mots de passe actuels faux en 15 min dans les Réglages (voir [Comptes](comptes.md#limites-anti-abus)) |
 | `bad_origin` | 403 | En-tête `Origin` étranger |
 | `google_disabled` | 404 | Google n'est pas configuré |
 | `google_expired` | 400 / 404 | Inscription Google en attente depuis plus de 30 min |
-| `wrong_password` | 400 | Mot de passe actuel faux (`/me/password`, `/me/email`) |
+| `wrong_password` | 400 | Mot de passe actuel faux (`/me/password`, `/me/email`, `DELETE /me`) |
+| `terms_outdated` | 403 | Nouvelle version des CGU à accepter (`POST /me/accept-terms`) |
+| `confirm_mismatch` | 400 | `DELETE /me` : l'adresse retapée n'est pas celle du compte |
+| `reauth_required` | 403 | `DELETE /me`, compte Google sans mot de passe : se reconnecter avec Google, puis confirmer dans les 5 min |
+| `export_pending` | 409 | Un export est déjà en préparation |
+| `export_limit` | 429 | Un export par jour au plus |
 | `email_taken` | 409 | Adresse prise par un autre compte : entre la demande et la validation du code, ou choisie par l'admin |
 | `self_demotion` | 400 | Un admin retire son propre rôle d'administrateur |
 | `last_admin` | 400 | Le dernier admin perdrait son rôle |

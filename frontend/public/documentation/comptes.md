@@ -94,7 +94,7 @@ docker compose exec -T api python -m app.cli ensure-user --email prenom@exemple.
 |---|---|
 | `/`, `/explorer`, `/etf`, `/titres/:id`, `/cgu`, `/confidentialite`, `/mentions-legales` | Tout le monde, indexables |
 | `/connexion`, `/inscription` | Tout le monde, indexables, hors de la mise en page de l'application |
-| `/verifier-email`, `/mot-de-passe-oublie`, `/reinitialiser`, `/ce-n-etait-pas-moi` | Tout le monde, `noindex` |
+| `/verifier-email`, `/mot-de-passe-oublie`, `/reinitialiser`, `/ce-n-etait-pas-moi`, `/accepter-cgu` | Tout le monde, `noindex` |
 | `/previsions`, `/portefeuille`, `/assistant`, `/reglages` | Membres. Un visiteur est renvoyé vers `/connexion?suite=<page>` |
 
 Côté API, les routes personnelles (ordres, portefeuille, favoris, réglages, assistant, prévisions) renvoient `401` sans session.
@@ -111,6 +111,7 @@ Chaque tentative est comptée dans `rate_limit_hits` sur une fenêtre glissante 
 | `mail_ip` | Demandes de code ou de lien depuis une IP | 20 par heure | `429 too_many_requests` |
 | `mail_account` | Codes et liens envoyés à une adresse | 5 par heure | Réponse inchangée, mais plus rien n'est envoyé |
 | `oauth_state` | Retours de Google avec le même `state` | 1 en 10 min | Retour refusé (`/connexion?erreur=google`) |
+| `password_check` | Mots de passe actuels faux dans les Réglages (changer de mot de passe, d'adresse, supprimer le compte) | 10 en 15 min | `429 too_many_requests`, même avec le bon mot de passe |
 
 Après **3** mots de passe faux (par adresse ou par IP, `CAPTCHA_AFTER`), la connexion exige Turnstile. Une connexion réussie remet à zéro le compteur de l'adresse.
 
@@ -142,6 +143,9 @@ Les événements de compte sont écrits dans `security_events` par `log_event()`
 | `password_changed` | Mot de passe changé (ou ajouté) depuis les Réglages |
 | `email_changed` | Nouvelle adresse validée depuis les Réglages |
 | `session_revoked` | Appareil déconnecté (`details.all_others` : tous les autres) |
+| `terms_accepted` | Nouvelle version des CGU acceptée (`details.version`) |
+| `data_export` | Export des données demandé |
+| `account_deleted` | Compte supprimé sans admin (`details.reason` : `self` par son titulaire, `inactivity` par le worker) |
 | `admin_user_updated` | Compte modifié par un admin (`actor_id`, `details.fields`) |
 | `admin_user_deleted` | Compte supprimé par un admin (`user_id` passe à vide, `actor_id` reste) |
 | `admin_settings_updated` | Modèle ou limite de l'assistant changé (`details` : les nouvelles valeurs) |
@@ -231,6 +235,51 @@ Les Réglages (`/reglages`) regroupent ce qui concerne le compte connecté (rout
 
 Le guide utilisateur (`/guide/`) et les fichiers Docsify communs (`/docsify/`) restent publics.
 
+## CGU versionnées
+
+`TERMS_VERSION` (`backend/app/core/terms.py`) est la date du texte des CGU en vigueur. Chaque compte garde la version acceptée (`users.terms_version`).
+
+- `get_current_user()`, utilisé par toutes les pages privées, répond `403 terms_outdated` si la version du compte n'est pas la bonne.
+- `get_account_user()` sert aux routes du compte lui-même (`/me`, appareils, export, suppression, `POST /me/accept-terms`) : elles restent ouvertes, pour pouvoir accepter, exporter ou partir.
+- `GET /api/me` renvoie `terms_outdated`. L'interface envoie alors toute page vers `/accepter-cgu?suite=<page>` : une case à cocher, puis retour à la page demandée.
+
+**Quand les CGU changent** : mettre à jour le texte (`frontend/src/features/legal/content.tsx`, avec `LEGAL_UPDATED`), puis la date de `TERMS_VERSION`. Chacun devra accepter à sa prochaine visite.
+
+## Export des données
+
+Carte « Mes données » des Réglages (`POST /api/me/export`, `backend/app/services/privacy/export.py`) :
+
+- La demande crée une ligne `data_exports` en attente. Le worker la prépare dans les **15 s** (tâche `exports`) : un fichier JSON avec le profil, les réglages, les ordres, les favoris, les conversations, l'usage de l'assistant et les appareils. Mots de passe, jetons et identifiants internes n'y sont jamais.
+- Le titulaire reçoit le mail C7 et télécharge le fichier depuis les Réglages (`GET /api/me/export/{id}`, sa session seulement). Le fichier est gardé **7 jours**.
+- Un export à la fois (`409 export_pending`), un par jour au plus (`429 export_limit`).
+
+## Suppression du compte
+
+Trois chemins, une seule fonction : `erase_account()` (`backend/app/services/privacy/erasure.py`), appelée par le titulaire (`DELETE /api/me`), par un admin, ou par le worker pour inactivité.
+
+- Toutes les données du compte partent avec lui (`ON DELETE CASCADE`). Le mail C6 confirme la suppression.
+- Le journal de sécurité garde ses lignes, sans lien vers le compte. Dans l'historique des mails, l'adresse est remplacée par une **empreinte** (`supprimé:…`) : on peut reconnaître une même adresse, pas la lire. Les mails encore en attente sont annulés.
+- Le titulaire retape son adresse et donne son mot de passe. Un compte Google sans mot de passe doit s'être reconnecté avec Google il y a **moins de 5 minutes** (`403 reauth_required` sinon).
+- Le dernier admin ne peut pas supprimer son compte (`last_admin`).
+
+## Durées de conservation
+
+Appliquées chaque nuit à **3 h 30** par la tâche `cleanup` du worker (`backend/app/services/privacy/retention.py`) :
+
+| Donnée | Durée |
+|---|---|
+| Compte et données saisies | Jusqu'à la suppression, ou **3 ans** sans connexion : mail C8, puis suppression 30 jours après si le compte n'est pas revenu. Jamais un admin |
+| Compte dont l'adresse n'a pas été validée | 7 jours |
+| Sessions, codes et liens | Jusqu'à leur expiration |
+| Export des données | 7 jours |
+| Historique des mails | 90 jours |
+| Journal de sécurité | 12 mois |
+| Compteurs anti-abus | 1 jour |
+
+Toute connexion, ou l'usage d'une session « rester connecté », compte comme activité (`last_login_at`, `last_seen_at`).
+
+Le détail des traitements est dans le [registre des traitements](registre.md).
+
 ## Étape suivante
 
-Le lot `comptes-rgpd` ajoutera les pages légales, l'acceptation et la version des CGU, l'export des données, la suppression du compte par son titulaire, les durées de conservation et le registre des traitements.
+Le lot `notifications` ajoutera les alertes par mail (cours, prévisions) et leurs réglages.
