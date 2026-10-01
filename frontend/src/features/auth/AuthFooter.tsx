@@ -7,6 +7,7 @@ export function AuthFooter() {
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
         <Link to="/mentions-legales" className="hover:text-foreground">Mentions légales</Link>
         <Link to="/cgu" className="hover:text-foreground">CGU</Link>
+        <Link to="/cgv" className="hover:text-foreground">CGV</Link>
         <Link to="/confidentialite" className="hover:text-foreground">Confidentialité</Link>
         <a href="/guide/" className="hover:text-foreground">Guide</a>
       </div>

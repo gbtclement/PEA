@@ -16,11 +16,11 @@ from app.models import Security
 
 router = APIRouter(prefix="/seo", tags=["seo"])
 
-PUBLIC_PATHS = ["/", "/explorer", "/etf"]
+PUBLIC_PATHS = ["/", "/explorer", "/etf", "/premium", "/cgv"]
 PRIVATE_PATHS = ["/portefeuille", "/assistant", "/reglages"]
 # Les pages sont rendues dans le navigateur : les robots doivent pouvoir lire les données publiques de l'API,
 # seules les données personnelles leur sont fermées.
-PRIVATE_API_PATHS = ["/api/portfolio", "/api/orders", "/api/assistant/", "/api/settings", "/api/favorites/"]
+PRIVATE_API_PATHS = ["/api/portfolio", "/api/orders", "/api/assistant/", "/api/settings", "/api/favorites/", "/api/billing/"]
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 DbDep = Annotated[Session, Depends(get_db)]
@@ -40,7 +40,7 @@ def robots(settings: SettingsDep) -> Response:
     if not settings.seo_indexing:
         lines.append("Disallow: /")
     else:
-        lines += ["Allow: /$", "Allow: /explorer", "Allow: /etf", "Allow: /titres/", "Allow: /llms.txt"]
+        lines += ["Allow: /$", "Allow: /explorer", "Allow: /etf", "Allow: /premium$", "Allow: /cgv", "Allow: /titres/", "Allow: /llms.txt"]
         lines += [f"Disallow: {path}" for path in PRIVATE_PATHS]
         lines += [f"Disallow: {path}" for path in PRIVATE_API_PATHS]
         lines += ["", f"Sitemap: {_url(settings, '/sitemap.xml')}"]

@@ -55,6 +55,8 @@ def test_sitemap_lists_public_pages_and_eligible_securities(online, db):
         "https://pea.example/",
         "https://pea.example/explorer",
         "https://pea.example/etf",
+        "https://pea.example/premium",
+        "https://pea.example/cgv",
         f"https://pea.example/titres/{stock.id}",
         f"https://pea.example/titres/{etf.id}",
     ]
@@ -74,3 +76,11 @@ def test_llms_txt_describes_site(online, db):
     assert "pas un conseil en investissement" in text
     assert "1 action" in text and "1 ETF" in text
     assert "/portefeuille" not in text
+
+
+def test_premium_and_sales_terms_are_indexable(online):
+    lines = online.get("/api/seo/robots.txt").text.splitlines()
+    assert "Allow: /premium$" in lines and "Allow: /cgv" in lines
+    assert "Disallow: /api/billing/" in lines
+    sitemap = online.get("/api/seo/sitemap.xml").text
+    assert "/premium</loc>" in sitemap and "/cgv</loc>" in sitemap

@@ -29,6 +29,7 @@ export const routes: RouteObject[] = [
       { path: "etf", element: <ScreenerPage kind="etf" title="ETF" description="Les ETF éligibles au PEA, classés par score technique." /> },
       { path: "titres/:id", lazy: async () => ({ Component: (await import("@/features/security/SecurityPage")).SecurityPage }) },
       { path: "cgu", element: <LegalPage kind="cgu" /> },
+      { path: "cgv", element: <LegalPage kind="cgv" /> },
       { path: "confidentialite", element: <LegalPage kind="confidentialite" /> },
       { path: "mentions-legales", element: <LegalPage kind="mentions-legales" /> },
       { path: "premium", lazy: async () => ({ Component: (await import("@/features/premium/PremiumPage")).PremiumPage }) },
