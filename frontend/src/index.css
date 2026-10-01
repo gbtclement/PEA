@@ -129,6 +129,28 @@
   html {
     @apply font-sans;
     }
+  /* Tout ce qui se clique montre la main ; ce qui est désactivé montre l'interdiction. */
+  button,
+  a[href],
+  select,
+  summary,
+  label[for],
+  input:is([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="submit"], [type="button"], [type="reset"]),
+  [role="button"],
+  [role="tab"],
+  [role="link"],
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"] {
+    cursor: pointer;
+  }
+  :is(button, select, input, [role="button"], [role="tab"], [role="menuitem"], [role="option"], [role="switch"]):is(:disabled, [aria-disabled="true"]) {
+    cursor: not-allowed;
+  }
 }
 body {
   font-variant-numeric: tabular-nums;

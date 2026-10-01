@@ -34,3 +34,28 @@ test("assistant, réglages du compte et onglet Admin", async ({ page }) => {
   await expect(page.getByRole("cell", { name: "e2e@example.com" })).toBeVisible();
   await expect(page.getByRole("list", { name: "État de la configuration" })).toBeVisible();
 });
+
+test("les éléments cliquables affichent la main", async ({ page }) => {
+  const cursor = (selector: string) => page.locator(selector).first().evaluate((el) => getComputedStyle(el).cursor);
+
+  await page.goto("/reglages");
+  const save = page.getByRole("button", { name: /Enregistrer/ }).first();
+  await expect(save).toBeVisible();
+  expect(await save.evaluate((el) => getComputedStyle(el).cursor)).toBe("pointer");
+
+  await page.goto("/explorer");
+  await expect(page.getByRole("heading", { level: 1, name: "Explorer" })).toBeVisible();
+  expect(await cursor("select")).toBe("pointer");
+  expect(await cursor("a[href]")).toBe("pointer");
+  expect(await cursor("[role=tab], button")).toBe("pointer");
+
+  // Un bouton désactivé ne propose pas le clic.
+  await page.evaluate(() => {
+    const b = document.createElement("button");
+    b.id = "cursor-probe";
+    b.disabled = true;
+    b.textContent = "x";
+    document.body.append(b);
+  });
+  expect(await cursor("#cursor-probe")).toBe("not-allowed");
+});
