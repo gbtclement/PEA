@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError, apiGet, apiSend, type ConfigStatus } from "@/lib/api/client";
 
-const ITEMS: { key: keyof ConfigStatus; label: string; variables: string }[] = [
+const ITEMS: { key: "claude" | "smtp" | "google" | "turnstile" | "app_secret" | "admin_email" | "stripe"; label: string; variables: string }[] = [
   { key: "claude", label: "Claude", variables: "ANTHROPIC_API_KEY" },
   { key: "smtp", label: "Envoi des mails", variables: "SMTP_HOST, SMTP_USER, SMTP_PASSWORD" },
   { key: "google", label: "Google", variables: "GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET" },
   { key: "turnstile", label: "Turnstile", variables: "TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY" },
   { key: "app_secret", label: "Secret de l'application", variables: "APP_SECRET" },
   { key: "admin_email", label: "Adresse de l'admin", variables: "ADMIN_EMAIL" },
+  { key: "stripe", label: "Paiement (Stripe)", variables: "STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, STRIPE_PRICE_MONTHLY, STRIPE_PRICE_YEARLY" },
 ];
 
 export function ConfigStatusCard() {
@@ -42,6 +43,12 @@ export function ConfigStatusCard() {
             );
           })}
         </ul>
+        {status.data?.stripe && (
+          <p className="text-xs text-muted-foreground">
+            Stripe en mode {status.data.stripe_mode === "live" ? "réel" : "test"} · dernier webhook reçu :{" "}
+            {status.data.stripe_last_webhook_at ? new Date(status.data.stripe_last_webhook_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }) : "aucun"}
+          </p>
+        )}
         <div className="flex items-center gap-3">
           <Button variant="outline" disabled={test.isPending} onClick={() => test.mutate()}>Envoyer un mail de test</Button>
           {test.data && <p role="status" className="text-sm text-muted-foreground">{test.data.message}</p>}
