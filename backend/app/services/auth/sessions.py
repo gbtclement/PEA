@@ -2,7 +2,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
@@ -49,6 +49,7 @@ def resolve_session(db: Session, token: str | None, *, now: datetime, settings: 
     if now - row.last_seen_at >= TOUCH_EVERY:  # au plus une écriture par minute
         row.last_seen_at = now
         row.expires_at = now + lifetime(row.persistent, settings)
+        db.execute(update(User).where(User.id == row.user_id).values(last_seen_at=now))  # inactivité (spec 6.5)
         db.commit()
     return row
 

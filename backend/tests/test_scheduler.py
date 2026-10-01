@@ -41,7 +41,7 @@ def test_quotes_job_skips_before_open(db, make_ctx):
 def test_build_scheduler_registers_jobs(make_ctx):
     scheduler = build_scheduler(make_ctx(), BackgroundScheduler(timezone="Europe/Paris"))
     assert {job.id for job in scheduler.get_jobs()} == {
-        "bootstrap", "universe", "daily", "evening", "quotes_t1", "quotes_t2", "quotes_t3", "cleanup",
+        "bootstrap", "universe", "daily", "evening", "quotes_t1", "quotes_t2", "quotes_t3", "cleanup", "exports",
     }
 
 

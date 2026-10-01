@@ -22,6 +22,15 @@ La liste de vos connexions ouvertes : appareil, navigateur et dernière activit�
 
 ?> Un appareil inconnu dans la liste ? Déconnectez-le, puis changez votre mot de passe.
 
+## Mes données
+
+- **Exporter mes données** : cliquez, puis attendez le mail « Vos données PEA Radar sont prêtes » (en général moins d'une minute). Un lien **Télécharger mes données** apparaît dans la carte : c'est un fichier JSON, lisible par un autre logiciel. Il reste disponible **7 jours** ; un export par jour au plus.
+- **Supprimer mon compte** : retapez votre adresse mail et votre mot de passe, puis cliquez sur **Supprimer définitivement**. Votre compte, vos ordres, vos favoris, vos conversations et vos réglages sont effacés tout de suite, sans retour possible.
+
+Si vous vous connectez uniquement avec Google, vous n'avez pas de mot de passe : cliquez sur **Se reconnecter avec Google**, puis confirmez la suppression dans les **5 minutes**.
+
+!> Pensez à exporter vos données **avant** de supprimer votre compte si vous voulez garder votre historique d'ordres.
+
 ## Frais et compteur d'ordres
 
 Les valeurs par défaut sont celles de la formule **Invest Store Intégral** du Crédit Agricole. Elles varient selon les caisses régionales : vérifiez les vôtres dans la brochure tarifaire de votre banque.

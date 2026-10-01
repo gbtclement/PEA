@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, Response
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_google_client
@@ -53,9 +54,12 @@ def admin_update_user(user_id: uuid.UUID, payload: AdminUserUpdate, db: Session 
     target = _target(db, user_id)
     try:
         update_user(db, actor=actor, target=target, changes=payload.model_dump(exclude_none=True), now=now)
+        db.commit()
     except AdminError as error:  # levée avant toute écriture : rien à annuler
         raise fail(error.status, error.code, error.message)
-    db.commit()
+    except IntegrityError:  # adresse prise entre la vérification et l'écriture
+        db.rollback()
+        raise fail(409, "email_taken", "Cette adresse vient d'être prise par un autre compte.")
     return _out(target)
 
 

@@ -15,6 +15,7 @@ from app.core.security import new_token, pkce_challenge, sign, unsign
 from app.schemas.auth import GoogleCompleteIn, GooglePendingOut, MeOut
 from app.services.auth import accounts
 from app.services.auth.google import GoogleClient, GoogleError, GoogleIdentity
+from app.services.auth.sessions import SESSION_COOKIE, resolve_session, revoke_session
 from app.services.security_log import log_event
 
 router = APIRouter(prefix="/auth/google", tags=["auth"])
@@ -81,10 +82,14 @@ def callback(request: Request, state: str | None = None, code: str | None = None
     if user is None:
         response = RedirectResponse("/finaliser-inscription", status_code=302)
         _set_cookie(response, PENDING_COOKIE, sign({"sub": identity.sub, "email": identity.email,
-                                                    "first_name": identity.first_name, "last_name": identity.last_name},
+                                                    "first_name": identity.first_name, "last_name": identity.last_name,
+                                                    "suite": flow["suite"]},
                                                    get_settings().app_secret, now), PENDING_MAX_AGE)
         db.commit()
     else:
+        previous = resolve_session(db, request.cookies.get(SESSION_COOKIE), now=now, settings=get_settings())
+        if previous is not None:
+            revoke_session(db, previous.id)  # jamais deux sessions pour le même cookie
         log_event(db, "login_ok", now=now, user_id=user.id, ip=client_ip(request), details={"method": "google"})
         response = RedirectResponse(flow["suite"], status_code=302)
         start_session(db, user, request, response, persistent=bool(flow["remember"]), now=now, alert_new_device=True)
@@ -99,7 +104,8 @@ def pending(request: Request, now: datetime = Depends(get_now),
     data = unsign(request.cookies.get(PENDING_COOKIE), get_settings().app_secret, now, PENDING_MAX_AGE)
     if data is None:
         raise HTTPException(404, detail={"code": "google_expired", "message": "Recommencez la connexion avec Google."})
-    return GooglePendingOut(email=data["email"], first_name=data["first_name"], last_name=data["last_name"])
+    return GooglePendingOut(email=data["email"], first_name=data["first_name"], last_name=data["last_name"],
+                            suite=safe_next(data.get("suite")))
 
 
 @router.post("/complete", response_model=MeOut, dependencies=[Depends(check_origin)])

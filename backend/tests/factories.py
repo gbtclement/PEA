@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
 from app.models import Security, SecurityScore, User
+from app.services.auth.accounts import TERMS_VERSION
 
 
 def make_security(
@@ -54,6 +55,7 @@ _HASHES: dict[str, str] = {}  # Argon2 est volontairement lent : un hachage par 
 def make_user(
     db: Session, email: str = "moi@example.com", *, first_name: str = "Jean", last_name: str = "Dupont",
     password: str | None = "motdepasse-solide", verified: bool = True, role: str = "user", is_premium: bool = False,
+    terms_version: str | None = TERMS_VERSION,
 ) -> User:
     if password is not None and password not in _HASHES:
         _HASHES[password] = hash_password(password)
@@ -61,6 +63,7 @@ def make_user(
         email=email, first_name=first_name, last_name=last_name,
         password_hash=_HASHES[password] if password is not None else None,
         email_verified_at=datetime(2026, 9, 1, tzinfo=UTC) if verified else None, role=role, is_premium=is_premium,
+        terms_version=terms_version, terms_accepted_at=datetime(2026, 9, 1, tzinfo=UTC) if terms_version else None,
     )
     db.add(user)
     db.flush()

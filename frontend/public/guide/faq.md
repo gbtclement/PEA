@@ -48,6 +48,10 @@ Après **10 mots de passe faux** en 15 minutes, le compte est bloqué **15 minut
 
 Soit il fait moins de 12 caractères, soit il **apparaît dans des fuites de données connues** : il a déjà été volé sur un autre site, et les pirates l'essaient en premier. Choisissez une phrase de plusieurs mots que vous n'utilisez nulle part ailleurs. Voir [Choisir un bon mot de passe](app/compte.md#choisir-un-bon-mot-de-passe).
 
+## Comment récupérer ou supprimer mes données ?
+
+Dans les **Réglages**, carte **Mes données** : **Exporter mes données** prépare un fichier avec tout ce que vous avez saisi, et **Supprimer mon compte** efface tout, immédiatement et définitivement. Voir [Réglages](app/reglages.md#mes-données). Le détail de ce qui est conservé, et combien de temps, est dans la [politique de confidentialité](/confidentialite ':ignore').
+
 ## Mes données sont-elles envoyées quelque part ?
 
 Tout reste sur l'ordinateur où tourne l'application. Seules exceptions :

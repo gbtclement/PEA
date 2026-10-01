@@ -7,6 +7,7 @@ export type JobStatus = components["schemas"]["JobStatus"];
 
 export type Me = components["schemas"]["MeOut"];
 export type AuthConfig = components["schemas"]["AuthConfigOut"];
+export type DataExport = components["schemas"]["ExportOut"];
 
 export class ApiError extends Error {
   readonly status: number;

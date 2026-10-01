@@ -1,0 +1,6 @@
+{% extends "_layout.html" %}
+{% block body %}
+<p>L'export de vos données PEA Radar est prêt.</p>
+<p><a href="{{ base_url }}/reglages#mes-donnees">Le télécharger depuis vos réglages</a> (connexion requise). Il reste disponible jusqu'au {{ expires_at | paris }}.</p>
+<p>Si vous n'avez pas demandé cet export, changez votre mot de passe.</p>
+{% endblock %}

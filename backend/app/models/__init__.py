@@ -9,12 +9,13 @@ from app.models.favorite import Favorite
 from app.models.forecast import Forecast, ForecastRun
 from app.models.market import DailyPrice, SecurityFundamentals, SecurityQuote
 from app.models.portfolio import Order, UserSettings
+from app.models.privacy import DataExport
 from app.models.score import SecurityScore
 from app.models.security import Security
 from app.models.user import User
 
 __all__ = [
-    "AiUsage", "AppSettings", "AuthSession", "Base", "ChatMessage", "Conversation", "DataStatus", "DailyPrice", "EmailCode", "EmailLog", "Favorite",
+    "AiUsage", "AppSettings", "AuthSession", "Base", "ChatMessage", "Conversation", "DataExport", "DataStatus", "DailyPrice", "EmailCode", "EmailLog", "Favorite",
     "Forecast", "ForecastRun", "KnownDevice", "Order", "RateLimitHit", "Security", "SecurityEvent", "SecurityFundamentals", "SecurityQuote",
     "SecurityScore", "User", "UserSettings",
 ]

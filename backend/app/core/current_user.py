@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.security import same
+from app.core.terms import TERMS_VERSION
 from app.models import AuthSession, User
 from app.services.auth.sessions import SESSION_COOKIE, resolve_session
 
@@ -29,10 +30,21 @@ def get_optional_user(auth: AuthSession | None = Depends(get_auth_session), db: 
     return db.get(User, auth.user_id) if auth is not None else None
 
 
-def get_current_user(user: User | None = Depends(get_optional_user)) -> User:
-    """Pages privées. Une session n'existe que pour un compte validé : l'utilisateur renvoyé l'est toujours."""
+def get_account_user(user: User | None = Depends(get_optional_user)) -> User:
+    """Routes du compte lui-même (profil, appareils, CGU, export, suppression) : sans vérifier les CGU.
+
+    Une session n'existe que pour un compte validé : l'utilisateur renvoyé l'est toujours.
+    """
     if user is None:
         raise HTTPException(401, detail={"code": "not_authenticated", "message": "Connectez-vous pour accéder à cette page."})
+    return user
+
+
+def get_current_user(user: User = Depends(get_account_user)) -> User:
+    """Pages privées : compte validé et CGU en vigueur acceptées (sinon 403 terms_outdated, spec 3.5)."""
+    if user.terms_version != TERMS_VERSION:
+        raise HTTPException(403, detail={"code": "terms_outdated",
+                                         "message": "Nos conditions d'utilisation ont changé : acceptez-les pour continuer."})
     return user
 
 

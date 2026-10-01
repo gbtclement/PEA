@@ -16,7 +16,7 @@ from app.services.auth.sessions import revoke_user_sessions
 from app.services.mail.outbox import enqueue
 from app.services.security_log import log_event
 
-TERMS_VERSION = "2026-09-28"  # à changer quand les CGU changent (étape 4)
+from app.core.terms import TERMS_VERSION  # noqa: E402  (réexporté : importé d'ici par les autres modules)
 
 
 def find_user(db: Session, email: str) -> User | None:
@@ -167,3 +167,7 @@ def oauth_state_used(db: Session, state: str, now: datetime) -> bool:
     ratelimit.record(db, "oauth_state", state, now)
     db.commit()
     return False
+
+
+def accept_terms(user: User, now: datetime) -> None:
+    user.terms_accepted_at, user.terms_version = now, TERMS_VERSION

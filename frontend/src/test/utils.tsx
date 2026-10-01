@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router";
 
 export const ME = { id: "0b6f7c1e-0000-4000-8000-000000000001", email: "moi@example.com", first_name: "Moi",
                     last_name: "Dupont", role: "user", is_premium: false, has_password: true, has_google: false,
-                    has_premium: false };
+                    has_premium: false, terms_outdated: false };
 
 export function renderWithProviders(ui: ReactElement, { route = "/" }: { route?: string } = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

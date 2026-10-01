@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { apiGet, apiSend, type Me } from "@/lib/api/client";
 import { usePageMeta } from "@/seo/usePageMeta";
 import { AuthCard } from "./AuthCard";
+import { isExternalSuite, safeNext } from "./redirect";
 
-type Pending = { email: string; first_name: string; last_name: string };
+type Pending = { email: string; first_name: string; last_name: string; suite: string };
 
 export function FinishSignUpPage() {
   usePageMeta({ title: "Finaliser l'inscription", description: "Derniers détails avant d'utiliser PEA Radar.", noindex: true });
@@ -32,7 +33,9 @@ function FinishForm({ pending }: { pending: Pending }) {
       { first_name: firstName, last_name: lastName, accept_terms: terms }) as Promise<Me>,
     onSuccess: (me) => {
       queryClient.setQueryData(["me"], me);
-      navigate("/", { replace: true });
+      const suite = safeNext(pending.suite);  // page demandée avant de passer par Google
+      if (isExternalSuite(suite)) window.location.assign(suite);
+      else navigate(suite, { replace: true });
     },
   });
 

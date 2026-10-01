@@ -5,7 +5,7 @@ Application web personnelle, en local, pour un investisseur débutant qui a un P
 C'est un outil d'aide à la décision, pas un conseil en investissement : garder cet avertissement partout où l'app recommande quelque chose.
 
 - Spécification : `docs/superpowers/specs/2026-09-26-pea-radar-design.md`. C'est la référence en cas de doute.
-- Comptes utilisateurs : `docs/superpowers/specs/2026-09-28-comptes-utilisateurs-design.md` (étapes `comptes-socle`, `comptes-securite` et `comptes-admin` faites, suivante : `comptes-rgpd`).
+- Comptes utilisateurs : `docs/superpowers/specs/2026-09-28-comptes-utilisateurs-design.md` (étapes `comptes-socle`, `comptes-securite`, `comptes-admin` et `comptes-rgpd` faites, suivante : `notifications`).
 - Plans des lots : `docs/superpowers/plans/`.
 - Utilisateur : francophone et débutant en bourse comme en code. Il lui faut des explications simples, en français.
 
@@ -71,7 +71,7 @@ docker compose up -d --build
 
 # Backend de dev (code monté, rechargement auto, API sur :8000, migrations appliquées au démarrage)
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db api worker
-docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api pytest -q        # ~560 tests, base pea_radar_test
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api pytest -q        # ~600 tests, base pea_radar_test
 docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api alembic revision --autogenerate -m "..."
 docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api alembic upgrade head
 
@@ -82,7 +82,7 @@ docker compose exec -T api python -m app.cli ensure-user --email … --password 
 # Frontend
 cd frontend && npm install
 npm run dev          # :5180, proxy /api et fichiers SEO vers :8000
-npm test             # Vitest (~170 tests)
+npm test             # Vitest (~190 tests)
 npx tsc -b           # vérification des types
 npm run build
 npm run e2e          # Playwright contre http://localhost:8095 : reconstruire web et api avant (COOKIE_SECURE=false, mails vers Mailpit : si .env vise Brevo, voir docker-compose.e2e.yml)
@@ -99,16 +99,19 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
   - messages de commit en anglais, au format conventional commits (`feat:`, `fix:`, `docs:`, `chore:`).
 - **Comptes** :
   - toute donnée personnelle (ordres, favoris, conversations, réglages) porte un `user_id` (UUID) ;
-  - les routes obtiennent l'utilisateur **uniquement** via `core/current_user.py` : `get_current_user()` (route privée, `401`), `get_optional_user()` (route publique), `require_admin()` (toutes les routes `/api/admin/*`) ou `require_premium()` (assistant ; un admin est toujours Premium, voir `User.has_premium`) ;
+  - les routes obtiennent l'utilisateur **uniquement** via `core/current_user.py` : `get_current_user()` (route privée, `401`, et `403 terms_outdated` si les CGU en vigueur ne sont pas acceptées), `get_account_user()` (routes du compte lui-même `/me…`, sans vérifier les CGU), `get_optional_user()` (route publique), `require_admin()` (toutes les routes `/api/admin/*`) ou `require_premium()` (assistant ; un admin est toujours Premium, voir `User.has_premium`) ;
   - les nouvelles erreurs d'API renvoient `{"detail": {"code", "message"}}` ;
   - ne **jamais** stocker un jeton en clair (session, code, lien) : seulement son empreinte (`token_hash`) ;
-  - `enqueue()` ne fait jamais de commit, et l'API n'envoie jamais un mail elle-même : c'est le worker.
+  - `enqueue()` ne fait jamais de commit, et l'API n'envoie jamais un mail elle-même : c'est le worker ;
+  - un compte se supprime **uniquement** par `erase_account()` (`services/privacy/erasure.py`) : titulaire, admin ou inactivité ;
+  - les durées de conservation sont dans `services/privacy/retention.py` (tâche nocturne `cleanup`) : toute nouvelle donnée personnelle y reçoit la sienne, et une ligne dans le registre (`frontend/public/documentation/registre.md`) ;
+  - changer le texte des CGU oblige à changer `TERMS_VERSION` (`core/terms.py`) et `LEGAL_UPDATED` (`features/legal/content.tsx`).
 - **TDD** : écrire le test qui échoue, puis le code.
   - Côté backend, tests d'API avec `client` (connecté), `anon_client` (visiteur) ou `admin_client` (conftest, sur `https://testserver` pour les cookies `Secure`), `sign_in()` dans `tests/auth_helpers.py`, et fabriques dans `tests/factories.py`.
   - Faux fournisseurs dans `tests/fakes.py` (marché), `tests/fake_llm.py` (Claude), `tests/fake_mailer.py` (SMTP), et les fixtures `fake_captcha` (Turnstile), `fake_breach` (Have I Been Pwned) et `fake_google`. Aucun test ne doit appeler Yahoo, Anthropic, un vrai serveur de mail, Google, Cloudflare ni Have I Been Pwned.
 - **Mise en page** : thème clair, bureau uniquement. L'app est utilisable dès 1024 px, sur deux colonnes à partir de `xl` (1280 px). Les enfants d'une grille ont besoin de `min-w-0`. Toujours vérifier qu'aucune carte n'est coupée (les cartes shadcn ont `overflow-hidden`).
 - **Titres** : un seul `h1` par page. `CardTitle` rend un `h2`, un sous-titre dans une carte est un `h3`.
-- **Flux Git** : une branche par lot ou par sujet, et des PR ouvertes par l'utilisateur via des liens GitHub `compare` préremplis (`gh` n'est pas installé). Dépôt : https://github.com/gbtclement/PEA.
+- **Flux Git** : une branche par lot ou par sujet, et des PR ouvertes avec `gh pr create` (installé et connecté). Dépôt : https://github.com/gbtclement/PEA.
 
 ## Points d'attention
 

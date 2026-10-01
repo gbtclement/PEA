@@ -10,6 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.jobs.context import JobContext
+from app.jobs.privacy import build_pending_exports
 from app.jobs.forecasts import refresh_forecast_stats, refresh_forecasts, stats_are_stale
 from app.jobs.cleanup import purge_security_data
 from app.jobs.mail import send_pending_emails
@@ -113,6 +114,14 @@ def mail_job(ctx: JobContext) -> None:
         logging.getLogger(__name__).exception("Échec de la file d'envoi des mails")
 
 
+def exports_job(ctx: JobContext) -> None:
+    # Toutes les 15 s, comme la file des mails : pas de trace dans data_status.
+    try:
+        build_pending_exports(ctx)
+    except Exception:
+        logging.getLogger(__name__).exception("Échec de la préparation des exports")
+
+
 def cleanup_job(ctx: JobContext) -> None:
     run_job(ctx, "cleanup", purge_security_data)
 
@@ -134,6 +143,7 @@ def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> 
     for tier, minutes in intervals.items():
         scheduler.add_job(quotes_job, IntervalTrigger(minutes=minutes, timezone=tz), args=[ctx, tier],
                           id=f"quotes_t{tier}", **common)
+    scheduler.add_job(exports_job, IntervalTrigger(seconds=15, timezone=tz), args=[ctx], id="exports", **common)
     if ctx.mailer is not None:
         scheduler.add_job(mail_job, IntervalTrigger(seconds=5, timezone=tz), args=[ctx], id="emails", **common)
     else:

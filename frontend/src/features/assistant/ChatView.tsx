@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AssistantStatus } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
@@ -67,6 +68,10 @@ export function ChatView({ conversationId, securityId, securityName, onConversat
           Modèle : {status.data.model} · ce mois-ci : {usd(status.data.spent_usd)} $ sur {usd(status.data.limit_usd)} $
         </p>
       )}
+      <p className="text-center text-xs text-muted-foreground">
+        Vos questions sont envoyées à Anthropic (États-Unis) pour y répondre.{" "}
+        <Link className="underline" to="/confidentialite">En savoir plus</Link>
+      </p>
       <p className="text-center text-xs text-muted-foreground">Outil d'aide à la décision : ceci n'est pas un conseil en investissement.</p>
     </div>
   );

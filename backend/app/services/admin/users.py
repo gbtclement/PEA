@@ -7,8 +7,11 @@ from sqlalchemy.orm import Session
 
 from app.core.security import normalize_email
 from app.models import User
+from app.services.auth.codes import cancel_codes
+from app.services.auth.profile import LINKS_TO_OLD_ADDRESS
 from app.services.auth.sessions import revoke_user_sessions
 from app.services.mail.outbox import enqueue
+from app.services.privacy.erasure import erase_account
 from app.services.security_log import log_event
 
 PAGE_SIZE = 50
@@ -41,12 +44,18 @@ class UserPage:
     total: int
 
 
+def _like(q: str) -> str:
+    """Motif « contient » où % et _ tapés dans la recherche sont des caractères ordinaires."""
+    return "%" + q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+
+
 def list_users(db: Session, *, q: str, sort: str, order: str, page: int) -> UserPage:
     stmt = select(User)
     for word in q.lower().translate(_FOLD).split():  # chaque mot doit se trouver dans le mail, le prénom ou le nom
-        pattern = f"%{word}%"
-        stmt = stmt.where(or_(_fold(User.email).like(pattern), _fold(User.first_name).like(pattern),
-                              _fold(User.last_name).like(pattern)))
+        pattern = _like(word)
+        stmt = stmt.where(or_(_fold(User.email).like(pattern, escape="\\"),
+                              _fold(User.first_name).like(pattern, escape="\\"),
+                              _fold(User.last_name).like(pattern, escape="\\")))
     total = db.scalar(select(func.count()).select_from(stmt.subquery()))
     column = SORTS[sort]
     ordering = column.asc().nulls_last() if order == "asc" else column.desc().nulls_last()
@@ -55,7 +64,8 @@ def list_users(db: Session, *, q: str, sort: str, order: str, page: int) -> User
 
 
 def _admin_count(db: Session) -> int:
-    return db.scalar(select(func.count()).select_from(User).where(User.role == "admin"))
+    """Verrouille les lignes admin : deux admins qui se retirent le rôle en même temps ne passent pas tous les deux."""
+    return len(db.scalars(select(User.id).where(User.role == "admin").with_for_update()).all())
 
 
 def update_user(db: Session, *, actor: User, target: User, changes: dict, now: datetime) -> User:
@@ -79,6 +89,7 @@ def update_user(db: Session, *, actor: User, target: User, changes: dict, now: d
     if new_email:
         target.email = new_email
         target.email_verified_at = target.email_verified_at or now  # l'admin en prend la responsabilité
+        cancel_codes(db, target.id, LINKS_TO_OLD_ADDRESS, now)  # liens partis vers l'ancienne adresse
         changed.append("email")
     if not changed:
         return target
@@ -100,10 +111,4 @@ def delete_user(db: Session, *, actor: User, target: User, confirm_email: str, n
         raise AdminError(400, "self_delete", "Vous ne pouvez pas supprimer votre propre compte ici.")
     if normalize_email(confirm_email) != target.email:
         raise AdminError(400, "confirm_mismatch", "L'adresse retapée ne correspond pas au compte.")
-    email, first_name = target.email, target.first_name
-    # Écrite avant la suppression : son user_id passera à NULL (ON DELETE SET NULL), l'acteur reste.
-    log_event(db, "admin_user_deleted", now=now, user_id=target.id, actor_id=actor.id)
-    db.flush()
-    db.delete(target)  # les données liées suivent par ON DELETE CASCADE
-    db.flush()
-    enqueue(db, "account_deleted", to=email, user_id=None, context={"first_name": first_name})
+    erase_account(db, target, now=now, actor=actor)

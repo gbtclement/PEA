@@ -1,28 +1,28 @@
 import { usePageMeta } from "@/seo/usePageMeta";
+import { CGU, LEGAL_UPDATED, NOTICE, PRIVACY } from "./content";
 
 type Kind = "cgu" | "confidentialite" | "mentions-legales";
 
-const PAGES: Record<Kind, { title: string; description: string }> = {
-  cgu: { title: "Conditions générales d'utilisation", description: "Les règles d'utilisation de PEA Radar." },
-  confidentialite: { title: "Politique de confidentialité", description: "Comment PEA Radar protège vos données personnelles." },
-  "mentions-legales": { title: "Mentions légales", description: "Éditeur et hébergeur de PEA Radar." },
+const PAGES: Record<Kind, { title: string; description: string; Body: () => React.JSX.Element }> = {
+  cgu: { title: "Conditions générales d'utilisation", description: "Les règles d'utilisation de PEA Radar.", Body: CGU },
+  confidentialite: { title: "Politique de confidentialité", description: "Comment PEA Radar protège vos données personnelles.", Body: PRIVACY },
+  "mentions-legales": { title: "Mentions légales", description: "Éditeur et hébergeur de PEA Radar.", Body: NOTICE },
 };
 
-/** Pages légales provisoires : le texte définitif sera rédigé avant l'ouverture publique. */
 export function LegalPage({ kind }: { kind: Kind }) {
-  const page = PAGES[kind];
-  usePageMeta({ title: page.title, description: page.description });
+  const { title, description, Body } = PAGES[kind];
+  usePageMeta({ title, description });
   return (
-    <article className="max-w-3xl space-y-4">
-      <h1 className="text-2xl font-semibold">{page.title}</h1>
-      <p className="text-sm text-muted-foreground">Version provisoire : le texte complet sera publié avant l'ouverture du site.</p>
-      {kind === "cgu" && (
-        <p className="text-sm">
-          PEA Radar est un outil d'aide à la décision et d'apprentissage, pas un conseil en investissement. Les informations
-          affichées (cours différés, scores, prévisions, éligibilité au PEA) peuvent être incomplètes ou inexactes : vérifiez-les
-          auprès de votre banque avant tout ordre.
-        </p>
-      )}
+    <article className="max-w-3xl space-y-6 text-sm leading-relaxed">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold">{title}</h1>
+        <p className="text-muted-foreground">Dernière mise à jour : {LEGAL_UPDATED}</p>
+      </header>
+      <p role="note" className="rounded-md border border-amber-300 bg-amber-50 p-3 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        Brouillon : les passages entre crochets restent à compléter, et une relecture par un professionnel est conseillée avant
+        l'ouverture publique.
+      </p>
+      <Body />
     </article>
   );
 }

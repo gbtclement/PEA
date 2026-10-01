@@ -15,6 +15,7 @@ class MeOut(BaseModel):
     has_password: bool
     has_google: bool
     has_premium: bool  # Premium ou admin : accès à l'assistant
+    terms_outdated: bool  # CGU en vigueur pas encore acceptées : le frontend affiche /accepter-cgu
 
 
 class NoticeOut(BaseModel):
@@ -80,6 +81,7 @@ class GooglePendingOut(BaseModel):
     email: str
     first_name: str
     last_name: str
+    suite: str = "/"
 
 
 class GoogleCompleteIn(BaseModel):

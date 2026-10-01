@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta
 from enum import StrEnum
 
@@ -23,6 +24,12 @@ class CodeCheck(StrEnum):
 
 def _cancel_pending(db: Session, user: User, purpose: str, now: datetime) -> None:
     db.execute(update(EmailCode).where(EmailCode.user_id == user.id, EmailCode.purpose == purpose,
+                                       EmailCode.used_at.is_(None)).values(used_at=now))
+
+
+def cancel_codes(db: Session, user_id: uuid.UUID, purposes: tuple[str, ...], now: datetime) -> None:
+    """Rend inutilisables les codes et liens encore valables (ex. lien de réinitialisation envoyé à l'ancienne adresse)."""
+    db.execute(update(EmailCode).where(EmailCode.user_id == user_id, EmailCode.purpose.in_(purposes),
                                        EmailCode.used_at.is_(None)).values(used_at=now))
 
 

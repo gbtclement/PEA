@@ -1,7 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const PRIVATE = ["/portefeuille", "/assistant", "/reglages"];
-const NOINDEX = [...PRIVATE, "/previsions", "/page-inconnue", "/verifier-email?adresse=a%40b.fr", "/mot-de-passe-oublie"];
+const NOINDEX = [...PRIVATE, "/previsions", "/page-inconnue", "/verifier-email?adresse=a%40b.fr", "/mot-de-passe-oublie",
+                 "/accepter-cgu"];
 const AUTH = ["/connexion", "/inscription"];
 
 async function headings(page: Page) {
