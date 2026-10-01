@@ -157,3 +157,11 @@ def make_ctx(session_factory):
         )
 
     return _make
+
+
+@pytest.fixture
+def app_secret(monkeypatch):
+    """Clé de signature des liens (désinscription) : vide par défaut en test."""
+    from app.core.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "app_secret", "secret-de-test")

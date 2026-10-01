@@ -17,6 +17,7 @@ export const routes: RouteObject[] = [
   { path: "/finaliser-inscription", lazy: async () => ({ Component: (await import("@/features/auth/FinishSignUpPage")).FinishSignUpPage }) },
   { path: "/reinitialiser", lazy: async () => ({ Component: (await import("@/features/auth/ResetPasswordPage")).ResetPasswordPage }) },
   { path: "/accepter-cgu", lazy: async () => ({ Component: (await import("@/features/auth/AcceptTermsPage")).AcceptTermsPage }) },
+  { path: "/desinscription", lazy: async () => ({ Component: (await import("@/features/auth/UnsubscribePage")).UnsubscribePage }) },
   { path: "/ce-n-etait-pas-moi", lazy: async () => ({ Component: (await import("@/features/auth/NotMePage")).NotMePage }) },
   {
     path: "/",

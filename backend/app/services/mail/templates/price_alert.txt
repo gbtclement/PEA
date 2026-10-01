@@ -1,0 +1,8 @@
+Bonjour {{ first_name }},
+
+{{ name }} est passé {{ "au-dessus" if direction == "above" else "en dessous" }} de votre seuil de {{ target|price(currency) }} : dernier cours {{ price|price(currency) }}.
+{{ base_url }}/titres/{{ security_id }}
+
+L'alerte est maintenant désactivée. Vous pouvez la réarmer dans vos réglages.
+
+{% include "_footer.txt" %}

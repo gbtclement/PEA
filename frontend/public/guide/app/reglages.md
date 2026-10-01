@@ -22,9 +22,28 @@ La liste de vos connexions ouvertes : appareil, navigateur et dernière activit�
 
 ?> Un appareil inconnu dans la liste ? Déconnectez-le, puis changez votre mot de passe.
 
+## Notifications
+
+Carte **Notifications par mail** : un interrupteur par mail, enregistré dès que vous cliquez.
+
+| Mail | Par défaut | Quand |
+|---|---|---|
+| **Forte variation d'un titre suivi** | Activé | Pendant la séance, quand un favori ou une position bouge d'au moins le seuil choisi. Une fois par titre et par jour |
+| **Alertes de prix** | Activé | Quand un titre franchit le prix choisi sur sa fiche |
+| **Récap du soir** | Désactivé | À 18 h 45 les jours de bourse : valeur du portefeuille, variation du jour, hausses et baisses de vos favoris |
+| **Récap de la semaine** | Désactivé | Le samedi à 9 h : performance, entrées et sorties du top 10, prévisions vérifiées |
+| **Rappel du compteur d'ordres** | Activé | Les 1er octobre, novembre et décembre, s'il vous manque des ordres pour éviter les frais de votre banque |
+| **Changement de score d'un favori** | Désactivé | Après la séance : entrée ou sortie du top 10, ou score qui bouge d'au moins 10 points |
+
+- **Seuil de forte variation** : de 1 à 50 %, 5 % par défaut. Il est enregistré quand vous quittez le champ ; une virgule est acceptée (« 3,5 »).
+- **Alertes de prix** : la liste de vos alertes, créées depuis la [fiche d'un titre](app/fiche-titre.md). Une alerte déclenchée affiche sa date : **Réarmer** la relance après vous avoir laissé choisir un nouveau prix (le cours est souvent resté près de l'ancien seuil), **Supprimer** l'efface. 50 alertes actives au plus.
+- **Ne plus recevoir ce mail** : chaque notification se termine par ce lien. Il marche sans vous connecter : vous choisissez d'arrêter ce mail seulement, ou toutes les notifications.
+
+Les mails liés à votre compte (codes, alertes de sécurité) sont toujours envoyés.
+
 ## Mes données
 
-- **Exporter mes données** : cliquez, puis attendez le mail « Vos données PEA Radar sont prêtes » (en général moins d'une minute). Un lien **Télécharger mes données** apparaît dans la carte : c'est un fichier JSON, lisible par un autre logiciel. Il reste disponible **7 jours** ; un export par jour au plus.
+- **Exporter mes données** : cliquez, puis attendez le mail « Vos données PEA Radar sont prêtes » (en général moins d'une minute). Un lien **Télécharger mes données** apparaît dans la carte : c'est un fichier JSON, lisible par un autre logiciel. Il reste disponible **7 jours** ; un export par jour au plus. Si un export échoue, un message le dit et vous pouvez en demander un nouveau tout de suite.
 - **Supprimer mon compte** : retapez votre adresse mail et votre mot de passe, puis cliquez sur **Supprimer définitivement**. Votre compte, vos ordres, vos favoris, vos conversations et vos réglages sont effacés tout de suite, sans retour possible.
 
 Si vous vous connectez uniquement avec Google, vous n'avez pas de mot de passe : cliquez sur **Se reconnecter avec Google**, puis confirmez la suppression dans les **5 minutes**.

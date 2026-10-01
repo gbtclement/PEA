@@ -47,6 +47,7 @@ function ExportSection() {
           <span className="text-muted-foreground"> · disponible jusqu'au {day(row.expires_at!)}</span>
         </p>
       )}
+      {row?.status === "failed" && <p role="alert" className="text-sm text-destructive">L'export précédent a échoué : vous pouvez en demander un nouveau.</p>}
       <p className="text-sm text-muted-foreground">
         Un fichier JSON avec votre profil, vos réglages, vos ordres, vos favoris et vos conversations. Vous recevrez un mail quand il
         sera prêt.

@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
-from app.models import Security, SecurityScore, User
+from app.models import Security, SecurityQuote, SecurityScore, User
 from app.services.auth.accounts import TERMS_VERSION
 
 
@@ -68,3 +68,12 @@ def make_user(
     db.add(user)
     db.flush()
     return user
+
+
+def make_quote(db: Session, security: Security, price: float, *, change_pct: float | None = None,
+               previous_close: float | None = None, as_of: datetime | None = None) -> SecurityQuote:
+    quote = SecurityQuote(security_id=security.id, price=price, change_pct=change_pct, previous_close=previous_close,
+                          volume=1000, as_of=as_of or datetime.now(UTC))
+    db.merge(quote)
+    db.flush()
+    return db.get(SecurityQuote, security.id)

@@ -8,6 +8,8 @@ export type JobStatus = components["schemas"]["JobStatus"];
 export type Me = components["schemas"]["MeOut"];
 export type AuthConfig = components["schemas"]["AuthConfigOut"];
 export type DataExport = components["schemas"]["ExportOut"];
+export type NotificationPrefs = components["schemas"]["NotificationPrefsOut"];
+export type PriceAlert = components["schemas"]["PriceAlertOut"];
 
 export class ApiError extends Error {
   readonly status: number;

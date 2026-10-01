@@ -8,6 +8,7 @@ Le nom, le ticker, la place de cotation, le cours, la variation du jour et le ba
 
 - ⭐ **Favori** : le titre apparaît dans le filtre « favoris », et son cours est rafraîchi en priorité (toutes les minutes pendant la séance).
 - ✨ **Demander à l'IA** : ouvre l'assistant avec ce titre comme sujet et des questions prêtes.
+- 🔔 **Créer une alerte** : recevez un mail quand le cours passe **au-dessus** ou **en dessous** d'un prix que vous choisissez, dans la devise du titre (le cours actuel est proposé). Le mail part une seule fois, puis l'alerte se désactive : retrouvez-la dans les [Réglages](app/reglages.md#notifications) pour la réarmer ou la supprimer. Il faut être connecté.
 - **+ J'ai acheté** : ouvre le formulaire d'ordre déjà rempli avec ce titre (voir [Portefeuille](app/portefeuille.md)).
 
 ## Graphique

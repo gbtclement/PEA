@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
-from app.models import Favorite, SecurityScore
+from app.models import Favorite, PriceAlert, SecurityScore
 
 
 def upsert_score(session: Session, security_id: int, values: dict) -> None:
@@ -39,3 +39,7 @@ def sector_median_pe(pe_by_sector: dict[str | None, list[float]]) -> dict[str | 
         if sector is not None and len(values) >= 3:
             medians[sector] = median(values)
     return medians
+
+
+def alert_security_ids(session: Session) -> set[int]:
+    return set(session.scalars(select(PriceAlert.security_id).where(PriceAlert.active.is_(True))))

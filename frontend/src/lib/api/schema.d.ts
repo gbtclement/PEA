@@ -419,6 +419,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Notification Prefs */
+        get: operations["read_notification_prefs_api_me_notifications_get"];
+        /**
+         * Write Notification Prefs
+         * @description Ouverte même avec des CGU périmées : se retirer des mails reste toujours possible (spec 6.4).
+         */
+        put: operations["write_notification_prefs_api_me_notifications_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/price-alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Price Alerts */
+        get: operations["list_price_alerts_api_me_price_alerts_get"];
+        put?: never;
+        /** Create Price Alert */
+        post: operations["create_price_alert_api_me_price_alerts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/price-alerts/{alert_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Price Alert */
+        delete: operations["delete_price_alert_api_me_price_alerts__alert_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Price Alert */
+        patch: operations["update_price_alert_api_me_price_alerts__alert_id__patch"];
+        trace?: never;
+    };
+    "/api/unsubscribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check Unsubscribe Link */
+        get: operations["check_unsubscribe_link_api_unsubscribe_get"];
+        put?: never;
+        /**
+         * Unsubscribe
+         * @description Lien du mail ou clic unique du service de mail (RFC 8058) : pas de session, le jeton signé suffit.
+         */
+        post: operations["unsubscribe_api_unsubscribe_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/users": {
         parameters: {
             query?: never;
@@ -1642,6 +1720,40 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** NotificationPrefsIn */
+        NotificationPrefsIn: {
+            /** Price Move */
+            price_move: boolean;
+            /** Price Alert */
+            price_alert: boolean;
+            /** Daily Recap */
+            daily_recap: boolean;
+            /** Weekly Recap */
+            weekly_recap: boolean;
+            /** Order Reminder */
+            order_reminder: boolean;
+            /** Score Change */
+            score_change: boolean;
+            /** Move Threshold Pct */
+            move_threshold_pct: number;
+        };
+        /** NotificationPrefsOut */
+        NotificationPrefsOut: {
+            /** Price Move */
+            price_move: boolean;
+            /** Price Alert */
+            price_alert: boolean;
+            /** Daily Recap */
+            daily_recap: boolean;
+            /** Weekly Recap */
+            weekly_recap: boolean;
+            /** Order Reminder */
+            order_reminder: boolean;
+            /** Score Change */
+            score_change: boolean;
+            /** Move Threshold Pct */
+            move_threshold_pct: number;
+        };
         /** OrderIn */
         OrderIn: {
             /** Security Id */
@@ -1750,6 +1862,58 @@ export interface components {
             gain_pct: number | null;
             /** Weight */
             weight: number;
+        };
+        /** PriceAlertIn */
+        PriceAlertIn: {
+            /** Security Id */
+            security_id: number;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "above" | "below";
+            /** Price */
+            price: number;
+        };
+        /** PriceAlertOut */
+        PriceAlertOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Security Id */
+            security_id: number;
+            /** Symbol */
+            symbol: string;
+            /** Name */
+            name: string;
+            /** Currency */
+            currency: string;
+            /** Direction */
+            direction: string;
+            /** Price */
+            price: number;
+            /** Current Price */
+            current_price: number | null;
+            /** Active */
+            active: boolean;
+            /** Triggered At */
+            triggered_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** PriceAlertUpdate */
+        PriceAlertUpdate: {
+            /** Direction */
+            direction?: ("above" | "below") | null;
+            /** Price */
+            price?: number | null;
+            /** Active */
+            active?: boolean | null;
         };
         /** ProfileIn */
         ProfileIn: {
@@ -2197,6 +2361,13 @@ export interface components {
             real: {
                 [key: string]: components["schemas"]["RealTrackOut"] | null;
             };
+        };
+        /** UnsubscribeOut */
+        UnsubscribeOut: {
+            /** Kind */
+            kind: string | null;
+            /** Label */
+            label: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -2997,6 +3168,240 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_notification_prefs_api_me_notifications_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPrefsOut"];
+                };
+            };
+        };
+    };
+    write_notification_prefs_api_me_notifications_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPrefsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPrefsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_price_alerts_api_me_price_alerts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceAlertOut"][];
+                };
+            };
+        };
+    };
+    create_price_alert_api_me_price_alerts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriceAlertIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceAlertOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_price_alert_api_me_price_alerts__alert_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_price_alert_api_me_price_alerts__alert_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriceAlertUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceAlertOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_unsubscribe_link_api_unsubscribe_get: {
+        parameters: {
+            query: {
+                jeton: string;
+                type?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnsubscribeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsubscribe_api_unsubscribe_post: {
+        parameters: {
+            query: {
+                jeton: string;
+                type?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoticeOut"];
                 };
             };
             /** @description Validation Error */

@@ -1,17 +1,22 @@
 """Durées de conservation (spec 6.5), appliquées chaque nuit par la tâche « cleanup »."""
 from datetime import datetime, timedelta
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
-from app.models import AuthSession, DataExport, EmailCode, EmailLog, User
+from app.models import AuthSession, DataExport, EmailCode, EmailLog, MoveNotice, ScoreSnapshot, User
 from app.services.mail.outbox import enqueue
-from app.services.privacy.erasure import erase_account
+from app.services.market_calendar import PARIS
+from app.services.privacy.erasure import email_fingerprint, erase_account
 
 UNVERIFIED_TTL = timedelta(days=7)
 EMAIL_LOG_TTL = timedelta(days=90)
 INACTIVITY = timedelta(days=3 * 365)
 INACTIVITY_GRACE = timedelta(days=30)
+SNAPSHOT_TTL = timedelta(days=14)
+MOVE_NOTICE_TTL = timedelta(days=7)
+PENDING_EXPORT_TIMEOUT = timedelta(hours=1)
+STUCK_ACCOUNT_DELETED = timedelta(days=7)
 
 
 def _activity():
@@ -22,14 +27,22 @@ def _activity():
 
 def run_retention(db: Session, now: datetime) -> dict[str, int]:
     """Supprime ce qui a dépassé sa durée de conservation. Pas de commit ici."""
+    db.execute(update(DataExport).where(DataExport.status == "pending",
+                                        DataExport.created_at < now - PENDING_EXPORT_TIMEOUT).values(status="failed"))
+    for row in db.scalars(select(EmailLog).where(EmailLog.kind == "account_deleted", EmailLog.status == "pending",
+                                                 EmailLog.created_at < now - STUCK_ACCOUNT_DELETED)):
+        row.recipient, row.status = email_fingerprint(row.recipient), "failed"  # sans SMTP, l'adresse ne reste pas
     counts = {
         "unverified": db.execute(delete(User).where(User.email_verified_at.is_(None), User.role != "admin",
                                                     User.created_at < now - UNVERIFIED_TTL)).rowcount,
         "sessions": db.execute(delete(AuthSession).where(AuthSession.expires_at < now)).rowcount,
         "codes": db.execute(delete(EmailCode).where(EmailCode.expires_at < now)).rowcount,
         "exports": db.execute(delete(DataExport).where(DataExport.expires_at < now)).rowcount,
-        "email_log": db.execute(delete(EmailLog).where(EmailLog.created_at < now - EMAIL_LOG_TTL,
-                                                       EmailLog.status != "pending")).rowcount,
+        "email_log": db.execute(delete(EmailLog).where(EmailLog.created_at < now - EMAIL_LOG_TTL)).rowcount,
+        "score_snapshots": db.execute(delete(ScoreSnapshot).where(
+            ScoreSnapshot.day < now.astimezone(PARIS).date() - SNAPSHOT_TTL)).rowcount,
+        "move_notices": db.execute(delete(MoveNotice).where(
+            MoveNotice.day < now.astimezone(PARIS).date() - MOVE_NOTICE_TTL)).rowcount,
     }
     return counts | _inactivity(db, now)
 

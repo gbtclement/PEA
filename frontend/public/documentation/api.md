@@ -48,8 +48,16 @@ Détails dans [Comptes utilisateurs](comptes.md).
 | DELETE | `/me/sessions` | Déconnecter tous les autres appareils |
 | POST | `/me/accept-terms` | `{accept_terms: true}` : accepter la version en vigueur des CGU. Renvoie le compte |
 | POST | `/me/export` | Demander l'export de ses données (`202`, `{id, status, created_at, expires_at}`). Préparé par le worker, mail quand il est prêt |
-| GET | `/me/export` | Le dernier export (`pending` ou `ready`), ou `null` |
+| GET | `/me/export` | Le dernier export (`pending`, `ready` ou `failed`), ou `null` |
 | GET | `/me/export/{id}` | Télécharger le fichier JSON, 7 jours. `404` après, ou pour un autre compte |
+| GET | `/me/notifications` | Préférences : `{price_move, price_alert, daily_recap, weekly_recap, order_reminder, score_change, move_threshold_pct}` (valeurs par défaut si jamais enregistrées) |
+| PUT | `/me/notifications` | Les mêmes champs : enregistre les préférences. `move_threshold_pct` de 1 à 50 |
+| GET | `/me/price-alerts` | Alertes de prix : `[{id, security_id, symbol, name, currency, direction, price, current_price, active, triggered_at, created_at}]` |
+| POST | `/me/price-alerts` | `{security_id, direction: "above"|"below", price}` : créer une alerte (`201`). Prix dans la devise du titre |
+| PATCH | `/me/price-alerts/{id}` | `{active: true, direction, price}` : réarmer une alerte déclenchée, avec un nouveau seuil si besoin (mêmes contrôles qu'à la création) |
+| DELETE | `/me/price-alerts/{id}` | Supprimer une alerte (`204`) |
+| GET | `/unsubscribe?jeton=&type=` | **Sans connexion.** Vérifie le lien d'un mail : `{kind, label}`, ou `404 bad_link`. Ouverte dans un navigateur (`Accept: text/html`, lien `List-Unsubscribe`) : `303` vers la page `/desinscription`, sans rien changer |
+| POST | `/unsubscribe?jeton=&type=` | **Sans connexion.** Désactive ce type de mail, ou toutes les notifications sans `type`. Aussi appelée par la messagerie (`List-Unsubscribe` en un clic) |
 | DELETE | `/me` | `{confirm_email, password}` : supprimer son compte et toutes ses données. `204` et cookies effacés. `password` est ignoré pour un compte Google sans mot de passe, qui doit s'être reconnecté depuis moins de 5 min |
 
 Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_not_verified` et des erreurs de code ou de lien :
@@ -70,6 +78,9 @@ Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_no
 | `reauth_required` | 403 | `DELETE /me`, compte Google sans mot de passe : se reconnecter avec Google, puis confirmer dans les 5 min |
 | `export_pending` | 409 | Un export est déjà en préparation |
 | `export_limit` | 429 | Un export par jour au plus |
+| `alert_limit` | 400 | 50 alertes de prix actives au plus |
+| `already_reached` | 400 | Le cours a déjà franchi le seuil de l'alerte |
+| `bad_link` | 404 | Lien de désinscription faux ou abîmé |
 | `email_taken` | 409 | Adresse prise par un autre compte : entre la demande et la validation du code, ou choisie par l'admin |
 | `self_demotion` | 400 | Un admin retire son propre rôle d'administrateur |
 | `last_admin` | 400 | Le dernier admin perdrait son rôle |

@@ -33,6 +33,19 @@ Mesures de sécurité communes à tous les traitements : HTTPS, mots de passe ha
 | **Conservation** | Jusqu'à la suppression du compte, ou 3 ans sans connexion |
 | **Sécurité** | Chaque requête filtre sur le compte connecté ; suppression en cascade avec le compte |
 
+## Notifications par mail
+
+| | |
+|---|---|
+| **Finalité** | Prévenir le membre des mouvements de ses titres et de son compteur d'ordres (notifications N1 à N6) |
+| **Base légale** | Exécution du contrat (CGU), avec opposition possible à tout moment : préférences dans les Réglages, lien « Ne plus recevoir ce mail » en un clic |
+| **Personnes concernées** | Membres inscrits |
+| **Données** | Préférences de notification, alertes de prix, favoris et positions, titres déjà signalés |
+| **Destinataires** | Brevo (envoi SMTP) |
+| **Transferts hors UE** | Aucun annoncé par Brevo (hébergement dans l'UE) [À VÉRIFIER] |
+| **Conservation** | Jusqu'à la suppression du compte ; titres déjà signalés : 7 jours |
+| **Sécurité** | Lien de désinscription signé (jamais stocké) ; mails envoyés seulement aux adresses validées |
+
 ## Assistant IA
 
 | | |
@@ -50,13 +63,13 @@ Mesures de sécurité communes à tous les traitements : HTTPS, mots de passe ha
 
 | | |
 |---|---|
-| **Finalité** | Envoyer les mails du compte : codes, liens, alertes de sécurité, export prêt, suppression, avertissement d'inactivité |
+| **Finalité** | Envoyer les mails du compte (codes, liens, alertes de sécurité, export prêt, suppression, avertissement d'inactivité) et les notifications N1 à N6 choisies par le membre |
 | **Base légale** | Exécution du contrat (CGU) ; intérêt légitime pour les alertes de sécurité |
 | **Personnes concernées** | Membres, et personnes en cours d'inscription |
 | **Données** | Adresse mail, prénom, type et contenu du mail, statut d'envoi |
 | **Destinataires** | Brevo (envoi SMTP) |
 | **Transferts hors UE** | Aucun annoncé par Brevo (hébergement dans l'UE) [À VÉRIFIER] |
-| **Conservation** | Historique des mails : 90 jours. Le contenu des mails à code ou à lien est effacé dès l'envoi. Après suppression du compte, l'adresse est remplacée par une empreinte |
+| **Conservation** | Historique des mails : 90 jours. Le contenu des mails à code ou à lien est effacé dès l'envoi. Après suppression du compte, l'adresse est remplacée par une empreinte et le contenu des mails est effacé |
 | **Sécurité** | Connexion SMTP chiffrée ; limite d'envois par adresse et par IP |
 
 ## Sécurité et prévention des abus

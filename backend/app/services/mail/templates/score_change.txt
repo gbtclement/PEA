@@ -1,0 +1,9 @@
+Bonjour {{ first_name }},
+
+Le score de certains de vos favoris a changé après la séance :
+
+{% for item in items %}
+- {{ item.name }} : {% if item.change == "entered" %}entre dans le top 10{% elif item.change == "left" %}sort du top 10{% elif item.change == "up" %}gagne {{ item.after - item.before }} points{% else %}perd {{ item.before - item.after }} points{% endif %} ({{ item.before }} → {{ item.after }})
+{% endfor %}
+
+{% include "_footer.txt" %}

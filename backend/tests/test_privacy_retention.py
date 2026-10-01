@@ -5,8 +5,9 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.models import AuthSession, DataExport, EmailCode, EmailLog, User
 from app.services.auth.sessions import open_session, resolve_session
+from app.services.market_calendar import PARIS
 from app.services.privacy.retention import run_retention
-from tests.factories import make_user
+from tests.factories import make_security, make_user
 
 NOW = datetime(2029, 12, 1, 3, 30, tzinfo=UTC)
 
@@ -81,3 +82,19 @@ def test_using_a_remembered_session_counts_as_activity(db):
     resolve_session(db, new.token, now=NOW, settings=get_settings())
     db.expire_all()
     assert db.get(User, user.id).last_seen_at == NOW
+
+
+def test_old_score_snapshots_and_move_notices_are_purged(db, user):
+    from app.models import MoveNotice, ScoreSnapshot
+
+    security = make_security(db, "MC.PA")
+    today = NOW.astimezone(PARIS).date()
+    db.add_all([
+        ScoreSnapshot(day=today - timedelta(days=15), security_id=security.id, total=50),
+        ScoreSnapshot(day=today - timedelta(days=13), security_id=security.id, total=50),
+        MoveNotice(user_id=user.id, security_id=security.id, day=today - timedelta(days=8)),
+        MoveNotice(user_id=user.id, security_id=security.id, day=today - timedelta(days=6)),
+    ])
+    db.flush()
+    counts = run_retention(db, NOW)
+    assert (counts["score_snapshots"], counts["move_notices"]) == (1, 1)

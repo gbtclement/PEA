@@ -5,7 +5,7 @@ Application web personnelle, en local, pour un investisseur débutant qui a un P
 C'est un outil d'aide à la décision, pas un conseil en investissement : garder cet avertissement partout où l'app recommande quelque chose.
 
 - Spécification : `docs/superpowers/specs/2026-09-26-pea-radar-design.md`. C'est la référence en cas de doute.
-- Comptes utilisateurs : `docs/superpowers/specs/2026-09-28-comptes-utilisateurs-design.md` (étapes `comptes-socle`, `comptes-securite`, `comptes-admin` et `comptes-rgpd` faites, suivante : `notifications`).
+- Comptes utilisateurs : `docs/superpowers/specs/2026-09-28-comptes-utilisateurs-design.md` (étapes `comptes-socle` à `notifications` faites ; plus tard : Premium payant avec Stripe).
 - Plans des lots : `docs/superpowers/plans/`.
 - Utilisateur : francophone et débutant en bourse comme en code. Il lui faut des explications simples, en français.
 
@@ -26,7 +26,7 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
   - Les calculs (indicateurs, score, frais, positions, éligibilité) sont des fonctions pures, testées sans base ni réseau.
 - **Contenu des dossiers** :
   - `core/` : configuration (`config.py`, surchargée par variables d'environnement), base de données, `security.py` (Argon2, empreintes de jetons), `current_user.py`.
-  - `services/auth/` : comptes, codes et liens par mail, sessions, appareils connus, reprise par l'admin (`bootstrap.py`), Google (`google.py`), Turnstile (`captcha.py`), fuites de mots de passe (`breach.py`). `services/ratelimit.py` (limites anti-abus) et `services/security_log.py` (journal `security_events`). `services/mail/` : rendu des mails et file d'envoi (`enqueue`), envoyée par la tâche `jobs/mail.py` toutes les 5 s.
+  - `services/auth/` : comptes, codes et liens par mail, sessions, appareils connus, reprise par l'admin (`bootstrap.py`), Google (`google.py`), Turnstile (`captcha.py`), fuites de mots de passe (`breach.py`). `services/ratelimit.py` (limites anti-abus) et `services/security_log.py` (journal `security_events`). `services/mail/` : rendu des mails et file d'envoi (`enqueue`), envoyée par la tâche `jobs/mail.py` toutes les 5 s. `services/notifications/` : notifications N1 à N6 (préférences, jeton de désinscription signé, `notify()`), tâches dans `jobs/notifications.py`.
   - `models/` : SQLAlchemy 2 (API synchrone). Les migrations sont dans `backend/alembic/versions`.
   - `providers/` : `yahoo.py` (yfinance) et `euronext.py`, derrière les interfaces `providers/base.py`.
   - `jobs/` : tâches planifiées du worker :
@@ -71,7 +71,7 @@ docker compose up -d --build
 
 # Backend de dev (code monté, rechargement auto, API sur :8000, migrations appliquées au démarrage)
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db api worker
-docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api pytest -q        # ~600 tests, base pea_radar_test
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api pytest -q        # ~660 tests, base pea_radar_test
 docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api alembic revision --autogenerate -m "..."
 docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -T api alembic upgrade head
 
@@ -82,7 +82,7 @@ docker compose exec -T api python -m app.cli ensure-user --email … --password 
 # Frontend
 cd frontend && npm install
 npm run dev          # :5180, proxy /api et fichiers SEO vers :8000
-npm test             # Vitest (~190 tests)
+npm test             # Vitest (~200 tests)
 npx tsc -b           # vérification des types
 npm run build
 npm run e2e          # Playwright contre http://localhost:8095 : reconstruire web et api avant (COOKIE_SECURE=false, mails vers Mailpit : si .env vise Brevo, voir docker-compose.e2e.yml)
@@ -103,6 +103,7 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
   - les nouvelles erreurs d'API renvoient `{"detail": {"code", "message"}}` ;
   - ne **jamais** stocker un jeton en clair (session, code, lien) : seulement son empreinte (`token_hash`) ;
   - `enqueue()` ne fait jamais de commit, et l'API n'envoie jamais un mail elle-même : c'est le worker ;
+  - une notification N1 à N6 passe uniquement par `notify()` (`services/notifications/send.py`), jamais par `enqueue()` directement ;
   - un compte se supprime **uniquement** par `erase_account()` (`services/privacy/erasure.py`) : titulaire, admin ou inactivité ;
   - les durées de conservation sont dans `services/privacy/retention.py` (tâche nocturne `cleanup`) : toute nouvelle donnée personnelle y reçoit la sienne, et une ligne dans le registre (`frontend/public/documentation/registre.md`) ;
   - changer le texte des CGU oblige à changer `TERMS_VERSION` (`core/terms.py`) et `LEGAL_UPDATED` (`features/legal/content.tsx`).

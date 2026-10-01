@@ -223,6 +223,6 @@ def auth_config(google: GoogleClient | None = Depends(get_google_client)) -> Aut
 @router.get("/admin-check", status_code=204)
 def admin_check(user: User | None = Depends(get_optional_user)) -> Response:
     """Pour `auth_request` de nginx (/documentation/) : 204 pour un admin connecté, 401 sinon."""
-    if user is None or user.role != "admin":
+    if user is None or user.role != "admin" or user.terms_outdated:
         return Response(status_code=401)
     return Response(status_code=204)

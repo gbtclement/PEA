@@ -7,6 +7,7 @@ vi.mock("./ProfileCard", () => ({ ProfileCard: () => null }));
 vi.mock("./PasswordCard", () => ({ PasswordCard: () => null }));
 vi.mock("./EmailCard", () => ({ EmailCard: () => null }));
 vi.mock("./DevicesCard", () => ({ DevicesCard: () => null }));
+vi.mock("./NotificationsCard", () => ({ NotificationsCard: () => null }));
 afterEach(() => vi.unstubAllGlobals());
 
 const SETTINGS = { min_orders_per_year: 12, penalty_fee: 96, fee_grid: [{ up_to: null, rate: 0.0012 }] };

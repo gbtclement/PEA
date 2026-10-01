@@ -1,0 +1,24 @@
+Bonjour {{ first_name }},
+
+Voici votre récap de la séance du {{ day|day }}.
+
+{% if has_portfolio %}
+Valeur de votre portefeuille : {{ total_value|eur }}
+Variation du jour : {{ day_change|eur }} ({{ day_change_pct|pct }})
+
+{% endif %}
+{% if gainers %}
+Plus fortes hausses de vos favoris :
+{% for item in gainers %}
+- {{ item.name }} : {{ item.change_pct|pct }}
+{% endfor %}
+
+{% endif %}
+{% if losers %}
+Plus fortes baisses de vos favoris :
+{% for item in losers %}
+- {{ item.name }} : {{ item.change_pct|pct }}
+{% endfor %}
+
+{% endif %}
+{% include "_footer.txt" %}
