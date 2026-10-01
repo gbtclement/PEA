@@ -1,0 +1,5 @@
+{% extends "_layout.html" %}
+{% block body %}
+<p>Votre demande de résiliation est bien prise en compte. Vous gardez Premium jusqu'au {{ ends_on | day }} ; aucun autre prélèvement n'aura lieu.</p>
+<p>Vous changez d'avis ? Vous pouvez annuler la résiliation avant cette date : <a href="{{ manage_url }}" style="color:#4f46e5">Gérer mon abonnement</a>.</p>
+{% endblock %}

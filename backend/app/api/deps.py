@@ -7,6 +7,7 @@ from app.services.cache import TTLCache
 
 INTRADAY_CACHE = TTLCache(60)
 NEWS_CACHE = TTLCache(900)
+PLANS_CACHE = TTLCache(3600)  # prix Stripe (spec 3.1)
 
 
 @lru_cache
@@ -58,3 +59,10 @@ def get_google_client():
     if not (settings.google_client_id and settings.google_client_secret and settings.app_secret):
         return None
     return GoogleOIDC(settings.google_client_id, settings.google_client_secret)
+
+
+def get_billing_gateway():
+    """Stripe si les quatre variables sont renseignées, sinon None (spec 7) ; remplacé en test."""
+    from app.services.billing.stripe_gateway import gateway_from_settings
+
+    return gateway_from_settings(get_settings())

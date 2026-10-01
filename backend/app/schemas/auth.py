@@ -14,7 +14,8 @@ class MeOut(BaseModel):
     is_premium: bool
     has_password: bool
     has_google: bool
-    has_premium: bool  # Premium ou admin : accès à l'assistant
+    has_premium: bool  # admin, Premium offert ou abonnement actif : assistant et prévisions
+    premium_source: str  # admin | offered | subscription | none
     terms_outdated: bool  # CGU en vigueur pas encore acceptées : le frontend affiche /accepter-cgu
 
 

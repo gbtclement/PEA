@@ -1,0 +1,10 @@
+Bonjour {{ first_name }},
+
+Le dernier paiement de votre abonnement Premium n'est pas passé.
+
+Votre accès continue pendant que notre prestataire de paiement réessaie. Pour le garder, mettez à jour votre carte : {{ manage_url }}
+{% if period_end %}
+Période en cours jusqu'au {{ period_end | day }}.
+{% endif %}
+
+{% include "_footer.txt" %}

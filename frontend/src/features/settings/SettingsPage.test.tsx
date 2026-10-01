@@ -7,12 +7,14 @@ vi.mock("./ProfileCard", () => ({ ProfileCard: () => null }));
 vi.mock("./PasswordCard", () => ({ PasswordCard: () => null }));
 vi.mock("./EmailCard", () => ({ EmailCard: () => null }));
 vi.mock("./DevicesCard", () => ({ DevicesCard: () => null }));
+vi.mock("./NotificationsCard", () => ({ NotificationsCard: () => null }));
 afterEach(() => vi.unstubAllGlobals());
 
 const SETTINGS = { min_orders_per_year: 12, penalty_fee: 96, fee_grid: [{ up_to: null, rate: 0.0012 }] };
 
 test("modifie les obligations et la grille de frais", async () => {
   const fetchMock = mockFetch((url) => {
+    if (url === "/api/billing/subscription") return { body: { source: "none", status: null, interval: null, current_period_end: null, cancel_at_period_end: false, has_customer: false } };
     if (url === "/api/settings") return { body: { min_orders_per_year: 12, penalty_fee: 96, fee_grid: [{ up_to: 500, rate: 0.0048 }, { up_to: 1000, rate: 0.0018 }, { up_to: null, rate: 0.0012 }] } };
     return { body: { items: [], total: 0 } };
   });
@@ -34,7 +36,7 @@ test("modifie les obligations et la grille de frais", async () => {
 });
 
 test("les réglages ne montrent plus ni clé Claude ni corrections d'éligibilité, même à l'admin", async () => {
-  mockFetch((url) => ({ body: url === "/api/me" ? { ...ME, role: "admin" } : SETTINGS }));
+  mockFetch((url) => ({ body: url === "/api/me" ? { ...ME, role: "admin" } : url === "/api/billing/subscription" ? { source: "none", status: null, interval: null, current_period_end: null, cancel_at_period_end: false, has_customer: false } : SETTINGS }));
   renderWithProviders(<SettingsPage />);
   expect(await screen.findByRole("heading", { level: 1, name: "Réglages" })).toBeInTheDocument();
   expect(screen.queryByText(/clé API/i)).toBeNull();

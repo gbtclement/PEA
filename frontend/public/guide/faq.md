@@ -38,7 +38,23 @@ C'est possible : l'éligibilité est déduite du pays du siège, pas d'une liste
 
 ## Combien coûte l'assistant IA ?
 
-Il est réservé aux membres **Premium**, avec un budget par mois. Chaque question coûte en général quelques centimes ; le coût de chaque conversation et votre dépense du mois sont affichés. Voir [Assistant IA](app/assistant.md).
+Il est réservé aux membres **[Premium](app/premium.md)**, avec un budget par mois. Chaque question coûte en général quelques centimes ; le coût de chaque conversation et votre dépense du mois sont affichés. Voir [Assistant IA](app/assistant.md).
+
+## Premium est-il obligatoire ?
+
+Non. Presque tout PEA Radar est gratuit. Premium, payant, ajoute l'assistant IA et la liste des prévisions court terme. Voir [Premium](app/premium.md).
+
+## Comment résilier Premium ?
+
+Dans les **Réglages**, carte **Abonnement**, cliquez sur **Gérer mon abonnement**, puis résiliez dans l'espace client de Stripe. Voir [Premium](app/premium.md#gérer-ou-résilier).
+
+## Suis-je remboursé si je résilie ?
+
+Non : vous gardez Premium jusqu'à la fin de la période déjà payée (le mois ou l'année en cours), puis il s'arrête. Rien n'est prélevé ensuite.
+
+## PEA Radar voit-il ma carte bancaire ?
+
+Non. Le paiement se fait sur la page sécurisée de **Stripe**, notre prestataire de paiement : PEA Radar ne voit jamais votre numéro de carte.
 
 ## Je suis bloqué après plusieurs essais
 
@@ -52,12 +68,16 @@ Soit il fait moins de 12 caractères, soit il **apparaît dans des fuites de don
 
 Dans les **Réglages**, carte **Mes données** : **Exporter mes données** prépare un fichier avec tout ce que vous avez saisi, et **Supprimer mon compte** efface tout, immédiatement et définitivement. Voir [Réglages](app/reglages.md#mes-données). Le détail de ce qui est conservé, et combien de temps, est dans la [politique de confidentialité](/confidentialite ':ignore').
 
+## Comment ne plus recevoir un mail ?
+
+Cliquez sur **Ne plus recevoir ce mail** en bas du mail : pas besoin de vous connecter, vous choisissez d'arrêter ce mail seulement ou toutes les notifications. Vous pouvez aussi tout régler dans les **Réglages**, carte **Notifications par mail** (voir [Réglages](app/reglages.md#notifications)). Les mails liés à votre compte (code, alerte de sécurité) continuent d'arriver.
+
 ## Mes données sont-elles envoyées quelque part ?
 
 Tout reste sur l'ordinateur où tourne l'application. Seules exceptions :
 - les demandes de cours envoyées à la source de données ;
 - vos questions à l'assistant, envoyées à Anthropic avec les données que Claude consulte pour vous répondre ;
-- les mails du compte (code, lien, alertes), envoyés par un service d'envoi de mails ;
+- les mails du compte (code, lien, alertes) et les notifications que vous avez choisies, envoyés par un service d'envoi de mails ;
 - si vous utilisez **Continuer avec Google**, Google sait que vous vous connectez à PEA Radar ;
 - la case « Je ne suis pas un robot » est vérifiée par Cloudflare ;
 - pour savoir si un mot de passe a fuité, seuls les 5 premiers caractères de son empreinte partent vers le service Have I Been Pwned : jamais le mot de passe lui-même.

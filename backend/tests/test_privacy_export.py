@@ -68,3 +68,17 @@ def test_pending_export_cannot_be_downloaded(client):
 
 def test_latest_export_is_null_at_first(client):
     assert client.get("/api/me/export").json() is None
+
+
+def test_export_contains_notification_prefs_and_price_alerts(client, db, user, make_ctx):
+    from app.models import PriceAlert
+    from app.services.notifications.prefs import save_prefs
+
+    security = make_security(db, "MC.PA", name="LVMH")
+    save_prefs(db, user.id, {"daily_recap": True})
+    db.add(PriceAlert(user_id=user.id, security_id=security.id, direction="above", price=700))
+    db.flush()
+    export_id = _ready(client, make_ctx)
+    data = json.loads(client.get(f"/api/me/export/{export_id}").content)
+    assert data["notifications"]["daily_recap"] is True
+    assert data["alertes_prix"][0]["price"] == 700 and data["alertes_prix"][0]["titre"]["name"] == "LVMH"

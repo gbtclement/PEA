@@ -2,15 +2,18 @@ from sqlalchemy.orm import Session
 
 from app.repositories.market_data import average_turnover, refreshable_securities
 from app.repositories.orders import held_security_ids
-from app.repositories.scores import favorite_security_ids, top_security_ids
+from app.repositories.scores import alert_security_ids, favorite_security_ids, top_security_ids
 
 TOP_IN_T1 = 10
 
 
 def tier_tickers(session: Session, tier: int, tier2_size: int) -> list[str]:
-    """T1 : indices, favoris, titres détenus et top 10. T2 : les `tier2_size` titres les plus échangés. T3 : les autres."""
+    """T1 : indices, favoris, titres détenus, titres avec une alerte de prix et top 10. T2 : les `tier2_size` titres les plus échangés. T3 : les autres."""
     candidates = refreshable_securities(session)
-    priority_ids = favorite_security_ids(session) | held_security_ids(session) | set(top_security_ids(session, TOP_IN_T1))
+    priority_ids = (
+        favorite_security_ids(session) | held_security_ids(session) | alert_security_ids(session)
+        | set(top_security_ids(session, TOP_IN_T1))
+    )
     tier1 = [s for s in candidates if s.kind == "index" or s.id in priority_ids]
     if tier == 1:
         return sorted(s.yahoo_ticker for s in tier1)

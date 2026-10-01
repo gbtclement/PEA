@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request, Response
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,7 @@ from app.core.security import normalize_email
 from app.models import AuthSession, DataExport, User
 from app.schemas.auth import MeOut, NoticeOut
 from app.services import ratelimit
+from app.services.admin.users import count_admins
 from app.schemas.me import AcceptTermsIn, CodeIn, DeleteAccountIn, ExportOut, EmailChangeIn, PasswordChangeIn, ProfileIn, SessionOut
 from app.services.auth import accounts, profile
 from app.services.auth.breach import BreachChecker
@@ -150,7 +151,7 @@ def delete_account(payload: DeleteAccountIn, response: Response, db: Session = D
         _check_current_password(db, user, payload.password, now)
     elif now - auth.created_at > REAUTH_WINDOW:
         raise fail(403, "reauth_required", "Reconnectez-vous avec Google, puis confirmez dans les 5 minutes.")
-    if user.role == "admin" and db.scalar(select(func.count()).select_from(User).where(User.role == "admin")) <= 1:
+    if user.role == "admin" and count_admins(db) <= 1:
         raise fail(400, "last_admin", "Vous êtes le seul administrateur : nommez-en un autre avant de supprimer votre compte.")
     erase_account(db, user, now=now)
     db.commit()
@@ -166,6 +167,9 @@ def request_data_export(request: Request, db: Session = Depends(get_db), user: U
         row = export.request_export(db, user, now)
     except export.ExportRefused as refused:
         raise fail(refused.status, refused.code, refused.message)
+    except IntegrityError:  # une autre requête a créé l'export en attente juste avant
+        db.rollback()
+        raise fail(409, "export_pending", "Votre export est déjà en préparation : vous recevrez un mail.")
     log_event(db, "data_export", now=now, user_id=user.id, ip=client_ip(request))
     db.commit()
     return ExportOut.model_validate(row)

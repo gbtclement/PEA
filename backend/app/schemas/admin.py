@@ -16,6 +16,9 @@ class AdminUserOut(BaseModel):
     last_name: str
     role: str
     is_premium: bool
+    premium_source: str  # admin | offered | subscription | none
+    subscription_interval: str | None = None
+    subscription_status: str | None = None
     verified: bool
     has_password: bool
     has_google: bool
@@ -84,3 +87,6 @@ class ConfigStatusOut(BaseModel):
     turnstile: bool
     app_secret: bool
     admin_email: bool
+    stripe: bool
+    stripe_mode: str | None = None  # test | live, déduit du préfixe de la clé (jamais la clé)
+    stripe_last_webhook_at: datetime | None = None

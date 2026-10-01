@@ -8,7 +8,12 @@
       {% block body %}{% endblock %}
     </td></tr>
     <tr><td style="padding:16px 28px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280">
+      {% if unsubscribe_url is defined %}
+      PEA Radar est un outil d'aide à la décision et d'apprentissage, pas un conseil en investissement. Cours différés.<br>
+      <a href="{{ manage_url }}" style="color:#4f46e5">Gérer mes notifications</a> · <a href="{{ unsubscribe_url }}" style="color:#4f46e5">Ne plus recevoir ce mail</a>
+      {% else %}
       Vous recevez ce mail car un compte PEA Radar utilise cette adresse. <a href="{{ base_url }}" style="color:#4f46e5">{{ base_url }}</a>
+      {% endif %}
     </td></tr>
   </table>
 </body>

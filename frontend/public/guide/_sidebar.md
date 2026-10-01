@@ -10,6 +10,7 @@
   - [Prévisions](app/previsions.md)
   - [Portefeuille](app/portefeuille.md)
   - [Assistant IA](app/assistant.md)
+  - [Premium](app/premium.md)
   - [Réglages](app/reglages.md)
   - [Fraîcheur des données](app/donnees.md)
 

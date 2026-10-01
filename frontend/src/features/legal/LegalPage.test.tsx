@@ -11,5 +11,19 @@ test.each([
   expect(screen.getByRole("heading", { level: 1, name: title })).toBeInTheDocument();
   expect(screen.queryByText(/Version provisoire/)).toBeNull();
   for (const pattern of patterns) expect(screen.getAllByText(pattern).length).toBeGreaterThan(0);
-  expect(screen.getByText(/Dernière mise à jour : 1er octobre 2026/)).toBeInTheDocument();
+  expect(screen.getByText(/Dernière mise à jour : 5 octobre 2026/)).toBeInTheDocument();
+});
+
+test("CGV : prix, résiliation, rétractation, pas un conseil", () => {
+  renderWithProviders(<LegalPage kind="cgv" />);
+  expect(screen.getByRole("heading", { level: 1, name: "Conditions générales de vente" })).toBeInTheDocument();
+  expect(screen.getByText(/renonce expressément à son droit de rétractation/)).toBeInTheDocument();
+  expect(screen.getByText(/effective à la fin de la période déjà payée/)).toBeInTheDocument();
+  expect(screen.getByText(/pas un conseil en investissement/)).toBeInTheDocument();
+});
+
+test("confidentialité : Stripe sous-traitant, la carte n'est jamais vue", () => {
+  renderWithProviders(<LegalPage kind="confidentialite" />);
+  expect(screen.getAllByText(/Stripe/).length).toBeGreaterThan(0);
+  expect(screen.getByText(/ne voit jamais votre numéro de carte/)).toBeInTheDocument();
 });

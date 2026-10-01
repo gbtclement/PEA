@@ -53,7 +53,7 @@ def test_me_returns_the_signed_in_user(anon_client, db):
     body = anon_client.get("/api/me").json()
     assert body == {"id": str(user.id), "email": "jean@example.com", "first_name": "Jean", "last_name": "Dupont",
                     "role": "user", "is_premium": False, "has_password": True, "has_google": False,
-                    "has_premium": False, "terms_outdated": False}
+                    "has_premium": False, "premium_source": "none", "terms_outdated": False}
     assert "password_hash" not in body
 
 

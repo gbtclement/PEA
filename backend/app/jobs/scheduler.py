@@ -9,11 +9,15 @@ from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.jobs.billing import process_cancellations, send_renewal_notices, sync_subscriptions
 from app.jobs.context import JobContext
 from app.jobs.privacy import build_pending_exports
 from app.jobs.forecasts import refresh_forecast_stats, refresh_forecasts, stats_are_stale
 from app.jobs.cleanup import purge_security_data
 from app.jobs.mail import send_pending_emails
+from app.jobs.notifications import (
+    run_daily_recaps, run_order_reminders, run_price_alerts, run_price_moves, run_score_notifications, run_weekly_recaps,
+)
 from app.jobs.market import refresh_daily_history, refresh_fundamentals, refresh_quotes
 from app.jobs.runner import run_job
 from app.jobs.scoring import refresh_scores
@@ -34,11 +38,36 @@ def _refresh_scores(ctx: JobContext) -> None:
     run_job(ctx, "scores", refresh_scores)
 
 
+def _quietly(ctx: JobContext, fn) -> None:
+    """Notifications : une panne est journalisée, sans bloquer la tâche qui les déclenche."""
+    try:
+        fn(ctx)
+    except Exception:
+        logging.getLogger(__name__).exception("Échec d'une tâche de notification (%s)", fn.__name__)
+
+
 def quotes_job(ctx: JobContext, tier: int) -> None:
     if is_market_open(ctx.now()):
         _refresh_tier(ctx, tier)
+        _quietly(ctx, run_price_alerts)  # N2 : après chaque mise à jour des cours
         if tier == 2:
             _refresh_scores(ctx)
+
+
+def price_moves_job(ctx: JobContext) -> None:
+    _quietly(ctx, run_price_moves)
+
+
+def daily_recap_job(ctx: JobContext) -> None:
+    _quietly(ctx, run_daily_recaps)
+
+
+def order_reminders_job(ctx: JobContext) -> None:
+    _quietly(ctx, run_order_reminders)
+
+
+def weekly_recap_job(ctx: JobContext) -> None:
+    _quietly(ctx, run_weekly_recaps)
 
 
 def universe_job(ctx: JobContext) -> None:
@@ -60,6 +89,7 @@ def evening_job(ctx: JobContext) -> None:
         run_job(ctx, "daily_history", refresh_daily_history)
         _refresh_scores(ctx)
         _refresh_forecasts(ctx)
+        _quietly(ctx, run_score_notifications)  # photo des scores du soir, puis N6
 
 
 def _refresh_forecasts(ctx: JobContext) -> None:
@@ -126,6 +156,22 @@ def cleanup_job(ctx: JobContext) -> None:
     run_job(ctx, "cleanup", purge_security_data)
 
 
+def billing_sync_job(ctx: JobContext) -> None:
+    run_job(ctx, "billing_sync", sync_subscriptions)
+
+
+def renewal_notices_job(ctx: JobContext) -> None:
+    run_job(ctx, "renewal_notices", send_renewal_notices)
+
+
+def cancellations_job(ctx: JobContext) -> None:
+    # Toutes les minutes, comme la file des mails : pas de trace dans data_status.
+    try:
+        process_cancellations(ctx)
+    except Exception:
+        logging.getLogger(__name__).exception("Échec des résiliations Stripe en attente")
+
+
 def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> BaseScheduler:
     tz = ctx.settings.timezone
     scheduler = scheduler or BlockingScheduler(timezone=tz)
@@ -138,11 +184,23 @@ def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> 
                       args=[ctx], id="daily", **daily)
     scheduler.add_job(evening_job, CronTrigger(day_of_week="mon-fri", hour=18, minute=15, timezone=tz),
                       args=[ctx], id="evening", **daily)
+    scheduler.add_job(daily_recap_job, CronTrigger(day_of_week="mon-fri", hour=18, minute=45, timezone=tz),
+                      args=[ctx], id="daily_recap", **daily)
+    scheduler.add_job(order_reminders_job, CronTrigger(month="10-12", day=1, hour=9, minute=0, timezone=tz),
+                      args=[ctx], id="order_reminders", **daily)
+    scheduler.add_job(weekly_recap_job, CronTrigger(day_of_week="sat", hour=9, minute=0, timezone=tz),
+                      args=[ctx], id="weekly_recap", **daily)
     scheduler.add_job(cleanup_job, CronTrigger(hour=3, minute=30, timezone=tz), args=[ctx], id="cleanup", **daily)
+    scheduler.add_job(billing_sync_job, CronTrigger(hour=3, minute=30, timezone=tz), args=[ctx], id="billing_sync", **daily)
+    scheduler.add_job(renewal_notices_job, CronTrigger(hour=9, minute=0, timezone=tz), args=[ctx], id="renewal_notices",
+                      **daily)
+    scheduler.add_job(cancellations_job, IntervalTrigger(seconds=60, timezone=tz), args=[ctx], id="stripe_cancellations",
+                      **common)
     intervals = {1: ctx.settings.quotes_t1_minutes, 2: ctx.settings.quotes_t2_minutes, 3: ctx.settings.quotes_t3_minutes}
     for tier, minutes in intervals.items():
         scheduler.add_job(quotes_job, IntervalTrigger(minutes=minutes, timezone=tz), args=[ctx, tier],
                           id=f"quotes_t{tier}", **common)
+    scheduler.add_job(price_moves_job, IntervalTrigger(minutes=15, timezone=tz), args=[ctx], id="price_moves", **common)
     scheduler.add_job(exports_job, IntervalTrigger(seconds=15, timezone=tz), args=[ctx], id="exports", **common)
     if ctx.mailer is not None:
         scheduler.add_job(mail_job, IntervalTrigger(seconds=5, timezone=tz), args=[ctx], id="emails", **common)

@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
-from app.models import Security, SecurityScore, User
+from app.models import Security, SecurityQuote, SecurityScore, User
 from app.services.auth.accounts import TERMS_VERSION
 
 
@@ -68,3 +68,25 @@ def make_user(
     db.add(user)
     db.flush()
     return user
+
+
+def make_quote(db: Session, security: Security, price: float, *, change_pct: float | None = None,
+               previous_close: float | None = None, as_of: datetime | None = None) -> SecurityQuote:
+    quote = SecurityQuote(security_id=security.id, price=price, change_pct=change_pct, previous_close=previous_close,
+                          volume=1000, as_of=as_of or datetime.now(UTC))
+    db.merge(quote)
+    db.flush()
+    return db.get(SecurityQuote, security.id)
+
+
+def make_subscription(db: Session, user: User, *, status: str = "active", interval: str = "month",
+                      period_end: datetime | None = None, cancel: bool = False, sub_id: str | None = None,
+                      customer_id: str | None = None) -> "Subscription":  # noqa: F821
+    from app.models import Subscription
+
+    row = Subscription(user_id=user.id, stripe_customer_id=customer_id or f"cus_{user.id.hex[:12]}",
+                       stripe_subscription_id=sub_id or f"sub_{user.id.hex[:12]}", status=status, interval=interval,
+                       current_period_end=period_end or datetime(2026, 11, 1, tzinfo=UTC), cancel_at_period_end=cancel)
+    db.add(row)
+    db.flush()
+    return row

@@ -1,10 +1,12 @@
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import pytest
 
 from app.services.mail.render import KINDS, render
 
 BASE = "https://pea-radar.example"
+PREMIUM = {"first_name": "Jean", "interval_label": "annuel", "period_end": date(2026, 11, 1), "ends_on": date(2026, 11, 1),
+                "renews_on": "01/11/2026", "amount": "49,00 €", "manage_url": "m", "premium_url": "p", "cgv_url": "c"}
 CONTEXTS = {
     "verify_code": {"first_name": "Jean", "code": "042917"},
     "welcome": {"first_name": "Jean"},
@@ -15,6 +17,23 @@ CONTEXTS = {
     "inactivity_warning": {"first_name": "Jean", "delete_on": datetime(2029, 12, 31, 3, 30, tzinfo=UTC)},
     "data_export_ready": {"first_name": "Jean", "expires_at": datetime(2026, 10, 8, 8, 0, tzinfo=UTC)},
     "test": {"first_name": "Jean"},
+    "price_move": {"first_name": "Jean", "threshold": 5.0, "unsubscribe_url": "u", "manage_url": "m",
+                   "items": [{"security_id": 1, "name": "LVMH", "change_pct": 6.25, "price": 612.4, "currency": "EUR"}]},
+    "price_alert": {"first_name": "Jean", "security_id": 1, "name": "Equinor", "direction": "above", "target": 300.0,
+                    "price": 301.5, "currency": "NOK", "unsubscribe_url": "u", "manage_url": "m"},
+    "daily_recap": {"first_name": "Jean", "day": date(2026, 10, 2), "has_portfolio": True, "total_value": 12345.6,
+                    "day_change": -120.5, "day_change_pct": -0.97, "unsubscribe_url": "u", "manage_url": "m",
+                    "gainers": [{"security_id": 1, "name": "LVMH", "change_pct": 2.1}],
+                    "losers": [{"security_id": 2, "name": "Kering", "change_pct": -3.4}]},
+    "weekly_recap": {"first_name": "Jean", "week_end": date(2026, 10, 3), "has_portfolio": True, "total_value": 12345.6,
+                     "week_change": 210.0, "week_change_pct": 1.73, "entered": [{"security_id": 1, "name": "LVMH"}],
+                     "left": [{"security_id": 2, "name": "Kering"}], "forecasts_checked": 10, "forecasts_right": 6,
+                     "unsubscribe_url": "u", "manage_url": "m"},
+    "order_reminder": {"first_name": "Jean", "year": 2026, "count": 8, "min_orders": 12, "remaining": 4,
+                       "penalty_fee": 96.0, "unsubscribe_url": "u", "manage_url": "m"},
+    "score_change": {"first_name": "Jean", "unsubscribe_url": "u", "manage_url": "m",
+                     "items": [{"security_id": 1, "name": "LVMH", "before": 58, "after": 71, "change": "entered"}]},
+    **{kind: PREMIUM for kind in ("premium_started", "payment_failed", "premium_canceling", "premium_ended", "renewal_reminder")},
 }
 
 
@@ -23,7 +42,8 @@ def test_every_kind_renders_html_and_text(kind):
     mail = render(kind, CONTEXTS[kind], base_url=BASE)
     assert mail.subject and "Jean" in mail.text and "Jean" in mail.html
     assert "<" not in mail.text.replace("<https", "")  # texte brut, sans balise
-    assert "pas un conseil" not in mail.text  # l'avertissement est réservé aux notifications (étape 5)
+    # L'avertissement est réservé aux notifications (celles qui ont un lien de désinscription).
+    assert ("pas un conseil" in mail.text) == ("unsubscribe_url" in CONTEXTS[kind])
 
 
 def test_code_is_in_subject_and_body():

@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router";
-import { ME, mockFetch, renderWithProviders } from "@/test/utils";
+import { ME, PREMIUM_ME, mockFetch, renderWithProviders } from "@/test/utils";
 import { SecurityPage } from "./SecurityPage";
 
 vi.mock("./PriceChartPanel", () => ({ PriceChartPanel: () => <div data-testid="chart" /> }));
@@ -26,7 +26,7 @@ const FORECAST = {
               "1w": { expected_return: 0.003, prob_up: 0.53, reliability: "elevee", rank: 12 }, "1m": null },
 };
 
-function renderPage(detailStatus = 200, detail: object = DETAIL, forecast: object = FORECAST, me: { status?: number; body: unknown } = { body: ME }) {
+function renderPage(detailStatus = 200, detail: object = DETAIL, forecast: object = FORECAST, me: { status?: number; body: unknown } = { body: PREMIUM_ME }) {
   const fetchMock = mockFetch((url) => {
     if (url === "/api/me") return me;
     if (url.startsWith("/api/securities/1/forecast")) return { body: forecast };
@@ -150,4 +150,10 @@ test("« + J'ai acheté » : un visiteur passe par la connexion au lieu du formu
   await screen.findByRole("link", { name: "Connectez-vous" });
   await userEvent.click(screen.getByRole("button", { name: "+ J'ai acheté" }));
   expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+test("ForecastCard ne demande pas la prévision sans Premium", async () => {
+  const fetchMock = renderPage(200, DETAIL, FORECAST, { body: ME });
+  expect(await screen.findByText("Réservé aux membres Premium")).toBeInTheDocument();
+  expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/forecast"))).toBe(false);
 });

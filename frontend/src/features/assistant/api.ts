@@ -4,14 +4,18 @@ import { apiGet, apiSend, type AssistantStatus, type ConversationDetail, type Co
 export const useAssistantStatus = () =>
   useQuery({ queryKey: ["assistant-status"], queryFn: () => apiGet<AssistantStatus>("/api/assistant/status") });
 
-export const useConversations = () =>
-  useQuery({ queryKey: ["conversations"], queryFn: () => apiGet<ConversationOut[]>("/api/assistant/conversations") });
+/** Les conversations sont réservées à Premium : sans lui, le site ne les demande pas (le serveur répondrait 403). */
+export const canReadConversations = (status?: AssistantStatus) =>
+  !!status && (status.available || (status.reason ?? "premium") !== "premium");
 
-export const useConversation = (id: number | null) =>
+export const useConversations = (enabled: boolean) =>
+  useQuery({ queryKey: ["conversations"], queryFn: () => apiGet<ConversationOut[]>("/api/assistant/conversations"), enabled });
+
+export const useConversation = (id: number | null, enabled: boolean) =>
   useQuery({
     queryKey: ["conversation", id],
     queryFn: () => apiGet<ConversationDetail>(`/api/assistant/conversations/${id}`),
-    enabled: id !== null,
+    enabled: enabled && id !== null,
   });
 
 export const createConversation = (securityId?: number) =>

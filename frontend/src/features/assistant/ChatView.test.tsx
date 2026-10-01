@@ -64,7 +64,7 @@ test("non Premium : carte « Réservé aux membres Premium »", async () => {
   stubFetch((url) => (url === "/api/assistant/status" ? json({ ...AVAILABLE, available: false, reason: "premium" }) : undefined));
   renderChat();
   expect(await screen.findByText("Réservé aux membres Premium")).toBeInTheDocument();
-  expect(screen.getByText(/abonnement arrivera bientôt/)).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Découvrir Premium" })).toHaveAttribute("href", "/premium");
   expect(screen.queryByRole("textbox")).toBeNull();
 });
 

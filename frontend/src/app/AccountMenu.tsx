@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { LogOut } from "lucide-react";
+import { LogOut, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { buttonVariants } from "@/components/ui/button";
 import { useMe } from "@/features/auth/useMe";
@@ -37,6 +37,13 @@ export function AccountMenu() {
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{`${me.first_name} ${me.last_name}`.trim()}</p>
         <p className="truncate text-xs text-muted-foreground">{me.email}</p>
+        {me.has_premium ? (
+          <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            <Sparkles className="size-3" aria-hidden />Premium
+          </span>
+        ) : (
+          <Link to="/premium" className="text-xs font-medium text-primary hover:underline">Passer Premium</Link>
+        )}
       </div>
       <button type="button" aria-label="Se déconnecter" title="Se déconnecter" disabled={logout.isPending} onClick={() => logout.mutate()}
               className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">

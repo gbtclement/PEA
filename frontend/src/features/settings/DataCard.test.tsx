@@ -46,3 +46,10 @@ test("compte Google sans mot de passe : propose de se reconnecter", async () => 
   expect(await screen.findByRole("link", { name: "Se reconnecter avec Google" }))
     .toHaveAttribute("href", expect.stringContaining("/api/auth/google/start?suite=%2Freglages"));
 });
+
+test("export échoué : message et nouveau bouton", async () => {
+  mockFetch((url) => ({ body: url === "/api/me/export" ? { ...READY, status: "failed", expires_at: null } : ME }));
+  renderWithProviders(<DataCard />);
+  expect(await screen.findByText(/L'export précédent a échoué/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Exporter mes données" })).toBeInTheDocument();
+});

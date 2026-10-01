@@ -1,6 +1,6 @@
 """Rendu des mails (HTML + texte brut) à partir des modèles Jinja2. Fonctions pures."""
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, PackageLoader, StrictUndefined, select_autoescape
@@ -17,6 +17,17 @@ SUBJECTS = {
     "data_export_ready": "Vos données PEA Radar sont prêtes",
     "inactivity_warning": "Votre compte PEA Radar sera supprimé dans 30 jours",
     "test": "Mail de test PEA Radar",
+    "price_move": "Forte variation de vos titres suivis",
+    "price_alert": "Alerte de prix : {name}",
+    "daily_recap": "Votre récap du soir PEA Radar",
+    "weekly_recap": "Votre récap de la semaine PEA Radar",
+    "order_reminder": "Compteur d'ordres : il vous manque {remaining} ordre(s)",
+    "score_change": "Changement de score de vos favoris",
+    "premium_started": "Bienvenue dans PEA Radar Premium",
+    "payment_failed": "Le paiement de votre abonnement Premium a échoué",
+    "premium_canceling": "Votre abonnement Premium est résilié",
+    "premium_ended": "Votre accès Premium est terminé",
+    "renewal_reminder": "Votre abonnement Premium annuel sera renouvelé le {renews_on}",
 }
 KINDS = frozenset(SUBJECTS)
 
@@ -48,6 +59,30 @@ def _paris(value: datetime) -> str:
     return value.astimezone(PARIS).strftime("%d/%m/%Y à %H:%M")
 
 
+def _number(value: float) -> str:
+    return f"{value:,.2f}".replace(",", " ").replace(".", ",")
+
+
+def _eur(value: float) -> str:
+    return f"{_number(value)} €"
+
+
+def _price(value: float, currency: str = "EUR") -> str:
+    return f"{_number(value)} {'€' if currency == 'EUR' else currency}"
+
+
+def _pct(value: float | None) -> str:
+    return "—" if value is None else f"{'+' if value > 0 else ''}{_number(value)} %"
+
+
+def _day(value: date) -> str:
+    return value.strftime("%d/%m/%Y")
+
+
+def _short(value: float) -> str:
+    return f"{value:g}".replace(".", ",")
+
+
 _env = Environment(
     loader=PackageLoader("app.services.mail", "templates"),
     autoescape=select_autoescape(enabled_extensions=("html",), default_for_string=False),
@@ -56,6 +91,7 @@ _env = Environment(
     lstrip_blocks=True,
 )
 _env.filters["paris"] = _paris
+_env.filters.update(eur=_eur, price=_price, pct=_pct, day=_day, short=_short)
 
 
 def render(kind: str, context: dict, *, base_url: str) -> RenderedEmail:

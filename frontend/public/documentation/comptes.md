@@ -94,7 +94,7 @@ docker compose exec -T api python -m app.cli ensure-user --email prenom@exemple.
 |---|---|
 | `/`, `/explorer`, `/etf`, `/titres/:id`, `/cgu`, `/confidentialite`, `/mentions-legales` | Tout le monde, indexables |
 | `/connexion`, `/inscription` | Tout le monde, indexables, hors de la mise en page de l'application |
-| `/verifier-email`, `/mot-de-passe-oublie`, `/reinitialiser`, `/ce-n-etait-pas-moi`, `/accepter-cgu` | Tout le monde, `noindex` |
+| `/verifier-email`, `/mot-de-passe-oublie`, `/reinitialiser`, `/ce-n-etait-pas-moi`, `/accepter-cgu`, `/desinscription` | Tout le monde, `noindex` |
 | `/previsions`, `/portefeuille`, `/assistant`, `/reglages` | Membres. Un visiteur est renvoyé vers `/connexion?suite=<page>` |
 
 Côté API, les routes personnelles (ordres, portefeuille, favoris, réglages, assistant, prévisions) renvoient `401` sans session.
@@ -145,10 +145,15 @@ Les événements de compte sont écrits dans `security_events` par `log_event()`
 | `session_revoked` | Appareil déconnecté (`details.all_others` : tous les autres) |
 | `terms_accepted` | Nouvelle version des CGU acceptée (`details.version`) |
 | `data_export` | Export des données demandé |
+| `unsubscribed` | Désinscription par le lien d'un mail (`details.kind` : le type de mail, ou `all`) |
 | `account_deleted` | Compte supprimé sans admin (`details.reason` : `self` par son titulaire, `inactivity` par le worker) |
 | `admin_user_updated` | Compte modifié par un admin (`actor_id`, `details.fields`) |
 | `admin_user_deleted` | Compte supprimé par un admin (`user_id` passe à vide, `actor_id` reste) |
 | `admin_settings_updated` | Modèle ou limite de l'assistant changé (`details` : les nouvelles valeurs) |
+| `billing_consent` | Cases CGV et renonciation au droit de rétractation cochées avant un paiement (`details.cgv_version`, `details.interval`) |
+| `duplicate_subscription` | Deuxième abonnement payé alors qu'un premier donne déjà accès (deux onglets) : il est résilié tout de suite, à rembourser depuis Stripe (`details.subscription_id`) |
+| `subscription_started` | Abonnement Premium activé (`details.interval`) |
+| `subscription_ended` | Accès Premium par abonnement terminé (`details.status`) |
 
 ```sql
 SELECT e.created_at, e.kind, u.email, e.ip, e.details
@@ -212,14 +217,16 @@ Les Réglages (`/reglages`) regroupent ce qui concerne le compte connecté (rout
 
 `/admin` n'apparaît dans la barre latérale que pour un admin ; un autre compte qui ouvre l'adresse voit la page introuvable. Côté API, toutes les routes `/api/admin/*` passent par `require_admin()`.
 
-- **Utilisateurs** : 50 comptes par page, recherche (mail, prénom, nom, sans tenir compte des accents), tri sur chaque colonne, interrupteur **Premium** sur chaque ligne.
-- **Modifier** : prénom, nom, adresse, rôle, Premium. Une adresse changée par l'admin est considérée comme validée ; l'ancienne et la nouvelle adresse sont prévenues par mail. Tout autre changement, sauf la bascule Premium, prévient le titulaire (`security_alert`). Un changement de **rôle** ou d'**adresse** ferme toutes ses sessions.
+- **Utilisateurs** : 50 comptes par page, recherche (mail, prénom, nom, sans tenir compte des accents), tri sur chaque colonne. La colonne Premium dit d'où il vient : « Abonné (mensuel) », « Abonné (annuel) », « Offert » ou « Admin » ; l'interrupteur **Premium offert** le donne sans paiement.
+- **Modifier** : prénom, nom, adresse, rôle, Premium offert (l'abonnement Stripe éventuel est affiché, en lecture seule). Une adresse changée par l'admin est considérée comme validée ; l'ancienne et la nouvelle adresse sont prévenues par mail. Tout autre changement, sauf la bascule Premium offert, prévient le titulaire (`security_alert`). Un changement de **rôle** ou d'**adresse** ferme toutes ses sessions.
 - **Supprimer** : il faut retaper l'adresse du compte. Toutes ses données partent avec lui (`ON DELETE CASCADE`) et un mail `account_deleted` lui est envoyé.
 - **Garde-fous** : un admin ne peut ni retirer son propre rôle (`self_demotion`), ni supprimer son propre compte ici (`self_delete`), et il reste toujours au moins un admin (`last_admin`).
-- **État de la configuration** : pour chaque réglage de `.env` (Claude, SMTP, Google, Turnstile, `APP_SECRET`, `ADMIN_EMAIL`), « Renseigné » ou « Manquant ». **Aucune valeur n'est jamais renvoyée.** Un bouton envoie un mail de test à l'admin.
+- **État de la configuration** : pour chaque réglage de `.env` (Claude, SMTP, Google, Turnstile, `APP_SECRET`, `ADMIN_EMAIL`, Stripe), « Renseigné » ou « Manquant ». Pour Stripe, le mode (test ou réel, déduit du début de la clé) et l'heure du dernier webhook reçu. **Aucune valeur n'est jamais renvoyée.** Un bouton envoie un mail de test à l'admin.
 - **Corrections d'éligibilité PEA** (voir [Éligibilité](eligibilite.md)) et lien vers cette documentation.
 
 ## Assistant : Premium et limite de coût
+
+Premium (assistant et prévisions) vient du rôle admin, de la case **Premium offert** ou d'un abonnement payant : voir [Abonnement (Stripe)](abonnement.md).
 
 - La clé Claude ne se règle que dans `.env` (`ANTHROPIC_API_KEY`) : aucun secret n'est stocké en base ni affiché dans l'interface.
 - Le **modèle** et la **limite mensuelle par utilisateur** (5 $ par défaut) sont communs à tous et se règlent dans l'onglet Admin. Ils sont stockés dans `app_settings` (une seule ligne, lue par `get_app_settings()`).
@@ -252,16 +259,18 @@ Carte « Mes données » des Réglages (`POST /api/me/export`, `backend/app/serv
 
 - La demande crée une ligne `data_exports` en attente. Le worker la prépare dans les **15 s** (tâche `exports`) : un fichier JSON avec le profil, les réglages, les ordres, les favoris, les conversations, l'usage de l'assistant et les appareils. Mots de passe, jetons et identifiants internes n'y sont jamais.
 - Le titulaire reçoit le mail C7 et télécharge le fichier depuis les Réglages (`GET /api/me/export/{id}`, sa session seulement). Le fichier est gardé **7 jours**.
-- Un export à la fois (`409 export_pending`), un par jour au plus (`429 export_limit`).
+- Un export à la fois (`409 export_pending`, garanti par un index unique sur les exports en attente), un par jour au plus (`429 export_limit`).
+- Statuts : `pending`, `ready` ou `failed`. Un export qui plante passe à `failed` sans bloquer les autres, et un export bloqué plus d'une heure passe à `failed` (tâche `cleanup`). Après un échec, le titulaire peut en redemander un tout de suite.
 
 ## Suppression du compte
 
 Trois chemins, une seule fonction : `erase_account()` (`backend/app/services/privacy/erasure.py`), appelée par le titulaire (`DELETE /api/me`), par un admin, ou par le worker pour inactivité.
 
 - Toutes les données du compte partent avec lui (`ON DELETE CASCADE`). Le mail C6 confirme la suppression.
-- Le journal de sécurité garde ses lignes, sans lien vers le compte. Dans l'historique des mails, l'adresse est remplacée par une **empreinte** (`supprimé:…`) : on peut reconnaître une même adresse, pas la lire. Les mails encore en attente sont annulés.
+- Le journal de sécurité garde ses lignes, sans lien vers le compte. Dans l'historique des mails, chaque adresse est remplacée par son **empreinte** (`supprimé:…`) : on peut reconnaître une même adresse, pas la lire. Le contenu des mails (montants, titres, prénom) est effacé. Les mails encore en attente sont annulés. Si le mail C6 reste en attente plus de 7 jours (pas de SMTP), son adresse est remplacée par l'empreinte.
 - Le titulaire retape son adresse et donne son mot de passe. Un compte Google sans mot de passe doit s'être reconnecté avec Google il y a **moins de 5 minutes** (`403 reauth_required` sinon).
-- Le dernier admin ne peut pas supprimer son compte (`last_admin`).
+- Un abonnement Stripe vivant est mis en file (`stripe_cancellations`) et résilié chez Stripe par le worker dans la minute, sans remboursement.
+- Le dernier admin ne peut pas supprimer son compte (`last_admin`). Le compte des admins verrouille leurs lignes : deux admins qui partent en même temps ne passent pas tous les deux.
 
 ## Durées de conservation
 
@@ -269,18 +278,40 @@ Appliquées chaque nuit à **3 h 30** par la tâche `cleanup` du worker (`backen
 
 | Donnée | Durée |
 |---|---|
-| Compte et données saisies | Jusqu'à la suppression, ou **3 ans** sans connexion : mail C8, puis suppression 30 jours après si le compte n'est pas revenu. Jamais un admin |
+| Compte et données saisies | Jusqu'à la suppression, ou **3 ans** sans connexion : mail C8, puis suppression 30 jours après si le compte n'est pas revenu. Jamais un admin, ni un abonné Premium payant |
 | Compte dont l'adresse n'a pas été validée | 7 jours |
 | Sessions, codes et liens | Jusqu'à leur expiration |
 | Export des données | 7 jours |
 | Historique des mails | 90 jours |
+| Photos quotidiennes des scores (`score_snapshots`) | 14 jours |
+| Titres déjà signalés par N1 (`move_notices`) | 7 jours |
 | Journal de sécurité | 12 mois |
 | Compteurs anti-abus | 1 jour |
+| Abonnement et accords de vente (`subscriptions`, `billing_consents`) | Jusqu'à la suppression du compte |
+| Événements Stripe déjà traités (`stripe_events`) | 30 jours |
 
 Toute connexion, ou l'usage d'une session « rester connecté », compte comme activité (`last_login_at`, `last_seen_at`).
 
 Le détail des traitements est dans le [registre des traitements](registre.md).
 
+## Notifications
+
+Six mails que le membre choisit dans la carte « Notifications par mail » des Réglages (`/reglages#notifications`, `GET/PUT /api/me/notifications`). Code : `backend/app/services/notifications/`, tâches : `backend/app/jobs/notifications.py`.
+
+| | Type interne | Par défaut | Quand | Tâche du worker |
+|---|---|---|---|---|
+| N1 | `price_move` | Activé | Toutes les 15 min en séance : un favori ou une position bouge d'au moins le seuil (5 % par défaut, de 1 à 50 %). Une fois par titre et par jour | `price_moves` |
+| N2 | `price_alert` | Activé | Après chaque mise à jour des cours : une alerte de prix franchit son seuil | `quotes_t*` |
+| N3 | `daily_recap` | Désactivé | 18 h 45 les jours de bourse | `daily_recap` |
+| N4 | `weekly_recap` | Désactivé | Samedi 9 h | `weekly_recap` |
+| N5 | `order_reminder` | Activé | 1er octobre, novembre et décembre à 9 h, s'il manque des ordres pour éviter les frais de la caisse | `order_reminders` |
+| N6 | `score_change` | Désactivé | Après le calcul du soir : un favori entre ou sort du top 10, ou son score bouge d'au moins 10 points | `evening` |
+
+- **Un seul point d'entrée** : `notify()` (`services/notifications/send.py`). Il vérifie la préférence, ajoute le lien de désinscription et met le mail en file avec `enqueue()`. Une notification ne passe jamais par `enqueue()` directement.
+- **Désinscription** : chaque mail porte le lien « Ne plus recevoir ce mail » vers `/desinscription`, et l'en-tête `List-Unsubscribe` (désinscription en un clic depuis la messagerie, `POST /api/unsubscribe`). Le jeton n'est pas stocké : c'est `<user_id>.<HMAC-SHA256(APP_SECRET, …)>`. **Sans `APP_SECRET`, aucune notification ne part** (message dans les journaux du worker). Les mails du compte (codes, sécurité) ne sont pas concernés.
+- **Alertes de prix** : créées depuis la fiche d'un titre (« Créer une alerte »), **50 actives** au plus (`alert_limit`), refusées si le cours a déjà franchi le seuil (`already_reached`). Une alerte déclenchée se désactive ; le membre la réarme dans les Réglages. Si N2 est désactivé, les alertes restent en place mais aucun mail ne part.
+- **Photos des scores** : `score_snapshots` garde le score de chaque titre chaque soir pour N6, **14 jours**. `move_notices` retient les titres déjà signalés par N1, **7 jours**.
+
 ## Étape suivante
 
-Le lot `notifications` ajoutera les alertes par mail (cours, prévisions) et leurs réglages.
+Toutes les étapes des comptes sont faites, y compris l'abonnement Premium payant : voir [Abonnement (Stripe)](abonnement.md).

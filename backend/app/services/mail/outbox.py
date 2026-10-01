@@ -10,6 +10,7 @@ from app.services.mail.render import SUBJECTS, render
 
 def enqueue(
     db: Session, kind: str, *, to: str, context: dict, user_id: uuid.UUID | None = None, dedupe_key: str | None = None,
+    headers: dict[str, str] | None = None,
 ) -> int | None:
     """Met un mail en file d'attente dans la même transaction que l'action qui le déclenche (pas de commit ici).
 
@@ -19,7 +20,7 @@ def enqueue(
     stmt = (
         pg_insert(EmailLog)
         .values(user_id=user_id, kind=kind, recipient=to, subject=mail.subject, html=mail.html, text=mail.text,
-                headers={}, dedupe_key=dedupe_key)
+                headers=headers or {}, dedupe_key=dedupe_key)
         .on_conflict_do_nothing(index_elements=["dedupe_key"])
         .returning(EmailLog.id)
     )

@@ -1,10 +1,11 @@
 import { usePageMeta } from "@/seo/usePageMeta";
-import { CGU, LEGAL_UPDATED, NOTICE, PRIVACY } from "./content";
+import { CGU, CGV, LEGAL_UPDATED, NOTICE, PRIVACY } from "./content";
 
-type Kind = "cgu" | "confidentialite" | "mentions-legales";
+type Kind = "cgu" | "cgv" | "confidentialite" | "mentions-legales";
 
 const PAGES: Record<Kind, { title: string; description: string; Body: () => React.JSX.Element }> = {
   cgu: { title: "Conditions générales d'utilisation", description: "Les règles d'utilisation de PEA Radar.", Body: CGU },
+  cgv: { title: "Conditions générales de vente", description: "Les conditions de l'abonnement PEA Radar Premium.", Body: CGV },
   confidentialite: { title: "Politique de confidentialité", description: "Comment PEA Radar protège vos données personnelles.", Body: PRIVACY },
   "mentions-legales": { title: "Mentions légales", description: "Éditeur et hébergeur de PEA Radar.", Body: NOTICE },
 };
