@@ -41,14 +41,15 @@ def sync_subscriptions(ctx: JobContext) -> int:
     return done
 
 
-def _yearly_amount(ctx: JobContext) -> tuple[int | None, str | None]:
+def _own_price(ctx: JobContext, subscription_id: str) -> tuple[int | None, str | None]:
+    """Le prix de l'abonné lui-même (pas celui affiché aujourd'hui) : P5 doit l'annoncer exactement."""
     if ctx.billing is None:
         return None, None
     try:
-        year = next((p for p in ctx.billing.plans() if p.interval == "year"), None)
+        sub = ctx.billing.subscription(subscription_id)
     except BillingUnavailable:
         return None, None
-    return (year.amount, year.currency) if year else (None, None)
+    return sub.price_amount, sub.currency
 
 
 def send_renewal_notices(ctx: JobContext) -> int:
@@ -60,8 +61,10 @@ def send_renewal_notices(ctx: JobContext) -> int:
             Subscription.current_period_end > now, Subscription.current_period_end <= now + RENEWAL_NOTICE,
             or_(Subscription.renewal_notice_sent_for.is_(None),
                 Subscription.renewal_notice_sent_for != Subscription.current_period_end))).all()
-        amount, currency = _yearly_amount(ctx) if rows else (None, None)
         for row in rows:
+            amount, currency = _own_price(ctx, row.stripe_subscription_id)
+            if amount is None:
+                continue  # sans prix connu, P5 attend le lendemain
             user = db.get(User, row.user_id)
             enqueue(db, "renewal_reminder", to=user.email, user_id=user.id, context=mail_context(user, row, amount, currency),
                     dedupe_key=f"renewal:{row.stripe_subscription_id}:{row.current_period_end.date().isoformat()}")
@@ -72,7 +75,7 @@ def send_renewal_notices(ctx: JobContext) -> int:
 
 
 def process_cancellations(ctx: JobContext) -> int:
-    """Toutes les minutes : résilie chez Stripe les abonnements des comptes supprimés, jusqu'à réussite (Ruling 1)."""
+    """Toutes les minutes : résilie chez Stripe les abonnements des comptes supprimés et les doublons, jusqu'à réussite (Ruling 1)."""
     if ctx.billing is None:
         return 0
     done = 0

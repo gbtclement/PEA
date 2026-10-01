@@ -41,3 +41,10 @@ test("gratuit, avec un ancien abonnement : lien Premium et factures", async () =
   expect(screen.getByRole("link", { name: "Découvrir Premium" })).toHaveAttribute("href", "/premium");
   expect(screen.getByRole("button", { name: "Gérer mon abonnement" })).toBeInTheDocument();
 });
+
+test("Premium offert à un abonné payant : il peut encore gérer ou résilier", async () => {
+  show({ ...base, source: "offered" });
+  expect(await screen.findByText("Premium vous est offert.")).toBeInTheDocument();
+  expect(screen.getByText(/abonnement payant est toujours actif/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Gérer mon abonnement" })).toBeInTheDocument();
+});

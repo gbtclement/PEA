@@ -151,6 +151,7 @@ Les événements de compte sont écrits dans `security_events` par `log_event()`
 | `admin_user_deleted` | Compte supprimé par un admin (`user_id` passe à vide, `actor_id` reste) |
 | `admin_settings_updated` | Modèle ou limite de l'assistant changé (`details` : les nouvelles valeurs) |
 | `billing_consent` | Cases CGV et renonciation au droit de rétractation cochées avant un paiement (`details.cgv_version`, `details.interval`) |
+| `duplicate_subscription` | Deuxième abonnement payé alors qu'un premier donne déjà accès (deux onglets) : il est résilié tout de suite, à rembourser depuis Stripe (`details.subscription_id`) |
 | `subscription_started` | Abonnement Premium activé (`details.interval`) |
 | `subscription_ended` | Accès Premium par abonnement terminé (`details.status`) |
 
@@ -277,7 +278,7 @@ Appliquées chaque nuit à **3 h 30** par la tâche `cleanup` du worker (`backen
 
 | Donnée | Durée |
 |---|---|
-| Compte et données saisies | Jusqu'à la suppression, ou **3 ans** sans connexion : mail C8, puis suppression 30 jours après si le compte n'est pas revenu. Jamais un admin |
+| Compte et données saisies | Jusqu'à la suppression, ou **3 ans** sans connexion : mail C8, puis suppression 30 jours après si le compte n'est pas revenu. Jamais un admin, ni un abonné Premium payant |
 | Compte dont l'adresse n'a pas été validée | 7 jours |
 | Sessions, codes et liens | Jusqu'à leur expiration |
 | Export des données | 7 jours |

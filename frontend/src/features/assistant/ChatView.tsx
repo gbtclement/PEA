@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PremiumCard } from "@/features/premium/PremiumCard";
 import type { AssistantStatus } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
-import { useAssistantStatus, useConversation } from "./api";
+import { canReadConversations, useAssistantStatus, useConversation } from "./api";
 import { ChatMessages } from "./ChatMessages";
 import { Composer } from "./Composer";
 import { GENERAL_SUGGESTIONS, SECURITY_SUGGESTIONS } from "./suggestions";
@@ -22,7 +22,7 @@ export function ChatView({ conversationId, securityId, securityName, onConversat
   const status = useAssistantStatus();
   // Garde l'id créé pendant l'envoi, même si le parent ne le renvoie pas tout de suite.
   const [currentId, setCurrentId] = useState(conversationId);
-  const conversation = useConversation(currentId);
+  const conversation = useConversation(currentId, canReadConversations(status.data));
   const chat = useChat({
     conversationId: currentId,
     securityId,

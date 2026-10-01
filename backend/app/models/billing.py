@@ -50,7 +50,7 @@ class BillingConsent(Base):
 
 
 class StripeCancellation(Base):
-    """Abonnements à résilier chez Stripe après la suppression d'un compte : aucune donnée personnelle."""
+    """Abonnements à résilier chez Stripe (compte supprimé, ou abonnement payé en double) : aucune donnée personnelle."""
 
     __tablename__ = "stripe_cancellations"
 

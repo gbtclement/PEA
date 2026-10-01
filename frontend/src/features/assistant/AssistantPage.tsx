@@ -5,7 +5,7 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { useConversations, useDeleteConversation } from "./api";
+import { canReadConversations, useAssistantStatus, useConversations, useDeleteConversation } from "./api";
 import { ChatView } from "./ChatView";
 
 const formatCost = (usd: number) => `≈ ${usd.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
@@ -14,7 +14,7 @@ export function AssistantPage() {
   usePageMeta({ title: "Assistant IA", description: "Posez vos questions à Claude sur les actions, les ETF et votre portefeuille.", noindex: true });
   const [params, setParams] = useSearchParams();
   const selected = params.get("c") ? Number(params.get("c")) : null;
-  const conversations = useConversations();
+  const conversations = useConversations(canReadConversations(useAssistantStatus().data));
   const remove = useDeleteConversation();
   // Le chat suit l'adresse (liens, retour arrière), sauf quand l'adresse change parce qu'il vient lui-même
   // de créer la conversation : le recréer couperait la réponse en cours.

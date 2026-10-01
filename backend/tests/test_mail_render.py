@@ -6,7 +6,7 @@ from app.services.mail.render import KINDS, render
 
 BASE = "https://pea-radar.example"
 PREMIUM = {"first_name": "Jean", "interval_label": "annuel", "period_end": date(2026, 11, 1), "ends_on": date(2026, 11, 1),
-                "renews_on": "01/11/2026", "amount": "49,00 €", "manage_url": "m", "premium_url": "p"}
+                "renews_on": "01/11/2026", "amount": "49,00 €", "manage_url": "m", "premium_url": "p", "cgv_url": "c"}
 CONTEXTS = {
     "verify_code": {"first_name": "Jean", "code": "042917"},
     "welcome": {"first_name": "Jean"},

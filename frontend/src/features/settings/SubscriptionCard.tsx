@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ManageSubscriptionButton } from "@/features/premium/ManageSubscriptionButton";
 import { useSubscription } from "@/features/premium/api";
 
+const PAYING = ["active", "past_due", "trialing"];
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" }) : "");
 
 /** État de l'abonnement Premium (spec 3.4) ; tout se gère dans le portail Stripe. */
@@ -16,7 +17,15 @@ export function SubscriptionCard() {
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         {!data ? null : data.source === "offered" || data.source === "admin" ? (
-          <p>Premium vous est offert.</p>
+          <>
+            <p>Premium vous est offert.</p>
+            {data.has_customer && data.status && PAYING.includes(data.status) && (
+              <>
+                <p className="text-muted-foreground">Votre abonnement payant est toujours actif : vous pouvez le résilier.</p>
+                <ManageSubscriptionButton />
+              </>
+            )}
+          </>
         ) : data.source === "subscription" ? (
           <>
             <p className="font-medium">Premium {data.interval === "year" ? "annuel" : "mensuel"}</p>

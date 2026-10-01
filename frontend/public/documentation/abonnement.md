@@ -30,8 +30,8 @@ Tâches du worker :
 | Tâche | Quand | Rôle |
 |---|---|---|
 | `billing_sync` | 3 h 30 chaque nuit | Relit chez Stripe chaque abonnement vivant (et ceux terminés depuis moins de 7 jours) : rattrape un webhook perdu. Met aussi à jour l'adresse mail du client Stripe |
-| `renewal_notices` | 9 h chaque jour | Mail P5, 30 jours avant le renouvellement d'un abonnement **annuel** non résilié, une fois par échéance |
-| `stripe_cancellations` | Chaque minute | Résilie chez Stripe l'abonnement d'un compte supprimé, jusqu'à réussite (`stripe_cancellations`) |
+| `renewal_notices` | 9 h chaque jour | Mail P5, 30 jours avant le renouvellement d'un abonnement **annuel** non résilié, une fois par échéance. Le prix annoncé est celui de l'abonnement de la personne, relu chez Stripe ; si Stripe ne répond pas, le mail attend le lendemain |
+| `stripe_cancellations` | Chaque minute | Résilie chez Stripe l'abonnement d'un compte supprimé, ou un abonnement payé en double, jusqu'à réussite (`stripe_cancellations`) |
 
 Mails :
 
@@ -44,6 +44,10 @@ Mails :
 | P5 | `renewal_reminder` | 30 jours avant le renouvellement annuel (article L215-1 du Code de la consommation) |
 
 Ce sont des mails du compte (pas des notifications N1 à N6) : ils partent toujours.
+
+**Payé deux fois** (deux onglets ouverts sur la page de paiement) : le premier abonnement reste, le second est résilié tout de suite par la file `stripe_cancellations` et l'événement `duplicate_subscription` est journalisé. Le premier paiement du doublon est à **rembourser à la main** (voir plus bas).
+
+**Premium offert à un abonné payant** : la carte Abonnement garde le bouton « Gérer mon abonnement », pour qu'il puisse résilier.
 
 **Suppression d'un compte abonné** : `erase_account()` met l'abonnement vivant en file (`stripe_cancellations`) ; le worker le résilie immédiatement chez Stripe, sans remboursement (CGV, article 5).
 
@@ -92,5 +96,8 @@ stripe listen --forward-to localhost:8095/api/billing/webhook
 - **Offrir Premium** sans paiement : onglet Admin, interrupteur **Premium offert** sur la ligne du membre.
 
 ## Rembourser
+
+À faire notamment après un événement `duplicate_subscription` (onglet Admin, journal) : rembourser le premier paiement de l'abonnement indiqué.
+
 
 À la main, depuis le tableau de bord Stripe (Paiements > le paiement > Rembourser). L'application ne rembourse jamais elle-même ; pour couper l'accès, résilier l'abonnement dans Stripe.

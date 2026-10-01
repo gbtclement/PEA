@@ -55,7 +55,9 @@ def test_renewal_notice_once_per_period_and_yearly_only(db, make_ctx):
                       customer_id="cus_c")
     make_subscription(db, make_user(db, "l@example.com"), interval="year", period_end=NIGHT + timedelta(days=60),
                       sub_id="sub_l", customer_id="cus_l")
-    ctx = make_ctx(now=NIGHT, billing=FakeBilling())
+    stripe = FakeBilling()
+    stripe.put("sub_y", customer_id="cus_y", interval="year", period_end=soon)
+    ctx = make_ctx(now=NIGHT, billing=stripe)
     assert send_renewal_notices(ctx) == 1
     assert send_renewal_notices(ctx) == 0
     mail = db.scalar(select(EmailLog).where(EmailLog.kind == "renewal_reminder"))
@@ -74,3 +76,18 @@ def test_cancellations_are_retried_until_stripe_answers(db, make_ctx):
     stripe.down = False
     assert process_cancellations(make_ctx(now=NIGHT, billing=stripe)) == 1
     assert stripe.canceled == ["sub_gone"] and db.get(StripeCancellation, "sub_gone") is None
+
+
+def test_renewal_notice_states_the_subscribers_own_price_or_waits(db, make_ctx):
+    user = make_user(db, "p@example.com")
+    soon = NIGHT + timedelta(days=20)
+    make_subscription(db, user, interval="year", period_end=soon, sub_id="sub_p", customer_id="cus_p")
+    stripe = FakeBilling()
+    stripe.put("sub_p", customer_id="cus_p", interval="year", period_end=soon)
+    stripe.update("sub_p", price_amount=3900)
+    stripe.down = True
+    assert send_renewal_notices(make_ctx(now=NIGHT, billing=stripe)) == 0
+    assert db.get(Subscription, user.id).renewal_notice_sent_for is None
+    stripe.down = False
+    assert send_renewal_notices(make_ctx(now=NIGHT, billing=stripe)) == 1
+    assert "39,00 €" in db.scalar(select(EmailLog).where(EmailLog.kind == "renewal_reminder")).text

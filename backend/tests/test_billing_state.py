@@ -94,3 +94,22 @@ def test_premium_mails_render_as_account_mails(db, kind):
     assert "Rémi" in mail.text and "Ne plus recevoir" not in mail.text
     assert "/reglages#abonnement" in mail.text or "/premium" in mail.text
     assert "01/11/2026" in mail.text or kind == "premium_ended"
+
+
+def test_second_paid_subscription_is_queued_for_cancellation(db, user, stripe):
+    from app.models import StripeCancellation
+
+    apply_subscription(db, user, stripe.put("sub_1", customer_id="cus_1"), now=NOW)
+    second = stripe.put("sub_2", customer_id="cus_2")
+    row = apply_subscription(db, user, second, now=NOW)
+    apply_subscription(db, user, second, now=NOW)  # invoice.paid du doublon : rien de plus
+    assert (row.stripe_subscription_id, row.stripe_customer_id) == ("sub_1", "cus_1")
+    assert db.get(StripeCancellation, "sub_2") is not None
+    assert _kinds(db) == ["premium_started"]
+    assert "duplicate_subscription" in db.scalars(select(SecurityEvent.kind)).all()
+
+
+def test_p1_confirms_the_withdrawal_waiver(db, user, stripe):
+    apply_subscription(db, user, stripe.put(), now=NOW)
+    mail = db.scalar(select(EmailLog).where(EmailLog.kind == "premium_started"))
+    assert "renoncé à votre droit de rétractation" in mail.text and "/cgv" in mail.text

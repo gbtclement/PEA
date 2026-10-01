@@ -44,3 +44,13 @@ test("suit l'adresse : lien ou retour arrière vers une autre conversation", asy
   await userEvent.click(screen.getByRole("link", { name: "accueil assistant" }));
   expect(await screen.findByRole("button", { name: "Analyse mon portefeuille" })).toBeInTheDocument();
 });
+
+test("membre gratuit : ne demande ni la liste ni une conversation", async () => {
+  const fetch = mockFetch((url) => {
+    if (url === "/api/assistant/status") return { body: { available: false, reason: "premium", spent_usd: 0, limit_usd: 5, model: "Claude" } };
+    return { status: 403, body: { detail: "premium_required" } };
+  });
+  renderWithProviders(<AssistantPage />, { route: "/assistant?c=3" });
+  expect(await screen.findByText("Réservé aux membres Premium")).toBeInTheDocument();
+  expect(fetch.mock.calls.map(([url]) => String(url)).filter((url) => url.includes("/conversations"))).toEqual([]);
+});

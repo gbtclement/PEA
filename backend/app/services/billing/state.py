@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.models import Subscription, User
+from app.models import StripeCancellation, Subscription, User
 from app.services.billing.access import ACCESS_STATUSES, subscription_gives_access
 from app.services.billing.gateway import StripeSubscription
 from app.services.mail.outbox import enqueue
@@ -37,7 +37,7 @@ def mail_context(user: User, row: Subscription, amount: int | None = None, curre
         "period_end": period_end, "ends_on": period_end,
         "renews_on": period_end.strftime("%d/%m/%Y") if period_end else "",
         "amount": _amount(amount, currency),
-        "manage_url": f"{base}/reglages#abonnement", "premium_url": f"{base}/premium",
+        "manage_url": f"{base}/reglages#abonnement", "premium_url": f"{base}/premium", "cgv_url": f"{base}/cgv",
     }
 
 
@@ -46,6 +46,13 @@ def apply_subscription(db: Session, user: User, sub: StripeSubscription, *, now:
     if (row is not None and row.stripe_subscription_id not in (None, sub.id) and sub.status not in ACCESS_STATUSES
             and subscription_gives_access(row)):
         return row  # Ruling 5 : un essai raté n'écrase pas l'abonnement en cours
+    if (row is not None and row.stripe_subscription_id not in (None, sub.id) and sub.status in ACCESS_STATUSES
+            and subscription_gives_access(row)):
+        # Payé deux fois (deuxième onglet) : le doublon est résilié par la file, l'admin rembourse depuis Stripe.
+        if db.get(StripeCancellation, sub.id) is None:
+            db.add(StripeCancellation(subscription_id=sub.id))
+            log_event(db, "duplicate_subscription", now=now, user_id=user.id, details={"subscription_id": sub.id})
+        return row
     same = row is not None and row.stripe_subscription_id == sub.id
     had_access = subscription_gives_access(row)
     was_canceling = same and row.cancel_at_period_end
