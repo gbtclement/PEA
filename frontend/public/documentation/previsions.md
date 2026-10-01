@@ -87,5 +87,5 @@ Sans signal actif, pas de prédiction.
 
 - `forecast_runs` : une ligne par calcul complet (statistiques et test en JSON, coupure, frais). Seule la dernière est lue.
 - `forecasts` : une ligne par (titre, jour, horizon), avec rendement attendu, probabilité, fiabilité, signaux, rang, puis `actual_return` et `resolved_on` une fois l'horizon atteint.
-- Routes : voir [API REST](api.md?id=prévisions). Avant le premier calcul, les réponses sont vides avec `as_of: null`.
+- Routes : voir [API REST](api.md?id=prévisions). La liste des prédictions et la prévision d'un titre sont réservées aux membres Premium (`require_premium()`) ; les signaux et le bilan restent ouverts à tous les membres. Avant le premier calcul, les réponses sont vides avec `as_of: null`.
 - `/previsions` est toujours en `noindex` et absente du sitemap, par prudence réglementaire (AMF).

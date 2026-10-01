@@ -18,6 +18,8 @@ Une action sans signal aujourd'hui n'a pas de prévision.
 
 ### Prédictions
 
+?> Cet onglet est réservé aux membres **[Premium](app/premium.md)**. Sans Premium, la page s'ouvre sur le **Bulletin de notes** ; les statistiques des signaux et le bulletin restent ouverts à tous les membres.
+
 Toutes les actions qui présentent au moins un signal aujourd'hui. Pour chacune :
 - ses signaux actifs ;
 - pour 1 jour, 1 semaine et 1 mois : le **gain attendu** et la **probabilité de hausse** ;
@@ -51,7 +53,7 @@ Deux façons de vérifier si les prévisions valent quelque chose :
 
 ## Sur la fiche d'un titre
 
-La carte **Prévisions court terme** montre les signaux du titre et ses trois horizons.
+La carte **Prévisions court terme** montre les signaux du titre et ses trois horizons. Elle est réservée aux membres [Premium](app/premium.md).
 
 ## Quand sont-elles calculées ?
 

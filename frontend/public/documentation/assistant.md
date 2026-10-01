@@ -49,7 +49,7 @@ Catalogue dans `catalog.py`, avec les prix servant à estimer le coût :
 ## Clé API, Premium et limite
 
 - La clé est lue **uniquement** dans `ANTHROPIC_API_KEY` (`.env`). Elle n'est ni en base, ni renvoyée au navigateur, ni écrite dans les journaux. L'onglet Admin indique seulement si elle est renseignée.
-- Les routes de l'assistant sont réservées aux membres Premium et aux admins (`require_premium()`).
+- Les routes de l'assistant sont réservées aux membres Premium et aux admins (`require_premium()`). Premium s'obtient par abonnement ou est offert par un admin : voir [Abonnement (Stripe)](abonnement.md).
 - Le modèle et la limite mensuelle par utilisateur viennent de `app_settings` (onglet Admin). La migration a repris le modèle choisi avant les comptes (sinon `claude-opus-5`) ; `ASSISTANT_MODEL` ne sert que si cette ligne manque.
 - Chaque réponse ajoute son coût dans `ai_usage` par `add_cost()`. La limite est vérifiée avant la question (`429 ai_limit_reached`). Détails dans [Comptes utilisateurs](comptes.md#assistant--premium-et-limite-de-coût).
 

@@ -97,7 +97,7 @@ Le projet a été construit par lots. Chaque lot a sa spécification et son plan
 | Pages vides après installation | Le worker remplit encore la base : `docker compose logs -f worker` |
 | Bandeau « données anciennes » | Yahoo ne répond plus ou limite les requêtes. Le worker réessaiera tout seul |
 | L'assistant affiche « pas encore configuré » | `ANTHROPIC_API_KEY` est vide dans `.env` : renseignez-la puis `docker compose up -d api` |
-| L'assistant affiche « Réservé aux membres Premium » | Activez Premium sur le compte dans l'onglet Admin |
+| L'assistant affiche « Réservé aux membres Premium » | Cochez **Premium offert** sur le compte dans l'onglet Admin (ou abonnez-vous en mode test : voir [Abonnement](abonnement.md#tester-en-local)) |
 | `npm run gen:api` échoue | L'API de dev (port 8000) n'est pas lancée |
 | Connexion impossible en local, sans erreur | `COOKIE_SECURE` n'est pas à `false` : le navigateur refuse les cookies en HTTP |
 | Aucun mail reçu | Regardez http://localhost:8025 (Mailpit), puis `docker compose logs worker` et la table `email_log` |

@@ -24,6 +24,10 @@ PostgreSQL 16, conteneur `db`, données dans le volume Docker `pgdata`. Modèles
 | `price_alerts` | Alertes de prix : titre, sens, prix, active, date de déclenchement | **oui** |
 | `move_notices` | Titres déjà signalés par N1 ce jour-là (un mail par titre et par jour). Gardé 7 jours | **oui** |
 | `score_snapshots` | Score de chaque titre chaque soir, pour comparer à la veille (N6). Gardé 14 jours | non |
+| `subscriptions` | Abonnement Stripe de chaque compte (une ligne au plus) : identifiants client et abonnement Stripe, statut, formule `month`/`year`, fin de la période payée, résiliation demandée, échéance déjà rappelée par P5. Écrit seulement par `apply_subscription()` | **oui** |
+| `billing_consents` | Preuve des accords avant paiement : version des CGV, renonciation au droit de rétractation, formule, session Stripe, IP tronquée, date | **oui** |
+| `stripe_events` | Identifiants des événements webhook déjà traités (un événement n'est traité qu'une fois). Gardé 30 jours | non |
+| `stripe_cancellations` | Abonnements de comptes supprimés à résilier chez Stripe : essais, dernière erreur | non |
 | `orders` | Ordres : date, sens, quantité, prix unitaire, frais, note | **oui** |
 | `user_settings` | Ordres minimum, frais de non-respect, grille de courtage (JSON) | **oui** |
 | `app_settings` | Une seule ligne (`id = 1`) : modèle de l'assistant et limite mensuelle par utilisateur, réglés dans l'onglet Admin | non |

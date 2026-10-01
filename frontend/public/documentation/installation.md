@@ -24,6 +24,8 @@ node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
 
 La **clé Claude** de l'assistant se met dans `ANTHROPIC_API_KEY`, et nulle part ailleurs. Une clé saisie autrefois dans les Réglages a été effacée par la mise à jour des comptes : recopiez-la dans `.env`, puis `docker compose up -d api`. L'onglet Admin affiche « Renseigné » en face de Claude quand elle est lue.
 
+L'**abonnement Premium** demande les quatre variables `STRIPE_…` : voir [Abonnement (Stripe)](abonnement.md#mise-en-place). Vides, la page Premium affiche « L'abonnement arrive bientôt. ».
+
 Renseignez aussi les comptes et les mails :
 
 | Variable | En local | En ligne |
@@ -78,7 +80,7 @@ Au démarrage, le compte `ADMIN_EMAIL` devient administrateur. Il n'a pas encore
 
 Les autres personnes créent leur compte elles-mêmes avec **Créer un compte**. Détails dans [Comptes utilisateurs](comptes.md).
 
-L'onglet **Admin** de la barre latérale n'apparaît que pour ce compte (et les autres admins). On y active **Premium** sur un compte (accès à l'assistant IA), on règle le modèle et la limite mensuelle de l'assistant, et on vérifie ce qui est renseigné dans `.env` (sans jamais afficher les valeurs), avec un bouton pour envoyer un mail de test.
+L'onglet **Admin** de la barre latérale n'apparaît que pour ce compte (et les autres admins). On y offre **Premium** à un compte (assistant IA et prévisions), on règle le modèle et la limite mensuelle de l'assistant, et on vérifie ce qui est renseigné dans `.env` (sans jamais afficher les valeurs), avec un bouton pour envoyer un mail de test.
 
 ## Mettre à jour une installation d'avant les comptes
 
