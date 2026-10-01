@@ -1,0 +1,8 @@
+Bonjour {{ first_name }},
+
+Votre abonnement Premium est terminé : l'assistant IA et la liste des prévisions ne sont plus accessibles. Vos ordres, favoris et réglages sont conservés.
+
+Me réabonner : {{ premium_url }}
+Mes factures : {{ manage_url }}
+
+{% include "_footer.txt" %}

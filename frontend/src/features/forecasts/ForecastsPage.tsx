@@ -1,5 +1,7 @@
 import { useSearchParams } from "react-router";
 import { Button } from "@/components/ui/button";
+import { useMe } from "@/features/auth/useMe";
+import { PremiumCard } from "@/features/premium/PremiumCard";
 import { formatDate, formatRatioPct } from "@/lib/format";
 import { usePageMeta } from "@/seo/usePageMeta";
 import { PredictionsView } from "./PredictionsView";
@@ -21,9 +23,12 @@ export function ForecastsPage() {
     description: "Prédictions à 1 jour, 1 semaine et 1 mois calculées à partir des statistiques historiques des signaux techniques.",
     noindex: true,
   });
+  const { me } = useMe();
+  const premium = !!me?.has_premium;
+  const fallback: View = premium ? "predictions" : "bulletin";  // un membre gratuit arrive sur le bilan (spec 2)
   const [params, setParams] = useSearchParams();
-  const view: View = VIEWS.some((v) => v.key === params.get("vue")) ? (params.get("vue") as View) : "predictions";
-  const { data } = useForecasts();
+  const view: View = VIEWS.some((v) => v.key === params.get("vue")) ? (params.get("vue") as View) : fallback;
+  const { data } = useForecasts(premium);
 
   return (
     <section className="space-y-4">
@@ -43,12 +48,12 @@ export function ForecastsPage() {
       <div role="group" aria-label="Vues des prévisions" className="flex gap-2">
         {VIEWS.map((v) => (
           <Button key={v.key} variant={v.key === view ? "default" : "outline"} size="sm" aria-current={v.key === view ? "page" : undefined}
-                  onClick={() => setParams(v.key === "predictions" ? {} : { vue: v.key }, { replace: true })}>
+                  onClick={() => setParams(v.key === fallback ? {} : { vue: v.key }, { replace: true })}>
             {v.label}
           </Button>
         ))}
       </div>
-      {view === "predictions" && <PredictionsView />}
+      {view === "predictions" && (premium ? <PredictionsView /> : <PremiumCard feature="La liste des prévisions" />)}
       {view === "statistiques" && <SignalStatsView />}
       {view === "bulletin" && <TrackRecordView />}
     </section>

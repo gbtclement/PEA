@@ -476,6 +476,114 @@ export interface paths {
         patch: operations["update_price_alert_api_me_price_alerts__alert_id__patch"];
         trace?: never;
     };
+    "/api/billing/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Billing Plans */
+        get: operations["billing_plans_api_billing_plans_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Billing Subscription */
+        get: operations["billing_subscription_api_billing_subscription_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Billing Checkout */
+        post: operations["billing_checkout_api_billing_checkout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Billing Sync
+         * @description Retour de Stripe (/premium/merci) : applique l'abonnement sans attendre le webhook (spec 3.3).
+         */
+        post: operations["billing_sync_api_billing_sync_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/portal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Billing Portal */
+        post: operations["billing_portal_api_billing_portal_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/billing/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Billing Webhook
+         * @description Appelé par Stripe (pas de cookie, pas de CSRF) : seule la signature compte (spec 4.1).
+         */
+        post: operations["billing_webhook_api_billing_webhook_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/unsubscribe": {
         parameters: {
             query?: never;
@@ -483,7 +591,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Check Unsubscribe Link */
+        /**
+         * Check Unsubscribe Link
+         * @description Appelée par la page /desinscription. Ouverte dans un navigateur (lien List-Unsubscribe) : renvoie vers la page
+         *     de confirmation, sans rien changer.
+         */
         get: operations["check_unsubscribe_link_api_unsubscribe_get"];
         put?: never;
         /**
@@ -1156,6 +1268,12 @@ export interface components {
             role: string;
             /** Is Premium */
             is_premium: boolean;
+            /** Premium Source */
+            premium_source: string;
+            /** Subscription Interval */
+            subscription_interval?: string | null;
+            /** Subscription Status */
+            subscription_status?: string | null;
             /** Verified */
             verified: boolean;
             /** Has Password */
@@ -1239,6 +1357,18 @@ export interface components {
             /** Volume */
             volume: number | null;
         };
+        /** CheckoutIn */
+        CheckoutIn: {
+            /**
+             * Interval
+             * @enum {string}
+             */
+            interval: "month" | "year";
+            /** Accept Cgv */
+            accept_cgv: boolean;
+            /** Waive Withdrawal */
+            waive_withdrawal: boolean;
+        };
         /** CodeIn */
         CodeIn: {
             /** Code */
@@ -1276,6 +1406,12 @@ export interface components {
             app_secret: boolean;
             /** Admin Email */
             admin_email: boolean;
+            /** Stripe */
+            stripe: boolean;
+            /** Stripe Mode */
+            stripe_mode?: string | null;
+            /** Stripe Last Webhook At */
+            stripe_last_webhook_at?: string | null;
         };
         /** ConversationDetail */
         ConversationDetail: {
@@ -1657,6 +1793,8 @@ export interface components {
             has_google: boolean;
             /** Has Premium */
             has_premium: boolean;
+            /** Premium Source */
+            premium_source: string;
             /** Terms Outdated */
             terms_outdated: boolean;
         };
@@ -1812,6 +1950,24 @@ export interface components {
             /** New Password */
             new_password: string;
         };
+        /** PlanOut */
+        PlanOut: {
+            /** Interval */
+            interval: string;
+            /** Amount */
+            amount: number;
+            /** Currency */
+            currency: string;
+        };
+        /** PlansOut */
+        PlansOut: {
+            /** Configured */
+            configured: boolean;
+            /** Plans */
+            plans: components["schemas"]["PlanOut"][];
+            /** Yearly Saving Pct */
+            yearly_saving_pct: number | null;
+        };
         /** PortfolioOut */
         PortfolioOut: {
             /** Total Value */
@@ -1943,6 +2099,11 @@ export interface components {
              * Format: date
              */
             first_day: string;
+        };
+        /** RedirectOut */
+        RedirectOut: {
+            /** Url */
+            url: string;
         };
         /** RegisterIn */
         RegisterIn: {
@@ -2288,6 +2449,26 @@ export interface components {
             jobs: components["schemas"]["JobStatus"][];
             /** Indices */
             indices: components["schemas"]["IndexQuote"][];
+        };
+        /** SubscriptionOut */
+        SubscriptionOut: {
+            /** Source */
+            source: string;
+            /** Status */
+            status: string | null;
+            /** Interval */
+            interval: string | null;
+            /** Current Period End */
+            current_period_end: string | null;
+            /** Cancel At Period End */
+            cancel_at_period_end: boolean;
+            /** Has Customer */
+            has_customer: boolean;
+        };
+        /** SyncIn */
+        SyncIn: {
+            /** Session Id */
+            session_id: string;
         };
         /** TokenIn */
         TokenIn: {
@@ -3347,6 +3528,154 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    billing_plans_api_billing_plans_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlansOut"];
+                };
+            };
+        };
+    };
+    billing_subscription_api_billing_subscription_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionOut"];
+                };
+            };
+        };
+    };
+    billing_checkout_api_billing_checkout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CheckoutIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RedirectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    billing_sync_api_billing_sync_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyncIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    billing_portal_api_billing_portal_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RedirectOut"];
+                };
+            };
+        };
+    };
+    billing_webhook_api_billing_webhook_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };

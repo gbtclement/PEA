@@ -6,8 +6,8 @@ from sqlalchemy import inspect, select
 from sqlalchemy.orm import Session
 
 from app.models import (
-    AiUsage, AuthSession, ChatMessage, Conversation, DataExport, Favorite, NotificationPrefs, Order, PriceAlert, Security,
-    User, UserSettings,
+    AiUsage, AuthSession, BillingConsent, ChatMessage, Conversation, DataExport, Favorite, NotificationPrefs, Order, PriceAlert, Security,
+    Subscription, User, UserSettings,
 )
 
 EXPORT_TTL = timedelta(days=7)
@@ -42,6 +42,8 @@ def build_export(db: Session, user: User, now: datetime) -> dict:
                   for s in db.scalars(select(Security).where(Security.id.in_(ids)))} if ids else {}
     settings = db.get(UserSettings, user.id)
     conversations = db.scalars(select(Conversation).where(Conversation.user_id == user.id).order_by(Conversation.id)).all()
+    sub = db.get(Subscription, user.id)
+    consents = db.scalars(select(BillingConsent).where(BillingConsent.user_id == user.id).order_by(BillingConsent.accepted_at)).all()
     return {
         "genere_le": now.isoformat(),
         "profil": _row(user),
@@ -54,6 +56,10 @@ def build_export(db: Session, user: User, now: datetime) -> dict:
             select(ChatMessage).where(ChatMessage.conversation_id == c.id).order_by(ChatMessage.id))]} for c in conversations],
         "usage_assistant": [_row(u) for u in db.scalars(select(AiUsage).where(AiUsage.user_id == user.id))],
         "appareils": [_row(s) for s in db.scalars(select(AuthSession).where(AuthSession.user_id == user.id))],
+        "abonnement": {"formule": sub.interval, "etat": sub.status, "resiliation_demandee": sub.cancel_at_period_end,
+                       "fin_de_periode": _plain(sub.current_period_end)} if sub else None,
+        "accords_de_vente": [{"version_cgv": c.cgv_version, "renonciation_retractation": c.withdrawal_waiver,
+                              "formule": c.interval, "accepte_le": _plain(c.accepted_at)} for c in consents],
     }
 
 

@@ -9,6 +9,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.jobs.billing import process_cancellations, send_renewal_notices, sync_subscriptions
 from app.jobs.context import JobContext
 from app.jobs.privacy import build_pending_exports
 from app.jobs.forecasts import refresh_forecast_stats, refresh_forecasts, stats_are_stale
@@ -155,6 +156,22 @@ def cleanup_job(ctx: JobContext) -> None:
     run_job(ctx, "cleanup", purge_security_data)
 
 
+def billing_sync_job(ctx: JobContext) -> None:
+    run_job(ctx, "billing_sync", sync_subscriptions)
+
+
+def renewal_notices_job(ctx: JobContext) -> None:
+    run_job(ctx, "renewal_notices", send_renewal_notices)
+
+
+def cancellations_job(ctx: JobContext) -> None:
+    # Toutes les minutes, comme la file des mails : pas de trace dans data_status.
+    try:
+        process_cancellations(ctx)
+    except Exception:
+        logging.getLogger(__name__).exception("Échec des résiliations Stripe en attente")
+
+
 def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> BaseScheduler:
     tz = ctx.settings.timezone
     scheduler = scheduler or BlockingScheduler(timezone=tz)
@@ -174,6 +191,11 @@ def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> 
     scheduler.add_job(weekly_recap_job, CronTrigger(day_of_week="sat", hour=9, minute=0, timezone=tz),
                       args=[ctx], id="weekly_recap", **daily)
     scheduler.add_job(cleanup_job, CronTrigger(hour=3, minute=30, timezone=tz), args=[ctx], id="cleanup", **daily)
+    scheduler.add_job(billing_sync_job, CronTrigger(hour=3, minute=30, timezone=tz), args=[ctx], id="billing_sync", **daily)
+    scheduler.add_job(renewal_notices_job, CronTrigger(hour=9, minute=0, timezone=tz), args=[ctx], id="renewal_notices",
+                      **daily)
+    scheduler.add_job(cancellations_job, IntervalTrigger(seconds=60, timezone=tz), args=[ctx], id="stripe_cancellations",
+                      **common)
     intervals = {1: ctx.settings.quotes_t1_minutes, 2: ctx.settings.quotes_t2_minutes, 3: ctx.settings.quotes_t3_minutes}
     for tier, minutes in intervals.items():
         scheduler.add_job(quotes_job, IntervalTrigger(minutes=minutes, timezone=tz), args=[ctx, tier],

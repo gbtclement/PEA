@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const PRIVATE = ["/portefeuille", "/assistant", "/reglages"];
 const NOINDEX = [...PRIVATE, "/previsions", "/page-inconnue", "/verifier-email?adresse=a%40b.fr", "/mot-de-passe-oublie",
-                 "/accepter-cgu", "/desinscription"];
+                 "/accepter-cgu", "/desinscription", "/premium/merci"];
 const AUTH = ["/connexion", "/inscription"];
 
 async function headings(page: Page) {
@@ -16,7 +16,7 @@ test("structure et métadonnées de chaque page", async ({ page }) => {
   await expect(page.getByText("Score mixte")).toBeVisible();
   const security = new URL(page.url()).pathname;
 
-  for (const path of ["/", "/explorer", "/etf", ...AUTH, ...NOINDEX, security]) {
+  for (const path of ["/", "/explorer", "/etf", "/premium", "/cgv", ...AUTH, ...NOINDEX, security]) {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await page.waitForLoadState("networkidle");

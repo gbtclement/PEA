@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
-from app.core.current_user import get_current_user
+from app.core.current_user import get_current_user, require_premium
 from app.core.db import get_db
 from app.models import Forecast, Security, SecurityQuote, User
 from app.repositories.forecasts import forecasts_for, latest_as_of, latest_run
@@ -40,7 +40,7 @@ def _signals_of(items: list[Forecast]) -> list[str]:
 
 
 @router.get("/forecasts", response_model=ForecastListOut)
-def list_forecasts(db: DbDep, _user: User = Depends(get_current_user)) -> ForecastListOut:
+def list_forecasts(db: DbDep, _user: User = Depends(require_premium)) -> ForecastListOut:
     run = latest_run(db)
     cost = run.round_trip_cost if run else None
     as_of = latest_as_of(db)
@@ -117,7 +117,7 @@ def track_record(db: DbDep, _user: User = Depends(get_current_user)) -> TrackRec
 
 
 @router.get("/securities/{security_id}/forecast", response_model=SecurityForecastOut)
-def security_forecast(security_id: int, db: DbDep, _user: User = Depends(get_current_user)) -> SecurityForecastOut:
+def security_forecast(security_id: int, db: DbDep, _user: User = Depends(require_premium)) -> SecurityForecastOut:
     if db.get(Security, security_id) is None:
         raise HTTPException(status_code=404, detail="Titre introuvable")
     as_of = latest_as_of(db)

@@ -1,0 +1,9 @@
+Bonjour {{ first_name }},
+
+Votre abonnement Premium annuel sera renouvelé automatiquement le {{ period_end | day }}{% if amount %}, pour {{ amount }}{% endif %}.
+
+Vous n'avez rien à faire pour le garder. Pour l'arrêter, résiliez avant cette date : vous garderez Premium jusqu'au {{ period_end | day }}.
+
+Gérer mon abonnement : {{ manage_url }}
+
+{% include "_footer.txt" %}

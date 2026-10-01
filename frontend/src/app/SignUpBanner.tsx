@@ -3,7 +3,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { useMe } from "@/features/auth/useMe";
 import { cn } from "@/lib/utils";
 
-const LEGAL_PAGES = ["/cgu", "/confidentialite", "/mentions-legales"];
+const LEGAL_PAGES = ["/cgu", "/cgv", "/confidentialite", "/mentions-legales"];
 
 /** Invitation discrète à créer un compte, pour les visiteurs seulement. */
 export function SignUpBanner() {

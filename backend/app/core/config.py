@@ -55,10 +55,21 @@ class Settings(BaseSettings):
     # Cloudflare Turnstile ; clé secrète vide = captcha désactivé (local, tests)
     turnstile_site_key: str = ""
     turnstile_secret_key: str = ""
+
+    # Stripe (spec 7) : les quatre sont nécessaires, sinon /premium affiche « L'abonnement arrive bientôt ».
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_price_monthly: str = ""
+    stripe_price_yearly: str = ""
+
     # Refus des mots de passe connus dans les fuites (Have I Been Pwned, k-anonymat)
     hibp_enabled: bool = True
     # Origines acceptées en plus de PUBLIC_BASE_URL (serveur Vite de développement), séparées par des virgules
     dev_origins: str = "http://localhost:5180"
+
+    @property
+    def stripe_configured(self) -> bool:
+        return all((self.stripe_secret_key, self.stripe_webhook_secret, self.stripe_price_monthly, self.stripe_price_yearly))
 
 
 @lru_cache

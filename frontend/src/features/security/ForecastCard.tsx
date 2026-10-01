@@ -4,16 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HORIZONS, ReliabilityBadge, SignalChip, roundPct, signedPct, tone } from "@/features/forecasts/shared";
 import { loginPath } from "@/features/auth/redirect";
 import { useMe } from "@/features/auth/useMe";
+import { PremiumCard } from "@/features/premium/PremiumCard";
 import { apiGet, type SecurityForecast } from "@/lib/api/client";
 
 export function ForecastCard({ securityId }: { securityId: number }) {
   const { me } = useMe();
   const location = useLocation();
+  const premium = !!me?.has_premium;
   const { data, isPending } = useQuery({
     queryKey: ["forecast", securityId],
     queryFn: () => apiGet<SecurityForecast>(`/api/securities/${securityId}/forecast`),
     staleTime: 300_000,
-    enabled: !!me,
+    enabled: premium,
   });
   return (
     <Card>
@@ -29,6 +31,8 @@ export function ForecastCard({ securityId }: { securityId: number }) {
             Les prévisions sont réservées aux membres connectés.{" "}
             <Link to={loginPath(location)} className="font-medium text-primary">Connectez-vous</Link>
           </p>
+        ) : me && !premium ? (
+          <PremiumCard compact feature="La prévision de ce titre" />
         ) : isPending ? <p className="text-muted-foreground">Chargement…</p> : !data?.as_of ? (
           <p className="text-muted-foreground">Premier calcul en cours.</p>
         ) : data.signals.length === 0 ? (

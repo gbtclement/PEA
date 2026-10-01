@@ -1,10 +1,16 @@
 # Réglages
 
-Les Réglages regroupent votre compte et vos frais de courtage.
+Les Réglages regroupent votre compte, votre abonnement et vos frais de courtage.
 
 ## Profil
 
 Votre prénom et votre nom, tels qu'ils apparaissent dans l'application et dans les mails.
+
+## Abonnement
+
+La carte **Abonnement** montre votre formule Premium (mensuelle ou annuelle) et la date du prochain renouvellement, ou la date de fin si vous avez résilié. Une alerte apparaît si un paiement a échoué. Le bouton **Gérer mon abonnement** ouvre l'espace client de Stripe : carte, factures, changement de formule, résiliation. Voir [Premium](app/premium.md#gérer-ou-résilier).
+
+Sans abonnement, la carte propose **Découvrir Premium**. Si l'administrateur vous offre Premium, elle l'indique.
 
 ## Mot de passe
 

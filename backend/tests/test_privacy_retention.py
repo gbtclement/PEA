@@ -98,3 +98,14 @@ def test_old_score_snapshots_and_move_notices_are_purged(db, user):
     db.flush()
     counts = run_retention(db, NOW)
     assert (counts["score_snapshots"], counts["move_notices"]) == (1, 1)
+
+
+def test_inactivity_never_deletes_a_paying_subscriber(db):
+    from tests.factories import make_subscription
+
+    user = make_user(db, "abonne@example.com")
+    make_subscription(db, user, interval="year", period_end=NOW + timedelta(days=200))
+    _age(user, 4 * 365)
+    db.flush()
+    assert run_retention(db, NOW)["warned"] == 0
+    assert run_retention(db, NOW + timedelta(days=40))["inactive_deleted"] == 0

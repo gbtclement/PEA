@@ -17,6 +17,9 @@ const COLUMNS: { key: Sort; label: string }[] = [
   { key: "created_at", label: "Inscription" }, { key: "last_login_at", label: "Dernière connexion" },
 ];
 const date = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("fr-FR") : "—");
+const PREMIUM_LABELS: Record<string, string> = { offered: "Offert", admin: "Admin" };
+const premiumLabel = (u: AdminUser) =>
+  u.premium_source === "subscription" ? `Abonné (${u.subscription_interval === "year" ? "annuel" : "mensuel"})` : PREMIUM_LABELS[u.premium_source] ?? "";
 const methods = (u: AdminUser) => [u.has_password && "Mot de passe", u.has_google && "Google"].filter(Boolean).join(", ") || "—";
 
 export function UsersCard() {
@@ -78,9 +81,12 @@ export function UsersCard() {
                   <TableCell>{u.email}</TableCell>
                   <TableCell>{u.role === "admin" ? "Admin" : "Utilisateur"}</TableCell>
                   <TableCell>
-                    <input type="checkbox" role="switch" aria-label={`Premium pour ${name}`} className="size-4 accent-primary"
-                           checked={u.is_premium || u.role === "admin"} disabled={u.role === "admin" || premium.isPending}
-                           onChange={() => premium.mutate(u)} />
+                    <div className="flex items-center gap-2 whitespace-nowrap">
+                      <input type="checkbox" role="switch" aria-label={`Premium offert pour ${name}`} className="size-4 accent-primary"
+                             checked={u.is_premium || u.role === "admin"} disabled={u.role === "admin" || premium.isPending}
+                             onChange={() => premium.mutate(u)} />
+                      <span className="text-xs text-muted-foreground">{premiumLabel(u)}</span>
+                    </div>
                   </TableCell>
                   <TableCell>{u.verified ? "Oui" : "Non"}</TableCell>
                   <TableCell>{date(u.created_at)}</TableCell>

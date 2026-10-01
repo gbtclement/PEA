@@ -4,13 +4,13 @@ L'assistant est **Claude**, une intelligence artificielle de la société Anthro
 
 ## Qui peut l'utiliser
 
-L'assistant est réservé aux membres **Premium**. Vous n'avez rien à configurer : pas de clé à créer ni à coller. L'abonnement Premium arrivera bientôt ; en attendant, l'administrateur du site peut activer Premium sur votre compte.
+L'assistant est réservé aux membres **Premium**. Vous n'avez rien à configurer : pas de clé à créer ni à coller. Pour l'obtenir, abonnez-vous depuis la page [Premium](app/premium.md).
 
 Si l'assistant n'est pas disponible, la page vous dit pourquoi :
 
 | Message | Ce que ça veut dire |
 |---|---|
-| **Réservé aux membres Premium** | Votre compte n'est pas Premium |
+| **Réservé aux membres Premium** | Votre compte n'est pas Premium : bouton **Découvrir Premium** |
 | **Limite du mois atteinte** | Vous avez utilisé tout votre budget du mois (voir plus bas) |
 | **Assistant pas encore configuré** | Le site n'est pas encore relié à Claude : c'est à l'administrateur de le faire |
 

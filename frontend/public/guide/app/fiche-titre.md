@@ -35,7 +35,7 @@ Tout est expliqué avec des exemples dans [Lire un graphique](bourse/analyse-tec
 | **Données fondamentales** | PER, bénéfice par action, croissance, dette, marge, dividende, capitalisation (voir [Juger une entreprise](bourse/analyse-fondamentale.md)). |
 | **Simulateur** | « Si j'avais investi X € il y a 1 semaine / 1 mois / 6 mois / 1 an » : gain en euros et en %, frais compris. |
 | **Frais estimés** | Ce que coûterait un ordre avec votre grille de frais. |
-| **Prévisions court terme** | Les signaux repérés aujourd'hui et la prévision à 1 jour, 1 semaine et 1 mois (voir [Prévisions](app/previsions.md)). |
+| **Prévisions court terme** | Les signaux repérés aujourd'hui et la prévision à 1 jour, 1 semaine et 1 mois (voir [Prévisions](app/previsions.md)). Réservé aux membres [Premium](app/premium.md). |
 | **Actualités** | Les derniers articles publiés sur l'entreprise. |
 
 > **Exemple :** une action est passée de 40 € à 46 € en un an. Avec 12 actions achetées il y a un an, vous auriez payé 480 € plus 2,30 € de frais, soit 482,30 €. Elles valent aujourd'hui 552 € : un gain de 69,70 €, environ **+14 %**. Le simulateur fait ce type de calcul pour vous, frais compris.

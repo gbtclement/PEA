@@ -6,6 +6,7 @@
 
 - **Fonctionnement**
   - [Comptes utilisateurs](comptes.md)
+  - [Abonnement (Stripe)](abonnement.md)
   - [Données et worker](donnees.md)
   - [Éligibilité PEA](eligibilite.md)
   - [Score mixte](score.md)

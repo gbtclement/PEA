@@ -5,6 +5,14 @@ import pytest
 from app.models import Forecast, ForecastRun, SecurityQuote
 from tests.factories import make_security
 
+
+@pytest.fixture(autouse=True)
+def premium_user(db, user):
+    """Le contenu des prévisions est testé avec un compte Premium ; l'accès est testé dans test_api_premium_gates.py."""
+    user.is_premium = True
+    db.flush()
+
+
 AS_OF = date(2026, 9, 25)
 
 

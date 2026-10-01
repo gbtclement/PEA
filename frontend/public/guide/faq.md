@@ -38,7 +38,23 @@ C'est possible : l'éligibilité est déduite du pays du siège, pas d'une liste
 
 ## Combien coûte l'assistant IA ?
 
-Il est réservé aux membres **Premium**, avec un budget par mois. Chaque question coûte en général quelques centimes ; le coût de chaque conversation et votre dépense du mois sont affichés. Voir [Assistant IA](app/assistant.md).
+Il est réservé aux membres **[Premium](app/premium.md)**, avec un budget par mois. Chaque question coûte en général quelques centimes ; le coût de chaque conversation et votre dépense du mois sont affichés. Voir [Assistant IA](app/assistant.md).
+
+## Premium est-il obligatoire ?
+
+Non. Presque tout PEA Radar est gratuit. Premium, payant, ajoute l'assistant IA et la liste des prévisions court terme. Voir [Premium](app/premium.md).
+
+## Comment résilier Premium ?
+
+Dans les **Réglages**, carte **Abonnement**, cliquez sur **Gérer mon abonnement**, puis résiliez dans l'espace client de Stripe. Voir [Premium](app/premium.md#gérer-ou-résilier).
+
+## Suis-je remboursé si je résilie ?
+
+Non : vous gardez Premium jusqu'à la fin de la période déjà payée (le mois ou l'année en cours), puis il s'arrête. Rien n'est prélevé ensuite.
+
+## PEA Radar voit-il ma carte bancaire ?
+
+Non. Le paiement se fait sur la page sécurisée de **Stripe**, notre prestataire de paiement : PEA Radar ne voit jamais votre numéro de carte.
 
 ## Je suis bloqué après plusieurs essais
 

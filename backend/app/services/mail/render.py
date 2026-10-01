@@ -23,6 +23,11 @@ SUBJECTS = {
     "weekly_recap": "Votre récap de la semaine PEA Radar",
     "order_reminder": "Compteur d'ordres : il vous manque {remaining} ordre(s)",
     "score_change": "Changement de score de vos favoris",
+    "premium_started": "Bienvenue dans PEA Radar Premium",
+    "payment_failed": "Le paiement de votre abonnement Premium a échoué",
+    "premium_canceling": "Votre abonnement Premium est résilié",
+    "premium_ended": "Votre accès Premium est terminé",
+    "renewal_reminder": "Votre abonnement Premium annuel sera renouvelé le {renews_on}",
 }
 KINDS = frozenset(SUBJECTS)
 

@@ -2,15 +2,16 @@ import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, Response
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_google_client
+from app.api.deps import get_billing_gateway, get_google_client
 from app.api.routes.auth import fail
 from app.core.config import get_settings
 from app.core.current_user import get_now, require_admin
 from app.core.db import get_db
-from app.models import User
+from app.models import StripeEvent, User
 from app.repositories.app_settings import get_app_settings
 from app.schemas.admin import (
     AdminSettingsIn, AdminSettingsOut, AdminUserListOut, AdminUserOut, AdminUserUpdate, ConfigStatusOut, DeleteUserIn,
@@ -20,6 +21,8 @@ from app.schemas.auth import NoticeOut
 from app.services.admin.users import PAGE_SIZE, AdminError, delete_user, list_users, update_user
 from app.services.assistant.catalog import MODELS
 from app.services.auth.google import GoogleClient
+from app.services.billing.access import premium_source
+from app.services.billing.gateway import BillingGateway
 from app.services.mail.outbox import enqueue
 from app.services.security_log import log_event
 
@@ -30,7 +33,10 @@ _USER_FIELDS = ("id", "email", "first_name", "last_name", "role", "is_premium", 
 
 
 def _out(user: User) -> AdminUserOut:
-    return AdminUserOut(**{k: getattr(user, k) for k in _USER_FIELDS}, verified=user.email_verified_at is not None)
+    sub = user.subscription
+    return AdminUserOut(**{k: getattr(user, k) for k in _USER_FIELDS}, verified=user.email_verified_at is not None,
+                        premium_source=premium_source(user), subscription_interval=sub.interval if sub else None,
+                        subscription_status=sub.status if sub else None)
 
 
 def _target(db: Session, user_id: uuid.UUID) -> User:
@@ -97,13 +103,16 @@ def admin_update_settings(payload: AdminSettingsIn, db: Session = Depends(get_db
 
 
 @router.get("/config-status", response_model=ConfigStatusOut)
-def admin_config_status(google: GoogleClient | None = Depends(get_google_client)) -> ConfigStatusOut:
+def admin_config_status(google: GoogleClient | None = Depends(get_google_client), db: Session = Depends(get_db),
+                        billing: BillingGateway | None = Depends(get_billing_gateway)) -> ConfigStatusOut:
     """Ce qui est renseigné dans .env : oui ou non, jamais la valeur."""
     s = get_settings()
     return ConfigStatusOut(claude=bool(s.anthropic_api_key), smtp=bool(s.smtp_host), google=google is not None,
                            turnstile=bool(s.turnstile_secret_key and s.turnstile_site_key),
                            app_secret=bool(s.app_secret) and s.app_secret != "change-me",
-                           admin_email=bool(s.admin_email))
+                           admin_email=bool(s.admin_email), stripe=billing is not None,
+                           stripe_mode=billing.mode if billing else None,
+                           stripe_last_webhook_at=db.scalar(select(func.max(StripeEvent.received_at))))
 
 
 @router.post("/test-email", response_model=NoticeOut, status_code=202)

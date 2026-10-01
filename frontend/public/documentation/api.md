@@ -38,7 +38,7 @@ Détails dans [Comptes utilisateurs](comptes.md).
 | GET | `/auth/google/pending` | Nouveau compte Google en attente : `{email, first_name, last_name}`, ou `404 google_expired` |
 | POST | `/auth/google/complete` | `{first_name, last_name, accept_terms}` : crée le compte Google et ouvre la session. `400 google_expired` après 30 min |
 | GET | `/auth/admin-check` | `204` pour un admin connecté, `401` sinon. Appelée par nginx (`auth_request`) avant de servir `/documentation/` |
-| GET | `/me` | Le compte connecté (`id`, `email`, `first_name`, `last_name`, `role`, `is_premium`, `has_premium`, `has_password`, `has_google`, `terms_outdated`), ou `401` |
+| GET | `/me` | Le compte connecté (`id`, `email`, `first_name`, `last_name`, `role`, `is_premium` (Premium offert), `has_premium`, `premium_source` (`admin`, `offered`, `subscription` ou `none`), `has_password`, `has_google`, `terms_outdated`), ou `401` |
 | PATCH | `/me` | `{first_name, last_name}` : modifier son profil |
 | POST | `/me/password` | `{current_password, new_password}` : change le mot de passe et ferme les **autres** sessions. `current_password` n'est pas demandé à un compte Google sans mot de passe (« Ajouter un mot de passe ») |
 | POST | `/me/email` | `{new_email, password}` : envoie un code à la nouvelle adresse. Toujours `202`, même si l'adresse est déjà prise |
@@ -153,6 +153,19 @@ Toutes les routes, sauf `/assistant/status`, sont réservées aux membres **Prem
 | DELETE | `/assistant/conversations/{id}` | Supprimer une conversation |
 | POST | `/assistant/conversations/{id}/messages` | Envoyer un message. **Réponse en flux SSE**. `409 ai_not_configured` sans `ANTHROPIC_API_KEY`, `429 ai_limit_reached` quand la limite du mois est atteinte |
 
+## Abonnement
+
+Voir [Abonnement (Stripe)](abonnement.md). Sans les 4 variables Stripe, les routes qui appellent Stripe répondent `503 billing_not_configured` ; Stripe injoignable : `503 billing_unavailable`.
+
+| Méthode | Route | Rôle |
+|---|---|---|
+| GET | `/billing/plans` | Public. `{configured, plans: [{interval, amount, currency}], yearly_saving_pct}` ; montants en centimes. `configured: false` sans Stripe |
+| GET | `/billing/subscription` | `{source, status, interval, current_period_end, cancel_at_period_end, has_customer}` du compte connecté |
+| POST | `/billing/checkout` | `{interval, accept_cgv, waive_withdrawal}` : enregistre l'accord et renvoie `{url}` de la page de paiement Stripe. Refus `409 already_premium`, `409 premium_offered`, `422 consent_required`, `429 too_many_attempts` (10 par heure) |
+| POST | `/billing/sync` | `{session_id}` : au retour de Stripe, applique l'abonnement sans attendre le webhook. `404 not_found` si la session n'est pas celle du compte |
+| POST | `/billing/portal` | Renvoie `{url}` du portail client Stripe. `404 no_customer` sans abonnement |
+| POST | `/billing/webhook` | Appelé par Stripe, sans session ni CSRF : seule la signature compte (`400 bad_signature`) |
+
 ## Admin
 
 Toutes ces routes sont **admin** (`require_admin()`).
@@ -163,17 +176,17 @@ Toutes ces routes sont **admin** (`require_admin()`).
 | PATCH | `/admin/users/{id}` | `{first_name, last_name, email, role, is_premium}`, tous facultatifs. Un changement de rôle ou d'adresse ferme les sessions du compte. Refus `self_demotion`, `last_admin`, `email_taken` |
 | DELETE | `/admin/users/{id}` | `{confirm_email}` : supprime le compte et ses données. Refus `self_delete`, `confirm_mismatch` |
 | GET / PUT | `/admin/settings` | `{ai_model, ai_monthly_cost_limit_usd}` ; la lecture ajoute la liste `models` |
-| GET | `/admin/config-status` | Ce qui est renseigné dans `.env` : `{claude, smtp, google, turnstile, app_secret, admin_email}`, des booléens, **jamais les valeurs** |
+| GET | `/admin/config-status` | Ce qui est renseigné dans `.env` : `{claude, smtp, google, turnstile, app_secret, admin_email, stripe}`, des booléens, **jamais les valeurs**, plus `stripe_mode` (`test` ou `live`) et `stripe_last_webhook_at` |
 | POST | `/admin/test-email` | Met un mail de test en file d'attente pour l'admin connecté |
 
 ## Prévisions
 
 | Méthode | Route | Rôle |
 |---|---|---|
-| GET | `/forecasts` | Prédictions de la dernière séance calculée, pour les 3 horizons |
+| GET | `/forecasts` | Prédictions de la dernière séance calculée, pour les 3 horizons. **Premium** (`403 premium_required`) |
 | GET | `/forecasts/signals` | Statistiques signaux × horizons, référence et frais |
 | GET | `/forecasts/track-record` | Test sur l'année écoulée et suivi réel |
-| GET | `/securities/{id}/forecast` | Signaux actifs et prédictions d'un titre |
+| GET | `/securities/{id}/forecast` | Signaux actifs et prédictions d'un titre. **Premium** (`403 premium_required`) |
 
 Avant le premier calcul, ces routes renvoient des listes vides avec `as_of: null`.
 

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy import ColumnElement, func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.security import normalize_email
 from app.models import User
@@ -59,7 +59,7 @@ def list_users(db: Session, *, q: str, sort: str, order: str, page: int) -> User
     total = db.scalar(select(func.count()).select_from(stmt.subquery()))
     column = SORTS[sort]
     ordering = column.asc().nulls_last() if order == "asc" else column.desc().nulls_last()
-    rows = db.scalars(stmt.order_by(ordering, User.id).offset((page - 1) * PAGE_SIZE).limit(PAGE_SIZE)).all()
+    rows = db.scalars(stmt.options(selectinload(User.subscription)).order_by(ordering, User.id).offset((page - 1) * PAGE_SIZE).limit(PAGE_SIZE)).all()
     return UserPage(list(rows), total)
 
 

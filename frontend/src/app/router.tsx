@@ -29,8 +29,10 @@ export const routes: RouteObject[] = [
       { path: "etf", element: <ScreenerPage kind="etf" title="ETF" description="Les ETF éligibles au PEA, classés par score technique." /> },
       { path: "titres/:id", lazy: async () => ({ Component: (await import("@/features/security/SecurityPage")).SecurityPage }) },
       { path: "cgu", element: <LegalPage kind="cgu" /> },
+      { path: "cgv", element: <LegalPage kind="cgv" /> },
       { path: "confidentialite", element: <LegalPage kind="confidentialite" /> },
       { path: "mentions-legales", element: <LegalPage kind="mentions-legales" /> },
+      { path: "premium", lazy: async () => ({ Component: (await import("@/features/premium/PremiumPage")).PremiumPage }) },
       // Pages personnelles : connexion obligatoire
       {
         element: <RequireAuth />,
@@ -39,6 +41,7 @@ export const routes: RouteObject[] = [
           { path: "portefeuille", lazy: async () => ({ Component: (await import("@/features/portfolio/PortfolioPage")).PortfolioPage }) },
           { path: "assistant", lazy: async () => ({ Component: (await import("@/features/assistant/AssistantPage")).AssistantPage }) },
           { path: "reglages", element: <SettingsPage /> },
+          { path: "premium/merci", lazy: async () => ({ Component: (await import("@/features/premium/PremiumThanksPage")).PremiumThanksPage }) },
           {
             element: <RequireAdmin />,
             children: [{ path: "admin", lazy: async () => ({ Component: (await import("@/features/admin/AdminPage")).AdminPage }) }],

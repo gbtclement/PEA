@@ -9,11 +9,13 @@ afterEach(() => vi.unstubAllGlobals());
 
 const ADMIN = { ...ME, role: "admin", has_premium: true };
 const PAUL = { id: "u2", email: "paul@example.com", first_name: "Paul", last_name: "Martin", role: "user",
-  is_premium: false, verified: true, has_password: true, has_google: false, created_at: "2026-09-01T08:00:00Z", last_login_at: null };
+  is_premium: false, verified: true, has_password: true, has_google: false, created_at: "2026-09-01T08:00:00Z", last_login_at: null,
+  premium_source: "none", subscription_interval: null, subscription_status: null };
 const LIST = { items: [PAUL], total: 1, page: 1, page_size: 50 };
 const SETTINGS = { ai_model: "claude-opus-5", ai_monthly_cost_limit_usd: 5, models: [
   { id: "claude-opus-5", label: "Claude Opus 5 (recommandé)" }, { id: "claude-haiku-4-5", label: "Claude Haiku 4.5 (économique)" }] };
-const STATUS = { claude: true, smtp: true, google: false, turnstile: false, app_secret: true, admin_email: true };
+const STATUS = { claude: true, smtp: true, google: false, turnstile: false, app_secret: true, admin_email: true,
+                 stripe: true, stripe_mode: "test", stripe_last_webhook_at: "2026-10-02T08:00:00Z" };
 
 function api(overrides: Record<string, unknown> = {}) {
   return mockFetch((url) => {
@@ -42,7 +44,7 @@ test("liste les inscrits, cherche et trie côté serveur", async () => {
 test("bascule Premium dans le tableau", async () => {
   const fetchMock = api({ "/api/admin/users/u2": { ...PAUL, is_premium: true } });
   renderWithProviders(<AdminPage />);
-  await userEvent.click(await screen.findByRole("switch", { name: "Premium pour Paul Martin" }));
+  await userEvent.click(await screen.findByRole("switch", { name: "Premium offert pour Paul Martin" }));
   await waitFor(() => expect(bodyOf(fetchMock, "/api/admin/users/u2", "PATCH")).toEqual({ is_premium: true }));
 });
 
@@ -94,7 +96,19 @@ test("règle l'assistant et affiche l'état de la configuration sans valeur", as
   const status = screen.getByRole("list", { name: "État de la configuration" });
   expect(within(status).getByText("Claude").closest("li")).toHaveTextContent("Renseigné");
   expect(within(status).getByText("Google").closest("li")).toHaveTextContent("Manquant");
+  expect(screen.getByText("Paiement (Stripe)")).toBeInTheDocument();
+  expect(screen.getByText(/mode test/)).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Envoyer un mail de test" }));
   await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/admin/test-email", expect.objectContaining({ method: "POST" })));
   expect(screen.getByRole("link", { name: "Documentation admin" })).toHaveAttribute("href", "/documentation/");
+});
+
+test("colonne Premium : abonné, offert, admin", async () => {
+  api({ "/api/admin/users?sort=created_at&order=desc&page=1": { items: [
+    { ...PAUL, premium_source: "subscription", subscription_interval: "year", subscription_status: "active" },
+    { ...PAUL, id: "u3", first_name: "Léa", premium_source: "offered", is_premium: true },
+  ], total: 2, page: 1, page_size: 50 } });
+  renderWithProviders(<AdminPage />);
+  expect(await screen.findByText("Abonné (annuel)")).toBeInTheDocument();
+  expect(screen.getByText("Offert")).toBeInTheDocument();
 });

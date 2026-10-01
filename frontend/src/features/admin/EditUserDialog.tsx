@@ -44,8 +44,13 @@ function EditUserForm({ user, onDone }: { user: AdminUser; onDone: () => void })
         </select>
       </label>
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" className="size-4 accent-primary" checked={form.is_premium} onChange={set("is_premium")} />Premium
+        <input type="checkbox" className="size-4 accent-primary" checked={form.is_premium} onChange={set("is_premium")} />Premium offert
       </label>
+      {user.subscription_status && (
+        <p className="text-xs text-muted-foreground">
+          Abonnement Stripe : {user.subscription_interval === "year" ? "annuel" : "mensuel"}, {user.subscription_status} (lecture seule).
+        </p>
+      )}
       {save.error && <p role="alert" className="text-sm text-destructive">{(save.error as ApiError).message}</p>}
       <Button type="submit" disabled={save.isPending}>Enregistrer</Button>
     </form>

@@ -10,8 +10,8 @@ export const HORIZONS = [
 ] as const;
 export type HorizonKey = (typeof HORIZONS)[number]["key"];
 
-export const useForecasts = () =>
-  useQuery({ queryKey: ["forecasts"], queryFn: () => apiGet<ForecastList>("/api/forecasts"), staleTime: 300_000 });
+export const useForecasts = (enabled = true) =>
+  useQuery({ queryKey: ["forecasts"], queryFn: () => apiGet<ForecastList>("/api/forecasts"), staleTime: 300_000, enabled });
 export const useSignalStats = () =>
   useQuery({ queryKey: ["forecasts", "signals"], queryFn: () => apiGet<SignalStats>("/api/forecasts/signals"), staleTime: 300_000 });
 export const useTrackRecord = () =>
