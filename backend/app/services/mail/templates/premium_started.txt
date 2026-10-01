@@ -1,7 +1,7 @@
 Bonjour {{ first_name }},
 
 Merci ! Votre abonnement Premium {{ interval_label }} est actif. Vous avez maintenant accès à :
-- l'assistant IA, pour poser vos questions sur vos titres et votre PEA ;
+- l'assistant IA, pour poser vos questions sur vos titres et votre portefeuille ;
 - la liste des prévisions court terme et le bloc prévision de chaque fiche.
 {% if period_end %}
 Prochaine échéance : {{ period_end | day }}.
@@ -11,6 +11,6 @@ Gérer mon abonnement (carte, factures, résiliation) : {{ manage_url }}
 
 Avant le paiement, vous avez accepté les conditions générales de vente ({{ cgv_url }}), demandé l'accès immédiat à Premium et renoncé à votre droit de rétractation de 14 jours.
 
-PEA Radar reste un outil d'aide à la décision, et non un conseil en investissement.
+{{ app_name }} reste un outil d'aide à la décision, et non un conseil en investissement.
 
 {% include "_footer.txt" %}

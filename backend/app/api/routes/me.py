@@ -187,6 +187,6 @@ def download_data_export(export_id: uuid.UUID, db: Session = Depends(get_db), us
     row = db.get(DataExport, export_id)
     if row is None or row.user_id != user.id or row.status != "ready" or row.expires_at <= now:
         raise fail(404, "not_found", "Export introuvable ou expiré : demandez-en un nouveau.")
-    name = f"pea-radar-mes-donnees-{row.ready_at:%Y-%m-%d}.json"
+    name = f"cotalyx-mes-donnees-{row.ready_at:%Y-%m-%d}.json"
     return Response(row.content, media_type="application/json",
                     headers={"Content-Disposition": f'attachment; filename="{name}"', "Cache-Control": "no-store"})

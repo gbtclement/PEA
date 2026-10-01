@@ -70,12 +70,13 @@ def test_llms_txt_describes_site(online, db):
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/markdown")
     text = response.text
-    assert text.startswith("# PEA Radar\n")
+    assert text.startswith("# Cotalyx\n")
     for url in ("https://pea.example/", "https://pea.example/explorer", "https://pea.example/etf", "https://pea.example/sitemap.xml"):
         assert url in text
     assert "pas un conseil en investissement" in text
     assert "1 action" in text and "1 ETF" in text
     assert "/portefeuille" not in text
+    assert "PEA Radar" not in text and "éligibles au PEA" not in text
 
 
 def test_premium_and_sales_terms_are_indexable(online):

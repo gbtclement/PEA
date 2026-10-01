@@ -1,10 +1,10 @@
 Bonjour {{ first_name }},
 
-Vous ne vous êtes pas connecté à PEA Radar depuis 3 ans. Sans nouvelle connexion, votre compte et ses données seront supprimés le {{ delete_on | paris }}.
+Vous ne vous êtes pas connecté à {{ app_name }} depuis 3 ans. Sans nouvelle connexion, votre compte et ses données seront supprimés le {{ delete_on | paris }}.
 
 Pour garder votre compte, connectez-vous :
 {{ base_url }}/connexion
 
-Si vous ne souhaitez plus utiliser PEA Radar, vous n'avez rien à faire.
+Si vous ne souhaitez plus utiliser {{ app_name }}, vous n'avez rien à faire.
 
 {% include "_footer.txt" %}

@@ -48,7 +48,7 @@ TOOL_SPECS: list[dict] = [
      "description": "Top 10 actuel de l'application (actions éligibles PEA les mieux notées) avec les 3 principales raisons de chaque score.",
      "input_schema": {"type": "object", "properties": {}}},
     {"name": "get_portfolio",
-     "description": "Portefeuille PEA de l'utilisateur : positions, PRU, plus/moins-values, répartition par secteur, compteur d'ordres de l'année.",
+     "description": "Portefeuille de l'utilisateur : positions, PRU, plus/moins-values, répartition par secteur, compteur d'ordres de l'année.",
      "input_schema": {"type": "object", "properties": {}}},
     {"name": "simulate_past_investment",
      "description": "Simule un achat passé : combien vaudrait aujourd'hui un montant investi à une date donnée, frais de courtage inclus (grille de l'utilisateur).",

@@ -9,7 +9,7 @@ from app.providers.base import DailyBar, Fundamentals, Quote
 
 
 def refreshable_securities(session: Session) -> list[Security]:
-    """Titres actifs dont on suit les cours : indices + tout ce qui n'est pas exclu du PEA."""
+    """Titres actifs dont on suit les cours : indices + titres non exclus (règle revue au bloc B)."""
     stmt = select(Security).where(
         Security.active.is_(True),
         or_(Security.kind == "index", Security.eligibility != "non_eligible"),

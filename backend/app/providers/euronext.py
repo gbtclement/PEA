@@ -6,6 +6,7 @@ from pathlib import Path
 
 import httpx
 
+from app.core.brand import APP_NAME
 from app.providers.base import ListedSecurity
 from app.providers.retry import with_retries
 
@@ -101,6 +102,6 @@ class EuronextListingProvider:
 
     @staticmethod
     def _default_post(url: str, data: dict[str, str]) -> str:
-        response = httpx.post(url, data=data, headers={"User-Agent": "Mozilla/5.0 (PEA Radar)"}, timeout=60)
+        response = httpx.post(url, data=data, headers={"User-Agent": f"Mozilla/5.0 ({APP_NAME})"}, timeout=60)
         response.raise_for_status()
         return response.text

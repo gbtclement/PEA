@@ -5,25 +5,27 @@ from zoneinfo import ZoneInfo
 
 from jinja2 import Environment, PackageLoader, StrictUndefined, select_autoescape
 
+from app.core.brand import APP_NAME
+
 PARIS = ZoneInfo("Europe/Paris")
 
 SUBJECTS = {
-    "verify_code": "Votre code PEA Radar : {code}",
-    "welcome": "Bienvenue sur PEA Radar",
-    "reset_password": "Choisir un nouveau mot de passe PEA Radar",
-    "security_alert": "Alerte de sécurité sur votre compte PEA Radar",
-    "new_device": "Nouvelle connexion à votre compte PEA Radar",
-    "account_deleted": "Votre compte PEA Radar a été supprimé",
-    "data_export_ready": "Vos données PEA Radar sont prêtes",
-    "inactivity_warning": "Votre compte PEA Radar sera supprimé dans 30 jours",
-    "test": "Mail de test PEA Radar",
+    "verify_code": "Votre code Cotalyx : {code}",
+    "welcome": "Bienvenue sur Cotalyx",
+    "reset_password": "Choisir un nouveau mot de passe Cotalyx",
+    "security_alert": "Alerte de sécurité sur votre compte Cotalyx",
+    "new_device": "Nouvelle connexion à votre compte Cotalyx",
+    "account_deleted": "Votre compte Cotalyx a été supprimé",
+    "data_export_ready": "Vos données Cotalyx sont prêtes",
+    "inactivity_warning": "Votre compte Cotalyx sera supprimé dans 30 jours",
+    "test": "Mail de test Cotalyx",
     "price_move": "Forte variation de vos titres suivis",
     "price_alert": "Alerte de prix : {name}",
-    "daily_recap": "Votre récap du soir PEA Radar",
-    "weekly_recap": "Votre récap de la semaine PEA Radar",
+    "daily_recap": "Votre récap du soir Cotalyx",
+    "weekly_recap": "Votre récap de la semaine Cotalyx",
     "order_reminder": "Compteur d'ordres : il vous manque {remaining} ordre(s)",
     "score_change": "Changement de score de vos favoris",
-    "premium_started": "Bienvenue dans PEA Radar Premium",
+    "premium_started": "Bienvenue dans Cotalyx Premium",
     "payment_failed": "Le paiement de votre abonnement Premium a échoué",
     "premium_canceling": "Votre abonnement Premium est résilié",
     "premium_ended": "Votre accès Premium est terminé",
@@ -33,17 +35,17 @@ KINDS = frozenset(SUBJECTS)
 
 # Phrases des alertes de sécurité (C4) ; les étapes suivantes en ajoutent.
 SECURITY_EVENTS = {
-    "google_linked": ("Un compte Google vient d'être associé à votre compte PEA Radar : vous pouvez maintenant vous "
+    "google_linked": ("Un compte Google vient d'être associé à votre compte Cotalyx : vous pouvez maintenant vous "
                       "connecter avec Google. Si ce n'était pas vous, choisissez un nouveau mot de passe."),
     "password_reset": "Le mot de passe de votre compte vient d'être réinitialisé.",
-    "admin_updated": "Un administrateur de PEA Radar vient de modifier votre compte (nom, adresse ou rôle).",
-    "email_changed_by_admin": ("Un administrateur de PEA Radar vient de changer l'adresse mail de votre compte. "
+    "admin_updated": "Un administrateur de Cotalyx vient de modifier votre compte (nom, adresse ou rôle).",
+    "email_changed_by_admin": ("Un administrateur de Cotalyx vient de changer l'adresse mail de votre compte. "
                                "Les prochains mails iront à la nouvelle adresse."),
     "password_changed": ("Le mot de passe de votre compte vient d'être changé depuis les réglages. Vos autres "
                          "appareils ont été déconnectés."),
     "email_changed": ("L'adresse mail de votre compte vient d'être changée depuis les réglages. Les prochains mails "
                       "iront à la nouvelle adresse."),
-    "signup_attempt": ("Quelqu'un vient d'essayer de créer un compte PEA Radar avec votre adresse. Vous avez déjà un "
+    "signup_attempt": ("Quelqu'un vient d'essayer de créer un compte Cotalyx avec votre adresse. Vous avez déjà un "
                        "compte : si c'était vous, connectez-vous ou choisissez un nouveau mot de passe."),
 }
 
@@ -95,7 +97,7 @@ _env.filters.update(eur=_eur, price=_price, pct=_pct, day=_day, short=_short)
 
 
 def render(kind: str, context: dict, *, base_url: str) -> RenderedEmail:
-    values = {**context, "base_url": base_url.rstrip("/")}
+    values = {**context, "base_url": base_url.rstrip("/"), "app_name": APP_NAME}
     if kind == "security_alert":
         values["event_text"] = SECURITY_EVENTS[context["event"]]
     return RenderedEmail(

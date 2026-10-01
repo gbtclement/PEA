@@ -144,7 +144,7 @@ def simulate_since(db: Session, user_id: uuid.UUID | None, security_id: int, amo
     """Achat simulé à la première clôture à partir de `first_day`, revendu au dernier cours, frais inclus."""
     row = _row_or_404(db, user_id, security_id)
     security, quote = row[0], row[1]
-    rate = to_eur(1.0, currency_for_market(security.market)) or 1.0  # le PEA se paie en euros
+    rate = to_eur(1.0, currency_for_market(security.market)) or 1.0  # le simulateur compte en euros
     prices = all_daily_prices(db, security_id)
     empty = dict(shares=0, invested=0.0, buy_fee=0.0, sell_fee=0.0, current_value=0.0, gain=0.0, gain_pct=None)
     if not prices:

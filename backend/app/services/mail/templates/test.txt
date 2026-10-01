@@ -1,5 +1,5 @@
 Bonjour {{ first_name }},
 
-Ce mail de test confirme que l'envoi fonctionne depuis PEA Radar.
+Ce mail de test confirme que l'envoi fonctionne depuis {{ app_name }}.
 
 {% include "_footer.txt" %}
