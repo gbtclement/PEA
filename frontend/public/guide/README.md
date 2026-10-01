@@ -1,8 +1,8 @@
-# Bienvenue dans PEA Radar
+# Bienvenue dans Cotalyx
 
-PEA Radar vous aide à **choisir des actions pour votre PEA** et à **suivre votre portefeuille**. Pas besoin de connaître la bourse : ce guide explique l'application et tout le vocabulaire, avec des exemples chiffrés.
+Cotalyx vous aide à **choisir des actions et des ETF**, quelle que soit votre enveloppe (PEA, compte-titres…), et à **suivre votre portefeuille**. Pas besoin de connaître la bourse : ce guide explique l'application et tout le vocabulaire, avec des exemples chiffrés.
 
-!> PEA Radar est un **outil d'aide à la décision et d'apprentissage**, pas un conseil en investissement. Les scores et les prévisions sont des estimations, jamais des certitudes. Investir en bourse comporte un risque de perte en capital.
+!> Cotalyx est un **outil d'aide à la décision et d'apprentissage**, pas un conseil en investissement. Les scores et les prévisions sont des estimations, jamais des certitudes. Investir en bourse comporte un risque de perte en capital.
 
 ## Ce que fait l'application
 

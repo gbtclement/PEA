@@ -1,6 +1,6 @@
 # Documentation admin
 
-Cette documentation s'adresse à la personne qui **installe, fait tourner et fait évoluer** PEA Radar. Elle décrit l'architecture, les calculs exacts, l'API, la base de données et les commandes.
+Cette documentation s'adresse à la personne qui **installe, fait tourner et fait évoluer** Cotalyx. Elle décrit l'architecture, les calculs exacts, l'API, la base de données et les commandes.
 
 ?> Vous cherchez comment **utiliser** l'application ou comprendre la bourse ? C'est le [guide utilisateur](/guide/ ':ignore'), accessible depuis la barre latérale de l'application.
 

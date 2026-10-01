@@ -4,7 +4,7 @@
 
 De **Yahoo Finance**, une source gratuite. Comme toutes les sources gratuites, elle donne les cours de la bourse de Paris avec environ **15 minutes de retard**.
 
-!> Au moment d'acheter ou de vendre, fiez-vous au cours affiché par votre banque, pas à celui de PEA Radar.
+!> Au moment d'acheter ou de vendre, fiez-vous au cours affiché par votre banque, pas à celui de Cotalyx.
 
 ## À quel rythme sont-ils mis à jour ?
 

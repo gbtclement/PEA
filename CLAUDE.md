@@ -1,6 +1,6 @@
-# PEA Radar
+# Cotalyx
 
-Application web personnelle, en local, pour un investisseur débutant qui a un PEA au Crédit Agricole (formule Invest Store Intégral). Elle repère les actions et ETF européens éligibles au PEA, les classe avec un score mixte, suit le portefeuille et le compteur d'ordres annuels, et intègre un assistant Claude.
+Application web grand public pour investisseurs particuliers, souvent débutants. Elle repère des actions et des ETF, les classe avec un score mixte, indique les enveloppes compatibles (PEA…), suit le portefeuille et le compteur d'ordres annuels, et intègre un assistant Claude. Anciennement « PEA Radar » : le dépôt (`gbtclement/PEA`), le dossier local et la base PostgreSQL (`pea_radar`) gardent ce nom.
 
 C'est un outil d'aide à la décision, pas un conseil en investissement : garder cet avertissement partout où l'app recommande quelque chose.
 

@@ -8,7 +8,7 @@ Cliquez sur **Créer un compte** en bas de la barre latérale, puis saisissez le
 
 ## 2. Régler vos frais
 
-Allez dans **Réglages** et vérifiez la grille de frais de votre banque. Les valeurs proposées sont celles de la formule *Invest Store Intégral* du Crédit Agricole, qui varient selon les caisses régionales. Les calculs de frais de toute l'application en dépendent. Voir [Réglages](app/reglages.md).
+Allez dans **Réglages** et saisissez la grille de frais de votre courtier. Les valeurs proposées ne sont qu'un exemple (formule *Invest Store Intégral* du Crédit Agricole). Les calculs de frais de toute l'application en dépendent. Voir [Réglages](app/reglages.md).
 
 ## 3. Repérer des idées
 
@@ -36,7 +36,7 @@ Cliquez sur ✨ **Demander à l'IA** et choisissez « Quels sont les risques ? �
 
 ## 6. Acheter… chez votre banque
 
-PEA Radar ne passe **aucun ordre**. Achetez sur le site ou l'application de votre banque, de préférence pour **un peu plus de 500 €** afin de payer moins de frais. L'explication est dans [Passer un ordre](bourse/ordres-et-frais.md).
+Cotalyx ne passe **aucun ordre**. Achetez sur le site ou l'application de votre banque, de préférence pour **un peu plus de 500 €** afin de payer moins de frais. L'explication est dans [Passer un ordre](bourse/ordres-et-frais.md).
 
 ## 7. Enregistrer l'achat
 

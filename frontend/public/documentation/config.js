@@ -1,5 +1,5 @@
 window.$docsify = {
-  name: "PEA Radar · Admin",
+  name: "Cotalyx · Admin",
   nameLink: "#/",
   loadSidebar: true,
   subMaxLevel: 2,

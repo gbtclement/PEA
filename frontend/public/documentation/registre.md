@@ -1,6 +1,6 @@
 # Registre des traitements
 
-Registre prévu par l'article 30 du RGPD. Il décrit chaque traitement de données personnelles fait par PEA Radar. Le tenir à jour quand une fonction change ce qui est collecté, pourquoi, par qui ou combien de temps.
+Registre prévu par l'article 30 du RGPD. Il décrit chaque traitement de données personnelles fait par Cotalyx. Le tenir à jour quand une fonction change ce qui est collecté, pourquoi, par qui ou combien de temps.
 
 **Responsable du traitement** : [À COMPLÉTER : nom ou société, adresse, contact].
 **Dernière mise à jour** : 5 octobre 2026.
@@ -70,7 +70,7 @@ Mesures de sécurité communes à tous les traitements : HTTPS, mots de passe ha
 | **Destinataires** | Stripe (Stripe Payments Europe, Irlande) : paiement, factures |
 | **Transferts hors UE** | Stripe peut traiter des données aux États-Unis, clauses contractuelles types [À VÉRIFIER] |
 | **Conservation** | Abonnement et accords : jusqu'à la suppression du compte ; événements Stripe traités : 30 jours ; factures chez Stripe : 10 ans (obligation comptable) |
-| **Sécurité** | Clés Stripe uniquement dans `.env` ; webhook vérifié par signature ; aucune donnée de carte chez PEA Radar |
+| **Sécurité** | Clés Stripe uniquement dans `.env` ; webhook vérifié par signature ; aucune donnée de carte chez Cotalyx |
 
 ## Mails
 

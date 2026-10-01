@@ -20,7 +20,7 @@ Le **Plan d'épargne en actions** est un compte pour investir en bourse avec un 
 
 On **ne peut pas** y acheter directement des actions américaines (Apple, Microsoft), suisses (Nestlé), britanniques (Shell), ni des obligations.
 
-C'est pourquoi PEA Radar affiche un badge d'éligibilité sur chaque titre.
+C'est pourquoi Cotalyx affiche un badge d'éligibilité sur chaque titre.
 
 ## La fiscalité
 

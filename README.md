@@ -1,6 +1,6 @@
-# PEA Radar
+# Cotalyx
 
-Application personnelle pour repérer des actions éligibles au PEA et suivre son portefeuille.
+Application web pour repérer des actions et des ETF, voir les enveloppes compatibles (PEA…) et suivre son portefeuille.
 Outil d'aide à la décision et d'apprentissage — pas un conseil en investissement.
 
 ## Lancer l'application

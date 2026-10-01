@@ -1,6 +1,6 @@
 # Premium
 
-L'essentiel de PEA Radar est gratuit. **Premium** est un abonnement payant qui ajoute deux outils.
+L'essentiel de Cotalyx est gratuit. **Premium** est un abonnement payant qui ajoute deux outils.
 
 ## Ce que contient Premium
 
@@ -29,9 +29,9 @@ Les prix à jour sont sur la page **Premium** (lien **Passer Premium** dans le m
    - **J'ai lu et j'accepte les CGV** (conditions générales de vente) : les règles de l'abonnement (prix, renouvellement, résiliation). Lisez-les avant.
    - **Je demande l'accès immédiat à Premium et je renonce à mon droit de rétractation de 14 jours** : normalement, un achat en ligne peut être annulé pendant 14 jours. Ici, Premium marche tout de suite après le paiement, et vous acceptez en échange de ne pas pouvoir l'annuler pendant ces 14 jours.
 3. Cliquez sur **S'abonner** : vous arrivez sur la page de paiement sécurisée de **Stripe**, notre prestataire de paiement. Saisissez votre carte.
-4. Après le paiement, vous revenez sur PEA Radar : un message **Bienvenue dans Premium** confirme l'activation, et un mail vous l'annonce aussi. Le badge **Premium** apparaît sous votre nom.
+4. Après le paiement, vous revenez sur Cotalyx : un message **Bienvenue dans Premium** confirme l'activation, et un mail vous l'annonce aussi. Le badge **Premium** apparaît sous votre nom.
 
-?> PEA Radar ne voit jamais votre numéro de carte : il est saisi chez Stripe.
+?> Cotalyx ne voit jamais votre numéro de carte : il est saisi chez Stripe.
 
 Si l'activation tarde, attendez quelques minutes : elle se fait toute seule.
 

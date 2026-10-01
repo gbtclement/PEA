@@ -1,6 +1,6 @@
 # Juger une entreprise : l'analyse fondamentale
 
-L'**analyse fondamentale** regarde l'entreprise elle-même : ce qu'elle vend, ce qu'elle gagne, ses dettes, et le prix que la bourse en demande. C'est l'autre moitié du score de PEA Radar.
+L'**analyse fondamentale** regarde l'entreprise elle-même : ce qu'elle vend, ce qu'elle gagne, ses dettes, et le prix que la bourse en demande. C'est l'autre moitié du score de Cotalyx.
 
 ## Une entreprise fictive pour les exemples
 
@@ -26,7 +26,7 @@ Le **PER** (*price earnings ratio*, ou rapport cours/bénéfice) est le cours di
 
 > 50 € ÷ 4 € = **PER de 12,5**. Vous payez l'équivalent de 12,5 années de bénéfices.
 
-Un PER ne se juge qu'en le **comparant au même secteur** : les banques ont souvent des PER bas, le luxe ou la technologie des PER élevés. PEA Radar compare donc chaque action à la médiane de son secteur.
+Un PER ne se juge qu'en le **comparant au même secteur** : les banques ont souvent des PER bas, le luxe ou la technologie des PER élevés. Cotalyx compare donc chaque action à la médiane de son secteur.
 
 > Si le PER médian du secteur est de 16, notre action à 12,5 est **moins chère que ses concurrentes** : elle obtient le maximum de points en « Valorisation ».
 

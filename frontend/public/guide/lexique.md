@@ -41,7 +41,7 @@
 | **Rendement (du dividende)** | Dividende annuel ÷ cours, en % |
 | **Réplication synthétique** | Technique qui permet à un ETF éligible au PEA de suivre un indice non européen |
 | **RSI** | Indicateur de 0 à 100 : au-dessus de 70, l'action a beaucoup monté très vite ; sous 30, beaucoup baissé |
-| **Score** | La note sur 100 de PEA Radar. Voir [Comprendre le score](app/score.md) |
+| **Score** | La note sur 100 de Cotalyx. Voir [Comprendre le score](app/score.md) |
 | **Séance** | Une journée de bourse (9 h – 17 h 35 à Paris, en semaine) |
 | **Support / résistance** | Niveau de prix où le cours a souvent rebondi / calé |
 | **Ticker** | Code court d'un titre en bourse, par exemple `MC` pour LVMH (`MC.PA` chez Yahoo) |

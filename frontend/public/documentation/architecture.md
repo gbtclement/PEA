@@ -143,7 +143,7 @@ Toutes les valeurs sont dans `backend/app/core/config.py` (`Settings`, pydantic-
 | `SESSION_DAYS` / `SESSION_SHORT_HOURS` | `30` / `12` | Durée d'une session avec et sans « Rester connecté » |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` | *(vide)* / `587` / *(vide)* / *(vide)* | Serveur d'envoi des mails |
 | `SMTP_TLS` | `starttls` | `starttls`, `ssl` ou `none` (Mailpit) |
-| `MAIL_FROM` | `PEA Radar <no-reply@localhost>` | Expéditeur des mails |
+| `MAIL_FROM` | `Cotalyx <no-reply@localhost>` | Expéditeur des mails |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | *(vide)* | Client OAuth Google ; vide = pas de bouton Google |
 | `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | *(vide)* | Cloudflare Turnstile ; clé secrète vide = captcha désactivé |
 | `HIBP_ENABLED` | `true` | Refus des mots de passe connus dans les fuites |
