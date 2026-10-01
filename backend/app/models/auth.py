@@ -25,7 +25,7 @@ class AuthSession(Base):
 
 
 class KnownDevice(Base):
-    """Navigateur déjà vu pour ce compte (cookie pea_device) : sert à l'alerte « nouvel appareil »."""
+    """Navigateur déjà vu pour ce compte (cookie cotalyx_device) : sert à l'alerte « nouvel appareil »."""
 
     __tablename__ = "known_devices"
 

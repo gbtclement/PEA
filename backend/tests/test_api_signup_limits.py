@@ -1,6 +1,7 @@
 from sqlalchemy import select
 
 from app.models import EmailLog, SecurityEvent
+from app.services.auth.sessions import CSRF_COOKIE
 
 FORM = {"first_name": "Jean", "last_name": "Dupont", "email": "jean@example.com",
         "password": "motdepasse-solide", "accept_terms": True}
@@ -73,6 +74,6 @@ def test_verification_logout_and_reset_are_journaled(anon_client, db):
     mail = db.scalars(select(EmailLog).where(EmailLog.kind == "verify_code")).one()
     code = re.search(r"\b(\d{6})\b", mail.subject).group(1)
     verified = anon_client.post("/api/auth/verify-email", json={"email": "jean@example.com", "code": code})
-    anon_client.headers["X-CSRF-Token"] = verified.cookies.get("pea_csrf") or anon_client.cookies.get("pea_csrf")
+    anon_client.headers["X-CSRF-Token"] = verified.cookies.get(CSRF_COOKIE) or anon_client.cookies.get(CSRF_COOKIE)
     anon_client.post("/api/auth/logout")
     assert _kinds(db)[-3:] == ["signup", "email_verified", "logout"]

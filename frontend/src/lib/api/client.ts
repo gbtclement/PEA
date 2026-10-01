@@ -27,7 +27,7 @@ export class ApiError extends Error {
 
 /** Jeton anti-CSRF posé par l'API à la connexion (cookie lisible), renvoyé dans un en-tête à chaque modification. */
 export function csrfToken(): string | null {
-  const match = document.cookie.match(/(?:^|;\s*)pea_csrf=([^;]+)/);
+  const match = document.cookie.match(/(?:^|;\s*)cotalyx_csrf=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : null;
 }
 

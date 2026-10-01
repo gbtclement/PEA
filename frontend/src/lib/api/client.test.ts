@@ -23,11 +23,11 @@ test("apiSend garde un message générique pour les erreurs de validation", asyn
 });
 
 test("apiSend envoie le jeton CSRF lu dans le cookie", async () => {
-  document.cookie = "pea_csrf=jeton-123; path=/";
+  document.cookie = "cotalyx_csrf=jeton-123; path=/";
   const fetchMock = mockFetch(() => ({ body: { ok: true } }));
   await apiSend("POST", "/api/test", {});
   expect(new Headers(fetchMock.mock.calls[0][1]!.headers).get("X-CSRF-Token")).toBe("jeton-123");
-  document.cookie = "pea_csrf=; max-age=0; path=/";
+  document.cookie = "cotalyx_csrf=; max-age=0; path=/";
 });
 
 test("les erreurs de l'API gardent leur code et leur message", async () => {

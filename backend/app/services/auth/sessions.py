@@ -9,9 +9,9 @@ from app.core.config import Settings
 from app.core.security import device_label, new_token, token_hash, truncate_ip
 from app.models import AuthSession, User
 
-SESSION_COOKIE = "pea_session"
-CSRF_COOKIE = "pea_csrf"
-DEVICE_COOKIE = "pea_device"
+SESSION_COOKIE = "cotalyx_session"
+CSRF_COOKIE = "cotalyx_csrf"
+DEVICE_COOKIE = "cotalyx_device"
 TOUCH_EVERY = timedelta(minutes=1)
 
 

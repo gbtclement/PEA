@@ -8,7 +8,7 @@ from app.models import KnownDevice, User
 
 
 def remember_device(db: Session, user: User, device_token: str | None, now: datetime) -> tuple[str, bool]:
-    """Enregistre ce navigateur pour le compte. Renvoie (jeton du cookie pea_device, faut-il alerter ?).
+    """Enregistre ce navigateur pour le compte. Renvoie (jeton du cookie cotalyx_device, faut-il alerter ?).
 
     Pas d'alerte pour le tout premier appareil d'un compte (l'inscription elle-même).
     """
