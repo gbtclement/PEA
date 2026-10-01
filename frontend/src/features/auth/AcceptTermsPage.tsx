@@ -8,6 +8,7 @@ import { usePageMeta } from "@/seo/usePageMeta";
 import { AuthCard } from "./AuthCard";
 import { isExternalSuite, safeNext } from "./redirect";
 import { useMe } from "./useMe";
+import { SITE_NAME } from "@/seo/schema";
 
 /** Nouvelle version des CGU : tant qu'elle n'est pas acceptée, le compte est renvoyé ici (spec 3.5). */
 export function AcceptTermsPage() {
@@ -57,7 +58,7 @@ function AcceptForm() {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
-      <p className="text-sm text-muted-foreground">Pour continuer à utiliser PEA Radar, lisez et acceptez la nouvelle version.</p>
+      <p className="text-sm text-muted-foreground">Pour continuer à utiliser {SITE_NAME}, lisez et acceptez la nouvelle version.</p>
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-1" />
         <span>J'accepte les <Link to="/cgu" className="text-primary underline">CGU</Link> et la{" "}

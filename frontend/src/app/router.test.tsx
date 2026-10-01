@@ -57,7 +57,7 @@ test.each([
   renderRoute(path);
   await screen.findByRole("heading", { level: 1, name: title }, { timeout: 5000 });
   await waitFor(() => expect(robots()).toBe("noindex, nofollow"));
-  expect(document.title).toBe(`${title} | PEA Radar`);
+  expect(document.title).toBe(`${title} | Cotalyx`);
 });
 
 test("accueil : indexable, titre du site et WebApplication", async () => {
@@ -65,22 +65,29 @@ test("accueil : indexable, titre du site et WebApplication", async () => {
   await screen.findByRole("heading", { level: 1, name: "Accueil" }, { timeout: 5000 });
   await waitFor(() => expect(jsonLdTypes()).toEqual(["WebApplication"]));
   expect(robots()).toBeNull();
-  expect(document.title).toBe("PEA Radar");
+  expect(document.title).toBe("Cotalyx");
 });
 
 test.each([["/explorer", "Explorer"], ["/etf", "ETF"]])("%s : fil d'Ariane schema.org", async (path, title) => {
   renderRoute(path);
   await screen.findByRole("heading", { level: 1, name: title }, { timeout: 5000 });
   await waitFor(() => expect(jsonLdTypes()).toEqual(["BreadcrumbList"]));
-  expect(document.title).toBe(`${title} | PEA Radar`);
-  expect(document.head.querySelector('meta[name="description"]')?.getAttribute("content")).toMatch(/PEA/);
+  expect(document.title).toBe(`${title} | Cotalyx`);
+  expect(document.head.querySelector('meta[name="description"]')?.getAttribute("content")).toMatch(/enveloppes compatibles|ETF/);
 });
 
+
+test("l'accueil ne se présente plus comme un outil PEA", async () => {
+  renderRoute("/");
+  await screen.findByRole("heading", { level: 1, name: "Accueil" }, { timeout: 5000 });
+  await waitFor(() => expect(document.title).toBe("Cotalyx"));
+  expect(document.head.querySelector('meta[name="description"]')?.getAttribute("content")).not.toMatch(/PEA/);
+});
 test("pied de page avec l'avertissement et titres de cartes en h2", async () => {
   renderRoute("/reglages");
   await screen.findByRole("heading", { level: 1, name: "Réglages" }, { timeout: 5000 });
   expect(screen.getByRole("contentinfo")).toHaveTextContent(/pas un conseil en investissement/);
-  expect(screen.getByRole("heading", { level: 2, name: "Frais et obligations de la caisse régionale" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 2, name: "Frais et obligations de votre courtier" })).toBeInTheDocument();
 });
 
 test("adresse inconnue : page introuvable dans la mise en page, jamais indexée", async () => {
@@ -89,7 +96,7 @@ test("adresse inconnue : page introuvable dans la mise en page, jamais indexée"
   expect(screen.getByRole("navigation", { name: "Navigation principale" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Retour à l'accueil" })).toHaveAttribute("href", "/");
   await waitFor(() => expect(robots()).toBe("noindex, nofollow"));
-  expect(document.title).toBe("Page introuvable | PEA Radar");
+  expect(document.title).toBe("Page introuvable | Cotalyx");
 });
 
 const ANONYMOUS = { status: 401, body: { detail: { code: "not_authenticated", message: "…" } } };

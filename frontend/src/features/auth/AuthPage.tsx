@@ -7,12 +7,13 @@ import { AuthBrand } from "./AuthCard";
 import { AuthFooter } from "./AuthFooter";
 import { SignInForm } from "./SignInForm";
 import { SignUpForm } from "./SignUpForm";
+import { SITE_NAME } from "@/seo/schema";
 
 type Mode = "inscription" | "connexion";
 
 const PANEL = {
   inscription: { title: "Déjà un compte ?", text: "Retrouvez votre portefeuille, vos favoris et vos alertes.", action: "Se connecter" },
-  connexion: { title: "Pas encore de compte ?", text: "Créez votre compte gratuit pour suivre votre PEA en quelques minutes.", action: "S'inscrire" },
+  connexion: { title: "Pas encore de compte ?", text: "Créez votre compte gratuit pour suivre vos investissements en quelques minutes.", action: "S'inscrire" },
 };
 const MODES: Mode[] = ["inscription", "connexion"];
 const SWITCH_MS = 700; // durée du glissement du panneau (voir .auth-panel dans index.css)
@@ -30,7 +31,7 @@ export function AuthPage({ mode }: { mode: Mode }) {
   const signUp = mode === "inscription";
   usePageMeta({
     title: signUp ? "Créer un compte" : "Se connecter",
-    description: "Créez votre compte PEA Radar ou connectez-vous pour suivre votre portefeuille PEA.",
+    description: `Créez votre compte ${SITE_NAME} ou connectez-vous pour suivre votre portefeuille.`,
   });
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -114,7 +115,7 @@ function PanelArt({ replay }: { replay: Mode }) {
     <div aria-hidden className="auth-art relative hidden w-full max-w-sm sm:block">
       <div className="rounded-xl border border-white/20 bg-white/10 p-4 shadow-2xl backdrop-blur-sm">
         <div className="mb-2 flex items-center justify-between text-xs">
-          <span className="font-medium">Mon PEA</span>
+          <span className="font-medium">Mon portefeuille</span>
           <span className="rounded-full bg-emerald-400/20 px-2 py-0.5 font-semibold text-emerald-200">+12,4 %</span>
         </div>
         <svg key={replay} viewBox="0 0 280 90" className="h-24 w-full">
@@ -146,7 +147,7 @@ function PanelArt({ replay }: { replay: Mode }) {
         </div>
       </div>
       <span className="auth-badge absolute -right-3 -top-3 rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary shadow-lg">
-        ✓ Éligible PEA
+        ✓ Score 82/100
       </span>
     </div>
   );

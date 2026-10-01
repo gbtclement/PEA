@@ -7,11 +7,12 @@ import { apiGet, apiSend, type Me } from "@/lib/api/client";
 import { usePageMeta } from "@/seo/usePageMeta";
 import { AuthCard } from "./AuthCard";
 import { isExternalSuite, safeNext } from "./redirect";
+import { SITE_NAME } from "@/seo/schema";
 
 type Pending = { email: string; first_name: string; last_name: string; suite: string };
 
 export function FinishSignUpPage() {
-  usePageMeta({ title: "Finaliser l'inscription", description: "Derniers détails avant d'utiliser PEA Radar.", noindex: true });
+  usePageMeta({ title: "Finaliser l'inscription", description: `Derniers détails avant d'utiliser ${SITE_NAME}.`, noindex: true });
   const pending = useQuery({ queryKey: ["google-pending"], queryFn: () => apiGet<Pending>("/api/auth/google/pending"), retry: false });
   if (pending.isError) return <Navigate to="/inscription" replace />;
   return (

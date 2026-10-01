@@ -3,7 +3,7 @@ import { useLocation } from "react-router";
 import { DEFAULT_DESCRIPTION, SITE_NAME, absoluteUrl } from "./schema";
 
 export type PageMeta = {
-  /** Titre de la page, sans le nom du site ; `null` pour l'accueil (« PEA Radar » seul). */
+  /** Titre de la page, sans le nom du site ; `null` pour l'accueil (« Cotalyx » seul). */
   title: string | null;
   description: string;
   /** Adresse canonique ; par défaut, celle de la page affichée. */

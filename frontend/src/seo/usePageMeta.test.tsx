@@ -18,19 +18,19 @@ const jsonLd = () => document.head.querySelectorAll('script[type="application/ld
 
 test("titre, description, canonical et Open Graph absolus", () => {
   renderAt({ title: "Explorer", description: "Toutes les actions." });
-  expect(document.title).toBe("Explorer | PEA Radar");
+  expect(document.title).toBe("Explorer | Cotalyx");
   expect(content('meta[name="description"]')).toBe("Toutes les actions.");
   expect(head('link[rel="canonical"]')?.getAttribute("href")).toBe(`${window.location.origin}/explorer`);
   expect(content('meta[property="og:url"]')).toBe(`${window.location.origin}/explorer`);
-  expect(content('meta[property="og:title"]')).toBe("Explorer | PEA Radar");
+  expect(content('meta[property="og:title"]')).toBe("Explorer | Cotalyx");
   expect(content('meta[property="og:description"]')).toBe("Toutes les actions.");
   expect(content('meta[name="twitter:card"]')).toBe("summary");
-  expect(content('meta[name="twitter:title"]')).toBe("Explorer | PEA Radar");
+  expect(content('meta[name="twitter:title"]')).toBe("Explorer | Cotalyx");
 });
 
 test("accueil : titre seul du site", () => {
-  renderAt({ title: null, description: "Radar PEA." }, "/");
-  expect(document.title).toBe("PEA Radar");
+  renderAt({ title: null, description: "Radar des marchés." }, "/");
+  expect(document.title).toBe("Cotalyx");
   expect(head('link[rel="canonical"]')?.getAttribute("href")).toBe(`${window.location.origin}/`);
 });
 
@@ -57,7 +57,7 @@ test("plusieurs blocs JSON-LD, tous retirés au démontage avec le noindex", () 
   view.unmount();
   expect(jsonLd()).toHaveLength(0);
   expect(head('meta[name="robots"]')).toBeNull();
-  expect(document.title).toBe("PEA Radar");
+  expect(document.title).toBe("Cotalyx");
 });
 
 const DETAIL = {

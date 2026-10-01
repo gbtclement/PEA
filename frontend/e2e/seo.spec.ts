@@ -27,7 +27,7 @@ test("structure et métadonnées de chaque page", async ({ page }) => {
       if (i > 0) expect(h.level - list[i - 1].level, `${path} : niveau sauté avant « ${h.text} »`).toBeLessThanOrEqual(1);
     });
 
-    expect(await page.title()).toMatch(/PEA Radar$/);
+    expect(await page.title()).toMatch(/Cotalyx$/);
     expect(await page.locator('meta[name="description"]').getAttribute("content")).toBeTruthy();
     expect(await page.locator('link[rel="canonical"]').getAttribute("href")).toMatch(new RegExp(`${path === "/" ? "/$" : path.split("?")[0]}$`));
     const robots = await page.evaluate(() => document.querySelector('meta[name="robots"]')?.getAttribute("content") ?? null);
@@ -50,5 +50,5 @@ test("robots.txt, sitemap.xml et llms.txt servis à la racine", async ({ request
   expect(xml).not.toContain("/portefeuille");
 
   const llms = await request.get("/llms.txt");
-  expect(await llms.text()).toMatch(/^# PEA Radar/);
+  expect(await llms.text()).toMatch(/^# Cotalyx/);
 });

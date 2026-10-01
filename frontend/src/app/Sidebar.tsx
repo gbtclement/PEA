@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { NavLink } from "react-router";
 import { BookOpen, House, Layers, Radar, Search, Settings, ShieldCheck, Sparkles, Telescope, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SITE_NAME } from "@/seo/schema";
 
 export const NAV_ITEMS = [
   { to: "/", label: "Accueil", icon: House, end: true },
@@ -23,7 +24,7 @@ export function Sidebar({ footer, account, admin = false }: { footer?: ReactNode
         <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Radar className="size-4" aria-hidden />
         </div>
-        <span className="text-lg font-semibold tracking-tight">PEA Radar</span>
+        <span className="text-lg font-semibold tracking-tight">{SITE_NAME}</span>
       </div>
       <nav aria-label="Navigation principale" className="flex-1 space-y-1 px-3">
         {items.map(({ to, label, icon: Icon, end }) => (

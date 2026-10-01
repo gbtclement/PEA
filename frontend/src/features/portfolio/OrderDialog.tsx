@@ -98,7 +98,7 @@ function OrderForm({ security, price, order, onDone }: Omit<Props, "open" | "onO
     <form onSubmit={submit} className="space-y-4">
       <DialogHeader>
         <DialogTitle>{order ? "Modifier l'ordre" : "Nouvel ordre"}</DialogTitle>
-        <DialogDescription>Recopiez l'ordre passé sur l'application Crédit Agricole. Les frais sont calculés selon votre grille.</DialogDescription>
+        <DialogDescription>Recopiez l'ordre passé chez votre courtier. Les frais sont calculés selon votre grille.</DialogDescription>
       </DialogHeader>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Date" htmlFor={`${id}-date`}>

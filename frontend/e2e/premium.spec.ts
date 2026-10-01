@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test("admin : Premium offert, prévisions ouvertes", async ({ page }) => {
   await page.goto("/premium");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/PEA Radar Premium/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Cotalyx Premium/);
   await expect(page.getByText("L'abonnement arrive bientôt.")).toBeVisible();
   await page.goto("/previsions");
   await expect(page.getByRole("button", { name: "Prédictions" })).toHaveAttribute("aria-current", "page");
