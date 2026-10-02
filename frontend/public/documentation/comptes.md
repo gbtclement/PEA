@@ -31,9 +31,9 @@ Une connexion crée une ligne dans `sessions`. Le navigateur reçoit trois cooki
 
 | Cookie | Contenu | Lisible en JavaScript |
 |---|---|---|
-| `pea_session` | Jeton de session. En base, seule son empreinte SHA-256 est stockée | non |
-| `pea_csrf` | Jeton anti-CSRF de la session | **oui**, le frontend le renvoie |
-| `pea_device` | Identifiant de l'appareil, conservé 1 an, pour repérer les nouvelles connexions | non |
+| `cotalyx_session` | Jeton de session. En base, seule son empreinte SHA-256 est stockée | non |
+| `cotalyx_csrf` | Jeton anti-CSRF de la session | **oui**, le frontend le renvoie |
+| `cotalyx_device` | Identifiant de l'appareil, conservé 1 an, pour repérer les nouvelles connexions | non |
 
 - **Rester connecté** : session et cookies de 30 jours (`SESSION_DAYS`).
 - **Sinon** : cookies effacés à la fermeture du navigateur, et session limitée à 12 h côté serveur (`SESSION_SHORT_HOURS`).
@@ -41,7 +41,7 @@ Une connexion crée une ligne dans `sessions`. Le navigateur reçoit trois cooki
 
 ### CSRF
 
-Toute requête `POST`, `PUT`, `PATCH` ou `DELETE` faite avec une session doit porter l'en-tête `X-CSRF-Token` égal au cookie `pea_csrf`. Sinon l'API répond `403` avec le code `csrf`. Le client HTTP du frontend (`apiSend`, `streamSSE`) l'ajoute tout seul.
+Toute requête `POST`, `PUT`, `PATCH` ou `DELETE` faite avec une session doit porter l'en-tête `X-CSRF-Token` égal au cookie `cotalyx_csrf`. Sinon l'API répond `403` avec le code `csrf`. Le client HTTP du frontend (`apiSend`, `streamSSE`) l'ajoute tout seul.
 
 ## Codes et liens envoyés par mail
 
@@ -168,13 +168,13 @@ Le bouton n'apparaît que si `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET` sont r
 ```
 Bouton « Continuer avec Google »
   → GET /api/auth/google/start?suite=…&remember=1|0
-      pose le cookie signé pea_oauth (state, nonce, vérificateur PKCE, page de retour ; 10 min)
+      pose le cookie signé cotalyx_oauth (state, nonce, vérificateur PKCE, page de retour ; 10 min)
   → Google (choix du compte)
   → GET /api/auth/google/callback?state=…&code=…
       vérifie le state (usage unique), échange le code, vérifie le jeton d'identité (signature, émetteur, audience, nonce)
       ├─ adresse non vérifiée par Google → /connexion?erreur=google_email
       ├─ compte connu (google_sub ou même adresse) → session ouverte, retour à la page demandée
-      └─ inconnu → cookie signé pea_google_pending (30 min) → /finaliser-inscription
+      └─ inconnu → cookie signé cotalyx_google_pending (30 min) → /finaliser-inscription
                    → POST /api/auth/google/complete (prénom, nom, CGU) → compte créé, session ouverte
 ```
 
