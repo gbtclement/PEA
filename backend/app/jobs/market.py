@@ -128,10 +128,12 @@ def _junction_readjusted(session: Session, security_id: int, bars: list[DailyBar
     return _is_readjusted(bars, overlap.date, stored)
 
 
-def backfill_history(ctx: JobContext, guard: Callable[[], AbstractContextManager] = nullcontext) -> int:
+def backfill_history(ctx: JobContext, guard: Callable[[], AbstractContextManager] = nullcontext,
+                     pause: Callable[[], None] = lambda: None) -> int:
     """Rattrapage de l'historique complet : nouveaux titres en entier, anciens titres avant leur première date stockée.
 
-    `guard()` entoure chaque paquet : le verrou des tâches lourdes est rendu entre deux paquets.
+    `guard()` entoure chaque paquet : le verrou des tâches lourdes est rendu entre deux paquets, et `pause()`
+    (appelée hors du verrou) laisse à une tâche qui l'attend le temps de le prendre.
     """
     with ctx.session_factory() as session:
         incomplete = incomplete_history_securities(session)
@@ -143,6 +145,8 @@ def backfill_history(ctx: JobContext, guard: Callable[[], AbstractContextManager
         batch = dict(targets[offset:offset + BACKFILL_BATCH])
         with guard():
             total += _backfill_batch(ctx, batch, created, last_dates)
+        if offset + BACKFILL_BATCH < len(targets):
+            pause()
     return total
 
 

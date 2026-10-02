@@ -123,3 +123,11 @@ def test_confirmed_seed_etf_from_a_source_stays_eligible(db, make_ctx):
     security = by_ticker(db, "CW8.PA")
     assert (security.source, security.isin) == ("euronext_etf", "LU1681043599")
     assert (security.envelope_status("pea"), security.envelope("pea").source) == ("eligible", "seed")
+
+
+def test_merge_keeps_a_stock_its_home_list_does_not_carry():
+    # Redcare (ISIN néerlandais) n'est cotée qu'à Francfort : la liste Euronext ne l'a pas, on la garde.
+    redcare = ListedSecurity("NL0012044747", "RDC", "REDCARE PHARMACY", "Xetra", "RDC.DE", "stock", "EUR")
+    asml_xetra = ListedSecurity("NL0010273215", "ASME", "ASML", "Xetra", "ASME.DE", "stock", "EUR")
+    merged = {s.yahoo_ticker for _, s in merge_listings({"euronext": [ASML], "xetra": [redcare, asml_xetra]})}
+    assert merged == {"ASML.AS", "RDC.DE"}

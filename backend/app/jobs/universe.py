@@ -18,18 +18,22 @@ HOME_COUNTRIES: dict[str, frozenset[str]] = {
     "xetra": frozenset({"DE"}),
     "us": frozenset({"US"}),
 }
-COVERED_COUNTRIES = frozenset().union(*HOME_COUNTRIES.values())
 
 
 def merge_listings(batches: dict[str, list[ListedSecurity]]) -> list[tuple[str, ListedSecurity]]:
     """Une cotation par ISIN et par ticker. Une action cotée hors de chez elle n'est gardée que si sa place n'est pas suivie."""
+    # ISIN que les places d'origine listent vraiment : une action absente de sa liste d'origine (Redcare, néerlandaise,
+    # cotée seulement à Francfort) est gardée ailleurs. La liste américaine n'a pas d'ISIN : un ISIN US suffit.
+    listed_at_home = {item.isin for source, items in batches.items() for item in items
+                      if item.isin and country_from_isin(item.isin) in HOME_COUNTRIES.get(source, frozenset())}
     candidates = []
     for rank, source in enumerate(SOURCE_PRIORITY):
         home = HOME_COUNTRIES[source]
         for item in batches.get(source, []):
             country = country_from_isin(item.isin)
-            if source != "euronext" and item.kind == "stock" and country in COVERED_COUNTRIES and country not in home:
-                continue  # cotation secondaire (Apple à Francfort) : la place d'origine est déjà suivie
+            secondary = source != "euronext" and item.kind == "stock" and country not in home
+            if secondary and ((country == "US" and "us" in batches) or item.isin in listed_at_home):
+                continue  # cotation secondaire (Apple, SAP à Zurich) : la place d'origine la suit déjà
             candidates.append((country not in home, rank, source, item))
     candidates.sort(key=lambda c: (c[0], c[1]))
     seen_isins: set[str] = set()

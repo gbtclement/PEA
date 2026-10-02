@@ -263,7 +263,7 @@ def test_us_evening_job_loads_us_closes_then_scores(db, make_ctx, monkeypatch):
 
 def test_backfill_job_skips_when_already_running(make_ctx, monkeypatch):
     calls = []
-    monkeypatch.setattr(scheduler_module, "backfill_history", lambda ctx, guard: calls.append(1) or 0)
+    monkeypatch.setattr(scheduler_module, "backfill_history", lambda ctx, guard, pause: calls.append(1) or 0)
     assert scheduler_module.BACKFILL_LOCK.acquire(blocking=False)
     try:
         scheduler_module.history_backfill_job(make_ctx())
@@ -275,7 +275,7 @@ def test_backfill_job_skips_when_already_running(make_ctx, monkeypatch):
 def test_backfill_job_does_not_hold_the_heavy_lock_between_batches(make_ctx, monkeypatch):
     seen = []
 
-    def fake_backfill(ctx, guard):
+    def fake_backfill(ctx, guard, pause):
         seen.append(scheduler_module.HEAVY_JOBS_LOCK.locked())
         with guard():
             seen.append(scheduler_module.HEAVY_JOBS_LOCK.locked())
@@ -292,3 +292,30 @@ def test_universe_job_then_backfills(make_ctx, monkeypatch):
     monkeypatch.setattr(scheduler_module, "history_backfill_job", lambda ctx: calls.append("backfill"))
     scheduler_module.universe_job(make_ctx())
     assert calls == ["universe", "backfill"]
+
+
+def test_backfill_lets_a_waiting_heavy_job_in_between_batches(db, make_ctx, monkeypatch):
+    # Premier chargement : plusieurs heures. Une tâche qui attend le verrou doit passer entre deux paquets.
+    import threading
+
+    import app.jobs.market as market_module
+
+    monkeypatch.setattr(market_module, "BACKFILL_BATCH", 1)
+    monkeypatch.setattr(scheduler_module, "BACKFILL_PAUSE_SECONDS", 0.05)
+    for ticker in ("A.PA", "B.PA", "C.PA"):
+        make_security(db, ticker)
+    events: list[str] = []
+
+    def waiter():
+        with scheduler_module.HEAVY_JOBS_LOCK:
+            events.append("autre tâche")
+
+    class Market(FakeMarket):
+        def get_daily_history(self, tickers, start):
+            events.append(f"paquet {tickers[0]}")
+            if len(events) == 1:
+                threading.Thread(target=waiter).start()
+            return {}
+
+    scheduler_module.history_backfill_job(make_ctx(market=Market()))
+    assert events.index("autre tâche") < len(events) - 1  # pas reléguée après le dernier paquet

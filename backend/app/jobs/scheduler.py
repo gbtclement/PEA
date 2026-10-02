@@ -1,5 +1,6 @@
 import logging
 import threading
+import time
 from datetime import datetime, timedelta
 
 from apscheduler.schedulers.base import BaseScheduler
@@ -30,6 +31,8 @@ from app.services.market_calendar import any_market_open, last_session_close
 HEAVY_JOBS_LOCK = threading.Lock()
 # Le rattrapage dure des heures au premier chargement : un seul à la fois, verrou lourd repris à chaque paquet.
 BACKFILL_LOCK = threading.Lock()
+# Pause hors du verrou entre deux paquets : un verrou Python n'est pas équitable, sans elle le rattrapage le reprendrait aussitôt.
+BACKFILL_PAUSE_SECONDS = 1.0
 _DAILY_MAX_AGE = timedelta(hours=20)  # « une fois par jour », même si la veille le PC a démarré plus tard
 
 
@@ -112,7 +115,8 @@ def history_backfill_job(ctx: JobContext) -> None:
     if not BACKFILL_LOCK.acquire(blocking=False):
         return  # un rattrapage tourne déjà (premier chargement : plusieurs heures)
     try:
-        written = run_job(ctx, "history_backfill", lambda c: backfill_history(c, guard=lambda: HEAVY_JOBS_LOCK))
+        written = run_job(ctx, "history_backfill", lambda c: backfill_history(
+            c, guard=lambda: HEAVY_JOBS_LOCK, pause=lambda: time.sleep(BACKFILL_PAUSE_SECONDS)))
     finally:
         BACKFILL_LOCK.release()
     if written:
