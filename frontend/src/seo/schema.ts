@@ -1,8 +1,8 @@
 import type { SecurityDetail } from "@/lib/api/client";
 
-export const SITE_NAME = "PEA Radar";
+export const SITE_NAME = "Cotalyx";
 export const DEFAULT_DESCRIPTION =
-  "Radar des actions et ETF européens éligibles au PEA : top 10 du moment, score technique et fondamental expliqué, graphiques et simulateur. Outil d'aide à la décision, pas un conseil en investissement.";
+  "Radar des actions et ETF : top 10 du moment, score technique et fondamental expliqué, graphiques et simulateur. Outil d'aide à la décision, pas un conseil en investissement.";
 
 type JsonLd = Record<string, unknown>;
 

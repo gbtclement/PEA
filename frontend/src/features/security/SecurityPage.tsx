@@ -19,7 +19,7 @@ import { PriceAlertButton } from "./PriceAlertButton";
 import { PriceChartPanel } from "./PriceChartPanel";
 import { ScoreCard } from "./ScoreCard";
 import { SimulatorCard } from "./SimulatorCard";
-import { breadcrumb, corporation, DEFAULT_DESCRIPTION, investmentFund } from "@/seo/schema";
+import { breadcrumb, corporation, DEFAULT_DESCRIPTION, investmentFund, SITE_NAME } from "@/seo/schema";
 import { usePageMeta, type PageMeta } from "@/seo/usePageMeta";
 
 const ELIGIBILITY_TEXT: Record<string, string> = { eligible: "Éligible au PEA.", non_eligible: "Non éligible au PEA.", a_verifier: "Éligibilité au PEA à vérifier." };
@@ -30,7 +30,7 @@ function securityMeta(data: SecurityDetail | undefined, error: Error | null): Pa
   }
   const etf = data.kind === "etf";
   const section = etf ? { name: "ETF", path: "/etf" } : { name: "Explorer", path: "/explorer" };
-  const score = data.score != null ? `score PEA Radar ${Math.round(data.score)}/100, ` : "";
+  const score = data.score != null ? `score ${SITE_NAME} ${Math.round(data.score)}/100, ` : "";
   return {
     title: `${data.name} (${data.symbol}) — cours, score et analyse`,
     description: `${data.name} (${data.symbol}, ${data.market}) : cours, ${score}graphique en chandeliers, ${etf ? "" : "données fondamentales, "}actualités et simulateur. ${ELIGIBILITY_TEXT[data.eligibility] ?? ELIGIBILITY_TEXT.a_verifier}`,

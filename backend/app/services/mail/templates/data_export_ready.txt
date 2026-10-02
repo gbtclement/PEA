@@ -1,6 +1,6 @@
 Bonjour {{ first_name }},
 
-L'export de vos données PEA Radar est prêt. Téléchargez-le depuis vos réglages (connexion requise) :
+L'export de vos données {{ app_name }} est prêt. Téléchargez-le depuis vos réglages (connexion requise) :
 {{ base_url }}/reglages#mes-donnees
 
 Il reste disponible jusqu'au {{ expires_at | paris }}.

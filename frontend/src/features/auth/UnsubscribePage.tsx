@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import { apiGet, apiSend } from "@/lib/api/client";
 import { usePageMeta } from "@/seo/usePageMeta";
 import { AuthCard } from "./AuthCard";
+import { SITE_NAME } from "@/seo/schema";
 
 type LinkInfo = { kind: string | null; label: string | null };
 
 /** Lien « Ne plus recevoir ce mail » des notifications : sans connexion, le jeton signé suffit. */
 export function UnsubscribePage() {
-  usePageMeta({ title: "Se désinscrire", description: "Ne plus recevoir une notification de PEA Radar.", noindex: true });
+  usePageMeta({ title: "Se désinscrire", description: `Ne plus recevoir une notification de ${SITE_NAME}.`, noindex: true });
   const [params] = useSearchParams();
   const jeton = params.get("jeton") ?? "";
   const type = params.get("type");

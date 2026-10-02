@@ -3,7 +3,7 @@ import re
 from sqlalchemy import func, select
 
 from app.models import AuthSession, EmailLog
-from app.services.auth.sessions import DEVICE_COOKIE, SESSION_COOKIE
+from app.services.auth.sessions import CSRF_COOKIE, DEVICE_COOKIE, SESSION_COOKIE
 from tests.factories import make_user
 
 PASSWORD = "motdepasse-solide"
@@ -25,7 +25,7 @@ def test_login_sets_cookies_and_me_works(anon_client, db):
     make_user(db, "jean@example.com")
     response = _login(anon_client, "  JEAN@example.com ", remember=True)
     assert response.status_code == 200 and response.json()["email"] == "jean@example.com"
-    assert {SESSION_COOKIE, "pea_csrf", DEVICE_COOKIE} <= set(response.cookies)
+    assert {SESSION_COOKIE, CSRF_COOKIE, DEVICE_COOKIE} <= set(response.cookies)
     assert anon_client.get("/api/me").status_code == 200
 
 
@@ -49,7 +49,7 @@ def test_unverified_account_is_sent_to_validation(anon_client, db):
 def test_logout_revokes_the_session(anon_client, db):
     make_user(db, "jean@example.com")
     _login(anon_client)
-    anon_client.headers["X-CSRF-Token"] = anon_client.cookies["pea_csrf"]
+    anon_client.headers["X-CSRF-Token"] = anon_client.cookies[CSRF_COOKIE]
     assert anon_client.post("/api/auth/logout").status_code == 204
     assert db.scalar(select(func.count()).select_from(AuthSession)) == 0
     assert anon_client.get("/api/me").status_code == 401
@@ -58,7 +58,7 @@ def test_logout_revokes_the_session(anon_client, db):
 def test_new_device_alert_only_from_the_second_browser(anon_client, db):
     make_user(db, "jean@example.com")
     _login(anon_client)                  # premier appareil du compte : pas d'alerte
-    _login(anon_client)                  # même navigateur (cookie pea_device) : pas d'alerte
+    _login(anon_client)                  # même navigateur (cookie de l'appareil) : pas d'alerte
     assert _mails(db, "new_device") == []
     anon_client.cookies.clear()
     _login(anon_client)                  # autre navigateur
@@ -102,6 +102,16 @@ def test_forgot_and_reset_password(anon_client, db):
 def test_login_replaces_a_previous_session(anon_client, db):
     make_user(db, "jean@example.com")
     _login(anon_client)
-    anon_client.headers["X-CSRF-Token"] = anon_client.cookies["pea_csrf"]
+    anon_client.headers["X-CSRF-Token"] = anon_client.cookies[CSRF_COOKIE]
     _login(anon_client)
     assert db.scalar(select(func.count()).select_from(AuthSession)) == 1
+
+
+def test_cookie_names_use_new_prefix():
+    assert (SESSION_COOKIE, CSRF_COOKIE, DEVICE_COOKIE) == ("cotalyx_session", "cotalyx_csrf", "cotalyx_device")
+
+
+def test_old_session_cookie_is_simply_ignored(anon_client):
+    anon_client.cookies.set("pea_session", "ancien-jeton")
+    response = anon_client.get("/api/me")
+    assert response.status_code == 401  # visiteur, comme sans cookie : pas de 500

@@ -4,7 +4,7 @@ from sqlalchemy import select
 
 from app.core.terms import TERMS_VERSION
 from app.models import EmailLog, User
-from app.services.auth.sessions import SESSION_COOKIE
+from app.services.auth.sessions import CSRF_COOKIE, SESSION_COOKIE
 from tests.factories import make_user
 
 FORM = {"first_name": "Jean", "last_name": "Dupont", "email": "Jean@Example.com",
@@ -24,7 +24,7 @@ def test_signup_then_verify_opens_a_session(anon_client, db):
     assert user.email_verified_at is None and user.terms_version == TERMS_VERSION
     verified = anon_client.post("/api/auth/verify-email", json={"email": "jean@example.com", "code": _last_code(db)})
     assert verified.status_code == 200 and verified.json()["email"] == "jean@example.com"
-    assert SESSION_COOKIE in verified.cookies and "pea_csrf" in verified.cookies
+    assert SESSION_COOKIE in verified.cookies and CSRF_COOKIE in verified.cookies
     assert anon_client.get("/api/me").status_code == 200
     kinds = [m.kind for m in db.scalars(select(EmailLog).order_by(EmailLog.id))]
     assert kinds == ["verify_code", "welcome"]

@@ -12,12 +12,12 @@ Si une case « Je ne suis pas un robot » s'affiche, cochez-la avant d'envoyer l
 
 ## Choisir un bon mot de passe
 
-Un mot de passe est refusé s'il fait **moins de 12 caractères** ou s'il **apparaît dans des fuites de données connues**. Des millions de mots de passe volés sur d'autres sites circulent publiquement : les pirates les essaient en premier. PEA Radar vérifie le vôtre sans jamais l'envoyer à personne.
+Un mot de passe est refusé s'il fait **moins de 12 caractères** ou s'il **apparaît dans des fuites de données connues**. Des millions de mots de passe volés sur d'autres sites circulent publiquement : les pirates les essaient en premier. Cotalyx vérifie le vôtre sans jamais l'envoyer à personne.
 
 Un bon mot de passe :
 
 - est **une phrase de plusieurs mots** qui ne vont pas ensemble, par exemple quatre mots choisis au hasard ;
-- **ne sert que sur PEA Radar**, jamais sur un autre site ;
+- **ne sert que sur Cotalyx**, jamais sur un autre site ;
 - ne contient ni votre nom, ni votre date de naissance, ni le nom du site.
 
 Un gestionnaire de mots de passe (celui de votre navigateur, par exemple) peut en créer un et le retenir pour vous.
@@ -32,7 +32,7 @@ Sur les écrans de connexion et d'inscription, le bouton **Continuer avec Google
 
 ## Valider votre adresse mail
 
-Un **code à 6 chiffres** vous est envoyé par mail. Il figure dans l'objet du mail : « Votre code PEA Radar : 123456 ».
+Un **code à 6 chiffres** vous est envoyé par mail. Il figure dans l'objet du mail : « Votre code Cotalyx : 123456 ».
 
 - Saisissez-le sur l'écran qui s'est ouvert. Vous êtes alors connecté.
 - Le code est valable **15 minutes**.
@@ -61,7 +61,7 @@ Pour vous déconnecter, cliquez sur l'icône de sortie à côté de votre nom, e
 
 ## « Nouvelle connexion à votre compte »
 
-Quand quelqu'un se connecte à votre compte depuis un appareil ou un navigateur inconnu, vous recevez un mail « Nouvelle connexion à votre compte PEA Radar ».
+Quand quelqu'un se connecte à votre compte depuis un appareil ou un navigateur inconnu, vous recevez un mail « Nouvelle connexion à votre compte Cotalyx ».
 
 - **C'était vous** (nouveau téléphone, autre navigateur) : il n'y a rien à faire.
 - **Ce n'était pas vous** : cliquez sur **Ce n'était pas moi** dans le mail, puis sur **Sécuriser mon compte**. Tous les appareils sont aussitôt déconnectés, l'ancien mot de passe cesse de fonctionner et un mail vous permet d'en choisir un nouveau.

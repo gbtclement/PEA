@@ -19,7 +19,7 @@ from app.services.auth.sessions import SESSION_COOKIE, resolve_session, revoke_s
 from app.services.security_log import log_event
 
 router = APIRouter(prefix="/auth/google", tags=["auth"])
-OAUTH_COOKIE, PENDING_COOKIE, COOKIE_PATH = "pea_oauth", "pea_google_pending", "/api/auth/google"
+OAUTH_COOKIE, PENDING_COOKIE, COOKIE_PATH = "cotalyx_oauth", "cotalyx_google_pending", "/api/auth/google"
 OAUTH_MAX_AGE, PENDING_MAX_AGE = timedelta(minutes=10), timedelta(minutes=30)
 
 

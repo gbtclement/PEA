@@ -1,6 +1,6 @@
 # Lire un graphique : l'analyse technique
 
-L'**analyse technique** étudie l'évolution du **cours** et des **volumes**, sans regarder les comptes de l'entreprise. Elle aide à repérer une tendance et le bon moment pour agir. C'est la moitié du score de PEA Radar.
+L'**analyse technique** étudie l'évolution du **cours** et des **volumes**, sans regarder les comptes de l'entreprise. Elle aide à repérer une tendance et le bon moment pour agir. C'est la moitié du score de Cotalyx.
 
 ?> L'analyse technique décrit le passé récent. Elle ne garantit rien pour l'avenir : ce sont des indices, pas des certitudes.
 
@@ -80,4 +80,4 @@ Quand une résistance est franchie avec de gros volumes, on parle de **cassure**
 - Ils marchent mieux sur les actions très échangées.
 - Une mauvaise nouvelle (résultats décevants, scandale) balaie n'importe quel signal.
 
-C'est pour ça que PEA Radar combine la technique avec l'analyse de l'entreprise, et que la page Prévisions affiche les **vraies statistiques** de chaque signal.
+C'est pour ça que Cotalyx combine la technique avec l'analyse de l'entreprise, et que la page Prévisions affiche les **vraies statistiques** de chaque signal.

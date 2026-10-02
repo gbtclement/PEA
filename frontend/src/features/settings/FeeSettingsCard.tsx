@@ -41,9 +41,9 @@ export function FeeSettingsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Frais et obligations de la caisse régionale</CardTitle>
+        <CardTitle className="text-base">Frais et obligations de votre courtier</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Valeurs par défaut : formule Invest Store Intégral (caisse de Paris). Vérifiez-les dans la brochure tarifaire de votre caisse.
+          Valeurs par défaut : un exemple de grille de banque en ligne (Crédit Agricole, Invest Store Intégral). Remplacez-les par celles de votre courtier.
         </p>
       </CardHeader>
       <CardContent>

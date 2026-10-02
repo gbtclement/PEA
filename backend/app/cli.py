@@ -2,6 +2,7 @@
 import argparse
 from datetime import UTC, datetime
 
+from app.core.brand import APP_NAME
 from app.core.config import get_settings
 from app.core.db import get_session_factory
 from app.services.auth.bootstrap import bootstrap_admin, ensure_user
@@ -15,7 +16,7 @@ def main(argv: list[str] | None = None) -> None:
     user.add_argument("--email", required=True)
     user.add_argument("--password", required=True)
     user.add_argument("--first-name", default="Test")
-    user.add_argument("--last-name", default="PEA Radar")
+    user.add_argument("--last-name", default=APP_NAME)
     user.add_argument("--admin", action="store_true")
     args = parser.parse_args(argv)
 

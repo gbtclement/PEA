@@ -89,7 +89,7 @@ const jsonLd = () => [...document.head.querySelectorAll('script[type="applicatio
 test("métadonnées : titre, Corporation avec ticker et fil d'Ariane", async () => {
   renderPage();
   await screen.findByRole("heading", { level: 1, name: "LVMH" });
-  await waitFor(() => expect(document.title).toBe("LVMH (MC) — cours, score et analyse | PEA Radar"));
+  await waitFor(() => expect(document.title).toBe("LVMH (MC) — cours, score et analyse | Cotalyx"));
   expect(document.head.querySelector('meta[name="description"]')?.getAttribute("content")).toMatch(/LVMH/);
   const types = jsonLd().map((d) => d["@type"]);
   expect(types).toEqual(["Corporation", "BreadcrumbList"]);

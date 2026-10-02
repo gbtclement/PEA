@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
+import { SITE_NAME } from "@/seo/schema";
 
 /** Textes légaux en brouillon : les passages entre crochets sont à compléter par l'éditeur. */
-export const LEGAL_UPDATED = "5 octobre 2026";
+export const LEGAL_UPDATED = "6 octobre 2026";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -42,7 +43,7 @@ export function CGU() {
     <>
       <Section title="1. Objet">
         <p>
-          PEA Radar est un outil d'aide à la décision et d'apprentissage pour le Plan d'Épargne en Actions (PEA). L'essentiel du
+          {SITE_NAME} est un outil d'aide à la décision et d'apprentissage pour investir en actions et en ETF. L'essentiel du
           site est gratuit ; l'assistant IA et la liste des prévisions font partie d'un abonnement payant, Premium. Les présentes
           conditions fixent les règles d'utilisation du site. Créer un compte vaut acceptation de ces conditions.
         </p>
@@ -65,12 +66,12 @@ export function CGU() {
       </Section>
       <Section title="4. Pas un conseil en investissement">
         <p>
-          PEA Radar n'est <strong>pas un conseil en investissement</strong> et ne fournit aucune recommandation personnalisée au
+          {SITE_NAME} n'est <strong>pas un conseil en investissement</strong> et ne fournit aucune recommandation personnalisée au
           sens de l'Autorité des marchés financiers (AMF).
         </p>
         <List>
           <li>Les cours sont différés et peuvent être incomplets ou inexacts.</li>
-          <li>L'éligibilité au PEA est déduite automatiquement : elle peut être erronée.</li>
+          <li>La compatibilité d'un titre avec une enveloppe (PEA…) est déduite automatiquement : elle peut être erronée.</li>
           <li>Les scores et les prévisions sont des calculs sans aucune garantie de résultat.</li>
           <li>Vérifiez toujours auprès de votre banque avant de passer un ordre. Investir comporte un risque de perte en capital.</li>
         </List>
@@ -127,15 +128,15 @@ export function CGV() {
       </Section>
       <Section title="2. Objet">
         <p>
-          Ces conditions régissent l'abonnement <strong>PEA Radar Premium</strong>, qui donne accès à l'assistant IA et à la liste
-          des prévisions court terme, pour un utilisateur disposant d'un compte PEA Radar. Le reste du site reste régi par les{" "}
+          Ces conditions régissent l'abonnement <strong>{SITE_NAME} Premium</strong>, qui donne accès à l'assistant IA et à la liste
+          des prévisions court terme, pour un utilisateur disposant d'un compte {SITE_NAME}. Le reste du site reste régi par les{" "}
           <Link className="underline" to="/cgu">CGU</Link>.
         </p>
       </Section>
       <Section title="3. Prix et paiement">
         <List>
           <li>Les prix sont affichés sur la page <Link className="underline" to="/premium">Premium</Link>, en euros toutes taxes comprises. [À VÉRIFIER : mention « TVA non applicable, article 293 B du CGI » si le vendeur est en franchise de TVA.]</li>
-          <li>Le paiement se fait par carte bancaire via Stripe, au début de chaque période (mois ou année). PEA Radar ne voit jamais les données de carte.</li>
+          <li>Le paiement se fait par carte bancaire via Stripe, au début de chaque période (mois ou année). {SITE_NAME} ne voit jamais les données de carte.</li>
           <li>Les factures sont disponibles depuis « Gérer mon abonnement », dans les Réglages.</li>
         </List>
       </Section>
@@ -167,7 +168,7 @@ export function CGV() {
       </Section>
       <Section title="8. Service">
         <List>
-          <li>PEA Radar n'est <strong>pas un conseil en investissement</strong> : l'assistant et les prévisions sont des outils d'aide à la décision, sans garantie de résultat.</li>
+          <li>{SITE_NAME} n'est <strong>pas un conseil en investissement</strong> : l'assistant et les prévisions sont des outils d'aide à la décision, sans garantie de résultat.</li>
           <li>L'assistant IA est soumis à une limite d'utilisation mensuelle.</li>
           <li>Le service peut évoluer (méthodes de prévision, modèle d'IA) et être interrompu pour maintenance.</li>
         </List>
@@ -193,7 +194,7 @@ export function PRIVACY() {
           <li>Compte : prénom, nom, adresse mail, mot de passe (enregistré uniquement sous forme hachée).</li>
           <li>Données que vous saisissez : ordres, favoris, réglages, préférences de notification, alertes de prix, conversations avec l'assistant.</li>
           <li>Données techniques : appareils connectés, adresse IP tronquée, journal de sécurité, historique des mails envoyés.</li>
-          <li>Abonnement : formule, état et dates de l'abonnement Premium, et la preuve de vos accords avant paiement (version des CGV, date, renonciation au droit de rétractation). PEA Radar ne voit jamais votre numéro de carte : le paiement est traité par Stripe.</li>
+          <li>Abonnement : formule, état et dates de l'abonnement Premium, et la preuve de vos accords avant paiement (version des CGV, date, renonciation au droit de rétractation). {SITE_NAME} ne voit jamais votre numéro de carte : le paiement est traité par Stripe.</li>
         </List>
       </Section>
       <Section title="Finalités et bases légales">
@@ -246,8 +247,8 @@ export function PRIVACY() {
       </Section>
       <Section title="Cookies">
         <p>
-          PEA Radar n'utilise que des cookies strictement nécessaires : <code>pea_session</code> (connexion),{" "}
-          <code>pea_csrf</code> (protection des formulaires), <code>pea_device</code> (reconnaître un appareil déjà utilisé) et
+          {SITE_NAME} n'utilise que des cookies strictement nécessaires : <code>cotalyx_session</code> (connexion),{" "}
+          <code>cotalyx_csrf</code> (protection des formulaires), <code>cotalyx_device</code> (reconnaître un appareil déjà utilisé) et
           ceux de Turnstile (anti-robots). Aucun cookie de publicité ni de mesure d'audience : c'est pourquoi il n'y a pas de
           bandeau.
         </p>
@@ -270,7 +271,7 @@ export function NOTICE() {
       </Section>
       <Section title="Propriété intellectuelle">
         <p>
-          Les textes, le code et la présentation de PEA Radar sont protégés. Les marques et noms de sociétés cités appartiennent
+          Les textes, le code et la présentation de {SITE_NAME} sont protégés. Les marques et noms de sociétés cités appartiennent
           à leurs propriétaires respectifs.
         </p>
       </Section>

@@ -6,6 +6,7 @@ import { AccountMenu } from "./AccountMenu";
 import { MarketStatus } from "./MarketStatus";
 import { Sidebar } from "./Sidebar";
 import { SignUpBanner } from "./SignUpBanner";
+import { SITE_NAME } from "@/seo/schema";
 
 // Lisibles avant d'accepter : on ne consent pas à un texte qu'on ne peut pas ouvrir.
 const LEGAL_PAGES = ["/cgu", "/cgv", "/confidentialite", "/mentions-legales"];
@@ -29,8 +30,8 @@ export function Layout() {
         <footer className="ml-60 px-8 pb-6">
           <div className="mx-auto max-w-[1400px] space-y-1 border-t border-border pt-4 text-xs text-muted-foreground">
             <p>
-              PEA Radar est un outil d'aide à la décision et d'apprentissage, pas un conseil en investissement. Cours Yahoo Finance
-              en différé ; éligibilité PEA déduite du pays du siège, à confirmer auprès de votre banque.
+              {SITE_NAME} est un outil d'aide à la décision et d'apprentissage, pas un conseil en investissement. Cours Yahoo Finance
+              en différé ; compatibilité PEA déduite du pays du siège, à confirmer auprès de votre courtier.
             </p>
             <p className="flex flex-wrap gap-x-2">
               <Link to="/mentions-legales" className="hover:text-foreground">Mentions légales</Link>·

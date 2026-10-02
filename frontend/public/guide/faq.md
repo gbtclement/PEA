@@ -1,5 +1,9 @@
 # Questions fréquentes
 
+## Pourquoi PEA Radar s'appelle maintenant Cotalyx ?
+
+L'application ne se limite plus au PEA : elle s'adresse à tous les investisseurs particuliers, quelle que soit leur enveloppe (PEA, compte-titres…). Le nouveau nom reflète ce changement ; vos comptes, favoris et ordres sont inchangés.
+
 ## Les cours sont-ils en temps réel ?
 
 Non. Ils viennent d'une source gratuite, avec environ **15 minutes de retard**, et sont rafraîchis toutes les 1 à 5 minutes pendant la séance. Le soir, l'application charge les cours de clôture officiels. Au moment de passer un ordre, fiez-vous au cours affiché par votre banque. Voir [Fraîcheur des données](app/donnees.md).
@@ -42,7 +46,7 @@ Il est réservé aux membres **[Premium](app/premium.md)**, avec un budget par m
 
 ## Premium est-il obligatoire ?
 
-Non. Presque tout PEA Radar est gratuit. Premium, payant, ajoute l'assistant IA et la liste des prévisions court terme. Voir [Premium](app/premium.md).
+Non. Presque tout Cotalyx est gratuit. Premium, payant, ajoute l'assistant IA et la liste des prévisions court terme. Voir [Premium](app/premium.md).
 
 ## Comment résilier Premium ?
 
@@ -52,9 +56,9 @@ Dans les **Réglages**, carte **Abonnement**, cliquez sur **Gérer mon abonnemen
 
 Non : vous gardez Premium jusqu'à la fin de la période déjà payée (le mois ou l'année en cours), puis il s'arrête. Rien n'est prélevé ensuite.
 
-## PEA Radar voit-il ma carte bancaire ?
+## Cotalyx voit-il ma carte bancaire ?
 
-Non. Le paiement se fait sur la page sécurisée de **Stripe**, notre prestataire de paiement : PEA Radar ne voit jamais votre numéro de carte.
+Non. Le paiement se fait sur la page sécurisée de **Stripe**, notre prestataire de paiement : Cotalyx ne voit jamais votre numéro de carte.
 
 ## Je suis bloqué après plusieurs essais
 
@@ -78,6 +82,6 @@ Tout reste sur l'ordinateur où tourne l'application. Seules exceptions :
 - les demandes de cours envoyées à la source de données ;
 - vos questions à l'assistant, envoyées à Anthropic avec les données que Claude consulte pour vous répondre ;
 - les mails du compte (code, lien, alertes) et les notifications que vous avez choisies, envoyés par un service d'envoi de mails ;
-- si vous utilisez **Continuer avec Google**, Google sait que vous vous connectez à PEA Radar ;
+- si vous utilisez **Continuer avec Google**, Google sait que vous vous connectez à Cotalyx ;
 - la case « Je ne suis pas un robot » est vérifiée par Cloudflare ;
 - pour savoir si un mot de passe a fuité, seuls les 5 premiers caractères de son empreinte partent vers le service Have I Been Pwned : jamais le mot de passe lui-même.

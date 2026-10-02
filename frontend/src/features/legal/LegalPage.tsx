@@ -1,13 +1,14 @@
 import { usePageMeta } from "@/seo/usePageMeta";
 import { CGU, CGV, LEGAL_UPDATED, NOTICE, PRIVACY } from "./content";
+import { SITE_NAME } from "@/seo/schema";
 
 type Kind = "cgu" | "cgv" | "confidentialite" | "mentions-legales";
 
 const PAGES: Record<Kind, { title: string; description: string; Body: () => React.JSX.Element }> = {
-  cgu: { title: "Conditions générales d'utilisation", description: "Les règles d'utilisation de PEA Radar.", Body: CGU },
-  cgv: { title: "Conditions générales de vente", description: "Les conditions de l'abonnement PEA Radar Premium.", Body: CGV },
-  confidentialite: { title: "Politique de confidentialité", description: "Comment PEA Radar protège vos données personnelles.", Body: PRIVACY },
-  "mentions-legales": { title: "Mentions légales", description: "Éditeur et hébergeur de PEA Radar.", Body: NOTICE },
+  cgu: { title: "Conditions générales d'utilisation", description: `Les règles d'utilisation de ${SITE_NAME}.`, Body: CGU },
+  cgv: { title: "Conditions générales de vente", description: `Les conditions de l'abonnement ${SITE_NAME} Premium.`, Body: CGV },
+  confidentialite: { title: "Politique de confidentialité", description: `Comment ${SITE_NAME} protège vos données personnelles.`, Body: PRIVACY },
+  "mentions-legales": { title: "Mentions légales", description: `Éditeur et hébergeur de ${SITE_NAME}.`, Body: NOTICE },
 };
 
 export function LegalPage({ kind }: { kind: Kind }) {

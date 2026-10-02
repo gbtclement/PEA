@@ -76,7 +76,14 @@ def test_long_reset_validity_is_shown_in_hours():
 
 def test_account_deleted_and_admin_alerts_render():
     deleted = render("account_deleted", {"first_name": "Jean"}, base_url=BASE)
-    assert deleted.subject == "Votre compte PEA Radar a été supprimé" and "Jean" in deleted.text
+    assert deleted.subject == "Votre compte Cotalyx a été supprimé" and "Jean" in deleted.text
     for event in ("admin_updated", "email_changed_by_admin", "password_changed", "email_changed"):
         mail = render("security_alert", {"first_name": "Jean", "event": event}, base_url=BASE)
         assert mail.text.strip()
+
+
+def test_subjects_and_footer_use_new_name():
+    mail = render("verify_code", CONTEXTS["verify_code"], base_url=BASE)
+    assert mail.subject == "Votre code Cotalyx : 042917"
+    assert "Cotalyx" in mail.html and "Cotalyx" in mail.text
+    assert "PEA Radar" not in mail.html + mail.text

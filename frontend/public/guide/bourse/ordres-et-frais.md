@@ -1,6 +1,6 @@
 # Passer un ordre et payer moins de frais
 
-Un **ordre** est une instruction donnée à votre banque : acheter ou vendre telle quantité de telle action. PEA Radar ne passe aucun ordre : vous les passez chez votre banque, puis vous les enregistrez dans le [Portefeuille](app/portefeuille.md).
+Un **ordre** est une instruction donnée à votre banque : acheter ou vendre telle quantité de telle action. Cotalyx ne passe aucun ordre : vous les passez chez votre banque, puis vous les enregistrez dans le [Portefeuille](app/portefeuille.md).
 
 ## Les principaux types d'ordres
 
@@ -39,7 +39,7 @@ Acheter puis revendre coûte deux fois des frais.
 
 ### Les taxes
 
-À l'achat d'actions de **grandes entreprises françaises** (plus d'un milliard d'euros de capitalisation), l'État prélève aussi une **taxe sur les transactions financières**, de quelques dixièmes de pourcent du montant. Elle apparaît sur votre avis d'opéré. PEA Radar ne la calcule pas : corrigez les frais à la main lors de la saisie si vous voulez un suivi exact.
+À l'achat d'actions de **grandes entreprises françaises** (plus d'un milliard d'euros de capitalisation), l'État prélève aussi une **taxe sur les transactions financières**, de quelques dixièmes de pourcent du montant. Elle apparaît sur votre avis d'opéré. Cotalyx ne la calcule pas : corrigez les frais à la main lors de la saisie si vous voulez un suivi exact.
 
 ## Le minimum de 12 ordres par an
 

@@ -11,7 +11,7 @@ test.each([
   expect(screen.getByRole("heading", { level: 1, name: title })).toBeInTheDocument();
   expect(screen.queryByText(/Version provisoire/)).toBeNull();
   for (const pattern of patterns) expect(screen.getAllByText(pattern).length).toBeGreaterThan(0);
-  expect(screen.getByText(/Dernière mise à jour : 5 octobre 2026/)).toBeInTheDocument();
+  expect(screen.getByText(/Dernière mise à jour : 6 octobre 2026/)).toBeInTheDocument();
 });
 
 test("CGV : prix, résiliation, rétractation, pas un conseil", () => {

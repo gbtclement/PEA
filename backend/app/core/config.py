@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
     smtp_tls: str = "starttls"  # starttls | ssl | none
-    mail_from: str = "PEA Radar <no-reply@localhost>"
+    mail_from: str = "Cotalyx <no-reply@localhost>"
 
     # Connexion Google (OpenID Connect) ; vide = bouton masqué
     google_client_id: str = ""

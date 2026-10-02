@@ -13,6 +13,7 @@ import { OrderCounterCard } from "./OrderCounterCard";
 import { OrderDialog } from "./OrderDialog";
 import { OrdersHistory } from "./OrdersHistory";
 import { PositionsTable } from "./PositionsTable";
+import { SITE_NAME } from "@/seo/schema";
 
 type DialogState = { open: boolean; order?: OrderOut };
 
@@ -91,7 +92,7 @@ function EmptyCard({ onAdd }: { onAdd: () => void }) {
       <CardHeader><CardTitle className="text-base">Aucun ordre pour l'instant</CardTitle></CardHeader>
       <CardContent className="space-y-3 text-sm text-muted-foreground">
         <p>
-          Après chaque achat ou vente sur l'application Crédit Agricole, recopiez l'ordre ici : PEA Radar calcule votre prix de
+          Après chaque achat ou vente chez votre courtier, recopiez l'ordre ici : {SITE_NAME} calcule votre prix de
           revient, vos plus-values et le nombre d'ordres restant pour l'année.
         </p>
         <Button onClick={onAdd}>Ajouter mon premier ordre</Button>

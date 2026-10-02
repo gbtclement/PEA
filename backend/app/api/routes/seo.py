@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.brand import APP_NAME
 from app.core.config import Settings, get_settings
 from app.core.db import get_db
 from app.models import Security
@@ -60,24 +61,24 @@ def sitemap(settings: SettingsDep, db: DbDep) -> Response:
 def llms(settings: SettingsDep, db: DbDep) -> Response:
     counts = dict(db.execute(select(Security.kind, func.count()).where(*_public_securities()).group_by(Security.kind)).all())
     stocks, etfs = counts.get("stock", 0), counts.get("etf", 0)
-    body = f"""# PEA Radar
+    body = f"""# {APP_NAME}
 
-> Radar des actions et ETF européens éligibles au PEA (Plan d'Épargne en Actions) : top 10 du moment selon un score mixte technique et fondamental, explorateur, fiches détaillées avec graphiques et simulateur « et si j'avais investi ». Outil d'aide à la décision et d'apprentissage, pas un conseil en investissement.
+> Radar des actions et ETF : top 10 du moment selon un score mixte technique et fondamental, explorateur, fiches détaillées avec graphiques et simulateur « et si j'avais investi ». Outil d'aide à la décision et d'apprentissage, pas un conseil en investissement.
 
-Suivi actuel : {stocks} action{"s" if stocks > 1 else ""} et {etfs} ETF éligibles au PEA (Euronext, Xetra, Madrid…). Cours issus de Yahoo Finance, en différé.
+Suivi actuel : {stocks} action{"s" if stocks > 1 else ""} et {etfs} ETF (Euronext, Xetra, Madrid…). Cours issus de Yahoo Finance, en différé.
 
 ## Pages
 
 - [Accueil]({_url(settings, "/")}) : top 10 du moment avec l'explication de chaque score, indices, hausses et baisses du jour, carte du marché.
-- [Explorer]({_url(settings, "/explorer")}) : toutes les actions avec score, performances (1 jour à 1 an), PER, rendement et éligibilité PEA, triables et filtrables.
-- [ETF]({_url(settings, "/etf")}) : ETF éligibles au PEA classés par score technique.
+- [Explorer]({_url(settings, "/explorer")}) : toutes les actions avec score, performances (1 jour à 1 an), PER, rendement et enveloppes compatibles (PEA…), triables et filtrables.
+- [ETF]({_url(settings, "/etf")}) : ETF classés par score technique.
 - Fiches titres ({_url(settings, "/titres/")}<id>) : cours, graphique en chandeliers avec moyennes mobiles, RSI et MACD, détail du score, données fondamentales, actualités, simulateur d'achat passé frais inclus.
 
 ## Méthode du score
 
 - Score sur 100 : moitié technique (tendance, force relative face au CAC 40, RSI, MACD), moitié fondamentale (valorisation, croissance, bilan, dividende). Les ETF sont notés sur la partie technique seule.
-- Le top 10 exclut les titres peu échangés, à l'historique trop court ou à l'éligibilité PEA non confirmée.
-- L'éligibilité est déduite du pays du siège (code ISIN) : à confirmer auprès de son courtier.
+- Le top 10 exclut les titres peu échangés ou à l'historique trop court.
+- La compatibilité avec le PEA est déduite du pays du siège (code ISIN) : à confirmer auprès de son courtier.
 
 ## Plan du site
 

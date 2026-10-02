@@ -54,9 +54,9 @@ Ce sont des mails du compte (pas des notifications N1 à N6) : ils partent toujo
 ## Mise en place
 
 1. Créer un compte sur [stripe.com](https://stripe.com). Tout se fait d'abord en **mode test** (interrupteur en haut du tableau de bord).
-2. **Produit** : Catalogue de produits > Ajouter un produit, nom « PEA Radar Premium », avec **deux prix récurrents** en EUR, TTC : un mensuel et un annuel. Copier l'identifiant de chaque prix (`price_…`).
+2. **Produit** : Catalogue de produits > Ajouter un produit, nom « Cotalyx Premium », avec **deux prix récurrents** en EUR, TTC : un mensuel et un annuel. Copier l'identifiant de chaque prix (`price_…`).
 3. **Portail client** : Paramètres > Facturation > Portail client. Autoriser la mise à jour de la carte, l'historique des factures, le changement de formule entre les deux prix, et la résiliation **en fin de période** (pas immédiate).
-4. **E-mails clients** : Paramètres > E-mails clients : activer les reçus de paiement et les factures. PEA Radar n'envoie pas de facture lui-même.
+4. **E-mails clients** : Paramètres > E-mails clients : activer les reçus de paiement et les factures. Cotalyx n'envoie pas de facture lui-même.
 5. **Webhook** : Développeurs > Webhooks > Ajouter un point de terminaison, adresse `https://<domaine>/api/billing/webhook`, événements :
    - `checkout.session.completed`
    - `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`

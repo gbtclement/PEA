@@ -19,7 +19,7 @@ def test_enqueue_renders_and_waits(db):
     user = make_user(db, "jean@example.com")
     log_id = _enqueue(db, user_id=user.id)
     row = db.get(EmailLog, log_id)
-    assert row.status == "pending" and row.subject == "Bienvenue sur PEA Radar" and "Jean" in row.text
+    assert row.status == "pending" and row.subject == "Bienvenue sur Cotalyx" and "Jean" in row.text
 
 
 def test_dedupe_key_prevents_duplicates(db):
@@ -69,7 +69,7 @@ def test_codes_and_links_are_erased_once_sent_or_abandoned(db, make_ctx):
     for kind, secret in (("verify_code", "482913"), ("reset_password", "jeton-secret-reset")):
         row = rows[kind]
         assert row.status == "sent" and secret not in row.subject + row.html + row.text
-    assert rows["verify_code"].subject == "Votre code PEA Radar"
+    assert rows["verify_code"].subject == "Votre code Cotalyx"
     assert "Jean" in rows["welcome"].text  # rien de secret : gardé tel quel
 
 

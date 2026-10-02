@@ -1,9 +1,9 @@
 --
-PEA Radar — {{ base_url }}
+{{ app_name }} — {{ base_url }}
 {% if unsubscribe_url is defined %}
-PEA Radar est un outil d'aide à la décision et d'apprentissage, pas un conseil en investissement. Cours différés.
+{{ app_name }} est un outil d'aide à la décision et d'apprentissage, pas un conseil en investissement. Cours différés.
 Gérer mes notifications : {{ manage_url }}
 Ne plus recevoir ce mail : {{ unsubscribe_url }}
 {% else %}
-Vous recevez ce mail car un compte PEA Radar utilise cette adresse.
+Vous recevez ce mail car un compte {{ app_name }} utilise cette adresse.
 {% endif %}

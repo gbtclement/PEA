@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 const SITES = [
-  { path: "/guide/", title: "Bienvenue dans PEA Radar", minPages: 20 },
+  { path: "/guide/", title: "Bienvenue dans Cotalyx", minPages: 20 },
   { path: "/documentation/", title: "Documentation admin", minPages: 15 },
 ];
 
@@ -10,7 +10,7 @@ test("la barre latérale ouvre le guide, pas la documentation admin", async ({ p
   await expect(page.locator("a[href^='/documentation']")).toHaveCount(0);
   await page.getByRole("link", { name: "Guide" }).click();
   await expect(page).toHaveURL(/\/guide\/(#\/)?$/);
-  await expect(page.locator(".markdown-section h1")).toHaveText("Bienvenue dans PEA Radar");
+  await expect(page.locator(".markdown-section h1")).toHaveText("Bienvenue dans Cotalyx");
 });
 
 for (const site of SITES) {

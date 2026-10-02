@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 
+from app.core.brand import APP_NAME
+
 from app.api.routes import admin, assistant, auth, billing, favorites, google, fees, forecasts, health, me, notifications, orders, unsubscribe, portfolio, rankings, screener, securities, security_detail, seo, settings, status
 
 
 def create_app() -> FastAPI:
-    app = FastAPI(title="PEA Radar API")
+    app = FastAPI(title=f"{APP_NAME} API")
     for module in (health, auth, google, me, notifications, billing, unsubscribe, admin, securities, security_detail, status, screener, rankings, fees, favorites, settings, orders, portfolio, assistant, forecasts, seo):
         app.include_router(module.router, prefix="/api")
     return app

@@ -1,6 +1,6 @@
 # Portefeuille
 
-PEA Radar n'est pas connecté à votre banque : vous **saisissez vous-même vos ordres**, après les avoir passés chez votre banque. L'application calcule tout le reste.
+Cotalyx n'est pas connecté à votre banque : vous **saisissez vous-même vos ordres**, après les avoir passés chez votre banque. L'application calcule tout le reste.
 
 ## Saisir un ordre
 

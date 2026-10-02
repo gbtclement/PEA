@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { SITE_NAME } from "@/seo/schema";
 
 /** Liens légaux communs à tous les écrans de compte. */
 export function AuthFooter() {
@@ -11,7 +12,7 @@ export function AuthFooter() {
         <Link to="/confidentialite" className="hover:text-foreground">Confidentialité</Link>
         <a href="/guide/" className="hover:text-foreground">Guide</a>
       </div>
-      <p>PEA Radar est un outil d'aide à la décision, pas un conseil en investissement.</p>
+      <p>{SITE_NAME} est un outil d'aide à la décision, pas un conseil en investissement.</p>
     </footer>
   );
 }

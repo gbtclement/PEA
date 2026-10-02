@@ -33,7 +33,7 @@ Pour vous, le résultat est quasiment le même que si vous déteniez l'indice.
 | **Capitalisant** (souvent noté *Acc*) | Il les réinvestit automatiquement. Le plus simple pour faire grossir un PEA |
 | **Distribuant** (noté *Dist*) | Il vous les verse |
 
-## Dans PEA Radar
+## Dans Cotalyx
 
 - L'onglet **ETF** liste les ETF éligibles au PEA suivis par l'application.
 - Leur score est **uniquement technique**, puisqu'un ETF n'a ni bénéfices ni dettes à analyser.

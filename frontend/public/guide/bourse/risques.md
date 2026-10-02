@@ -51,7 +51,7 @@ Avec Invest Store Intégral, cette méthode remplit aussi l'objectif de 12 ordre
 
 Des allers-retours fréquents coûtent cher : environ 1 % par aller-retour de 500 €. Sur des années, les frais pèsent lourd. Voir [Passer un ordre et payer moins de frais](bourse/ordres-et-frais.md).
 
-## Bien utiliser PEA Radar
+## Bien utiliser Cotalyx
 
 - Le **score** décrit la situation **actuelle**. Il ne prédit pas l'avenir.
 - Les **prévisions** sont des statistiques : même les meilleures se trompent souvent.

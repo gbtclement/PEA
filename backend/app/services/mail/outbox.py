@@ -35,7 +35,7 @@ ERASED = "Contenu effacé après l'envoi : ce mail contenait un code ou un lien 
 
 def forget_secrets(row: EmailLog) -> None:
     if row.kind in SECRET_KINDS:
-        row.subject = SUBJECTS[row.kind].split(" : {")[0]  # « Votre code PEA Radar : {code} » perd son code
+        row.subject = SUBJECTS[row.kind].split(" : {")[0]  # « Votre code Cotalyx : {code} » perd son code
         row.html = row.text = ERASED
     if row.kind == "account_deleted":  # le compte n'existe plus : son adresse ne reste pas en clair (spec 6.4)
         from app.services.privacy.erasure import email_fingerprint

@@ -35,7 +35,7 @@ Renseignez aussi les comptes et les mails :
 | `SMTP_HOST` / `SMTP_PORT` | `mailpit` / `1025` | `smtp-relay.brevo.com` / `587` |
 | `SMTP_USER` / `SMTP_PASSWORD` | vides | Identifiants SMTP de Brevo |
 | `SMTP_TLS` | `none` | `starttls` |
-| `MAIL_FROM` | `PEA Radar <no-reply@pea-radar.local>` | Une adresse de votre domaine, validée chez Brevo |
+| `MAIL_FROM` | `Cotalyx <no-reply@pea-radar.local>` | Une adresse de votre domaine, validée chez Brevo |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Vides (pas de bouton Google), ou le client OAuth ci-dessous | Client OAuth Google |
 | `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | Vides (pas de case anti-robot) | Clés du widget Turnstile |
 | `HIBP_ENABLED` | `true` (`false` hors connexion) | `true` |
@@ -44,7 +44,7 @@ Renseignez aussi les comptes et les mails :
 
 ### Connexion avec Google (facultatif)
 
-1. Dans la [console Google Cloud](https://console.cloud.google.com/apis/credentials), créez un projet, puis configurez l'**écran de consentement OAuth** (type « Externe », nom « PEA Radar », votre adresse de contact).
+1. Dans la [console Google Cloud](https://console.cloud.google.com/apis/credentials), créez un projet, puis configurez l'**écran de consentement OAuth** (type « Externe », nom « Cotalyx », votre adresse de contact).
 2. **Identifiants → Créer des identifiants → ID client OAuth**, type **Application Web**.
 3. Dans **URI de redirection autorisés**, ajoutez :
    - en local : `http://localhost:8095/api/auth/google/callback` ;
@@ -58,7 +58,7 @@ L'adresse de retour est construite à partir de `PUBLIC_BASE_URL` : elle doit co
 ### Case anti-robot Cloudflare Turnstile (facultatif en local)
 
 1. Dans le tableau de bord Cloudflare, ouvrez **Turnstile → Add widget** (gratuit, sans y déplacer votre domaine).
-2. Nom « PEA Radar », mode **Managed**, domaines `localhost` et votre domaine public.
+2. Nom « Cotalyx », mode **Managed**, domaines `localhost` et votre domaine public.
 3. Copiez la **Site Key** dans `TURNSTILE_SITE_KEY` et la **Secret Key** dans `TURNSTILE_SECRET_KEY`.
 
 Sans ces clés, les formulaires fonctionnent sans case anti-robot ; les limites de tentatives restent actives.
@@ -73,7 +73,7 @@ Puis ouvrez **http://localhost:8095**.
 
 ## Votre compte administrateur
 
-Au démarrage, le compte `ADMIN_EMAIL` devient administrateur. Il n'a pas encore de mot de passe : un mail « Choisir un nouveau mot de passe PEA Radar » lui est envoyé, avec un lien valable 24 h.
+Au démarrage, le compte `ADMIN_EMAIL` devient administrateur. Il n'a pas encore de mot de passe : un mail « Choisir un nouveau mot de passe Cotalyx » lui est envoyé, avec un lien valable 24 h.
 
 - En local, ce mail arrive dans **Mailpit** : **http://localhost:8025**. Tous les mails de l'application y sont capturés, aucun ne part vraiment.
 - Lien expiré ? Utilisez **Mot de passe oublié ?** sur l'écran de connexion.
@@ -81,6 +81,15 @@ Au démarrage, le compte `ADMIN_EMAIL` devient administrateur. Il n'a pas encore
 Les autres personnes créent leur compte elles-mêmes avec **Créer un compte**. Détails dans [Comptes utilisateurs](comptes.md).
 
 L'onglet **Admin** de la barre latérale n'apparaît que pour ce compte (et les autres admins). On y offre **Premium** à un compte (assistant IA et prévisions), on règle le modèle et la limite mensuelle de l'assistant, et on vérifie ce qui est renseigné dans `.env` (sans jamais afficher les valeurs), avec un bouton pour envoyer un mail de test.
+
+## Passage de PEA Radar à Cotalyx (octobre 2026)
+
+L'application a été renommée Cotalyx. Au premier déploiement de cette version :
+
+- les cookies s'appellent désormais `cotalyx_session`, `cotalyx_csrf` et `cotalyx_device` : **tout le monde est déconnecté une fois**, et chaque compte peut recevoir une alerte « nouvelle connexion » à sa reconnexion ;
+- les CGU et CGV passent en version `2026-10-06` : chaque compte les accepte à nouveau ;
+- changez à la main `MAIL_FROM` dans `.env` (par exemple `Cotalyx <no-reply@votre-domaine>`) ;
+- la base de données, son utilisateur (`pea_radar`, `pea`) et le dépôt gardent leur ancien nom : rien à migrer.
 
 ## Mettre à jour une installation d'avant les comptes
 

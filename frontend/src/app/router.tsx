@@ -25,8 +25,8 @@ export const routes: RouteObject[] = [
     children: [
       // Pages publiques : lisibles sans compte (et par les moteurs de recherche)
       { index: true, lazy: async () => ({ Component: (await import("@/features/home/HomePage")).HomePage }) },
-      { path: "explorer", element: <ScreenerPage kind="stock" title="Explorer" description="Toutes les actions européennes avec leur score, leurs performances et leur éligibilité au PEA." /> },
-      { path: "etf", element: <ScreenerPage kind="etf" title="ETF" description="Les ETF éligibles au PEA, classés par score technique." /> },
+      { path: "explorer", element: <ScreenerPage kind="stock" title="Explorer" description="Toutes les actions européennes avec leur score, leurs performances et les enveloppes compatibles." /> },
+      { path: "etf", element: <ScreenerPage kind="etf" title="ETF" description="Les ETF, classés par score technique." /> },
       { path: "titres/:id", lazy: async () => ({ Component: (await import("@/features/security/SecurityPage")).SecurityPage }) },
       { path: "cgu", element: <LegalPage kind="cgu" /> },
       { path: "cgv", element: <LegalPage kind="cgv" /> },

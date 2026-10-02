@@ -71,7 +71,7 @@ Quand on dit « la bourse a baissé de 1 % aujourd'hui », on parle en général
 
 Le **volume** est le nombre d'actions échangées dans la journée. Une action **liquide** s'échange beaucoup : vous pouvez l'acheter ou la vendre à tout moment, à un prix proche du dernier cours. Une action peu liquide peut être difficile à revendre sans baisser son prix.
 
-C'est pour ça que PEA Radar ne met dans le top 10 que des actions échangées pour au moins 500 000 € par jour.
+C'est pour ça que Cotalyx ne met dans le top 10 que des actions échangées pour au moins 500 000 € par jour.
 
 ## Le rendement total
 

@@ -13,17 +13,18 @@ import { usePageMeta } from "@/seo/usePageMeta";
 import { formatAmount, usePlans } from "./api";
 import { ManageSubscriptionButton } from "./ManageSubscriptionButton";
 import { redirectTo } from "./redirect";
+import { SITE_NAME } from "@/seo/schema";
 
 type Interval = "month" | "year";
 
 const FEATURES = [
   "L'assistant IA : posez vos questions sur une action, un ETF ou votre portefeuille, en français.",
   "La liste des prévisions court terme (1 jour, 1 semaine, 1 mois) et le bloc prévision de chaque fiche.",
-  "Tout le reste de PEA Radar, qui reste gratuit : classement, fiches, portefeuille, notifications.",
+  `Tout le reste de ${SITE_NAME}, qui reste gratuit : classement, fiches, portefeuille, notifications.`,
 ];
 
 export function PremiumPage() {
-  usePageMeta({ title: "Premium", description: "L'assistant IA et les prévisions court terme de PEA Radar, en abonnement mensuel ou annuel, résiliable à tout moment." });
+  usePageMeta({ title: "Premium", description: `L'assistant IA et les prévisions court terme de ${SITE_NAME}, en abonnement mensuel ou annuel, résiliable à tout moment.` });
   const { me } = useMe();
   const plans = usePlans();
   const [interval, setInterval] = useState<Interval>("month");
@@ -33,7 +34,7 @@ export function PremiumPage() {
   return (
     <section className="mx-auto max-w-3xl space-y-6">
       <header className="space-y-2">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Sparkles className="size-6 text-primary" aria-hidden />PEA Radar Premium</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Sparkles className="size-6 text-primary" aria-hidden />{SITE_NAME} Premium</h1>
         <p className="text-sm text-muted-foreground">Pour aller plus loin : l'assistant IA et les prévisions court terme.</p>
       </header>
       <ul className="space-y-2 text-sm">
@@ -73,8 +74,8 @@ export function PremiumPage() {
         </CardContent>
       </Card>
       <p className="text-xs text-muted-foreground">
-        Paiement sécurisé par Stripe : PEA Radar ne voit jamais votre carte. Résiliable à tout moment depuis les Réglages, effet à la fin
-        de la période payée. Voir les <Link to="/cgv" className="underline">conditions générales de vente</Link>. PEA Radar est un outil
+        Paiement sécurisé par Stripe : {SITE_NAME} ne voit jamais votre carte. Résiliable à tout moment depuis les Réglages, effet à la fin
+        de la période payée. Voir les <Link to="/cgv" className="underline">conditions générales de vente</Link>. {SITE_NAME} est un outil
         d'aide à la décision, pas un conseil en investissement.
       </p>
     </section>
