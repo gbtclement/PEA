@@ -181,6 +181,8 @@ def _backfill_batch(ctx: JobContext, batch: dict[str, int], created: dict[int, d
             else created[security_id].astimezone(PARIS).date() < cutoff)]
         mark_history_complete(session, done)
         session.commit()
+    # Dernière clôture comme cours affiché : un titre ajouté bourse fermée apparaît sans attendre la séance suivante.
+    _write_closing_quotes(ctx, [batch[ticker] for ticker in history])
     retry = len(batch) - len(done)
     if retry:
         logger.info("Historique complet non rattrapé pour %d titres (réessai au prochain passage)", retry)
