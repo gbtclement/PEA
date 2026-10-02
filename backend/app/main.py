@@ -10,10 +10,10 @@ from app.api.routes import admin, assistant, auth, billing, favorites, google, f
 
 def create_app() -> FastAPI:
     app = FastAPI(title=f"{APP_NAME} API")
-    fx.use_store(store_loader(get_session_factory()))  # cours de change stockés, relus toutes les 10 min
     for module in (health, auth, google, me, notifications, billing, unsubscribe, admin, securities, security_detail, status, screener, rankings, fees, favorites, settings, orders, portfolio, assistant, forecasts, seo):
         app.include_router(module.router, prefix="/api")
     return app
 
 
+fx.use_store(store_loader(get_session_factory()))  # application réelle : cours de change stockés, relus toutes les 10 min
 app = create_app()

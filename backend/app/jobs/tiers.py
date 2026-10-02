@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -8,6 +8,7 @@ from app.repositories.scores import alert_security_ids, favorite_security_ids, t
 from app.services.market_calendar import calendar_for_market
 
 TOP_IN_T1 = 10
+TURNOVER_WINDOW = timedelta(days=40)  # ≈ 28 séances : assez pour la moyenne sur 20
 TOP_SCOPES: tuple[tuple[str, ...], ...] = ((), ("pea",), ("pea_pme",))  # top 10 de chaque façon de filtrer
 
 
@@ -27,7 +28,8 @@ def tier_tickers(session: Session, tier: int, tier2_size: int, now: datetime | N
     if tier == 1:
         return sorted(s.yahoo_ticker for s in tier1)
     tier1_ids = {s.id for s in tier1}
-    turnover = average_turnover(session)
+    since = (now or datetime.now(UTC)).date() - TURNOVER_WINDOW
+    turnover = average_turnover(session, since)
     others = sorted(
         (s for s in candidates if s.id not in tier1_ids),
         key=lambda s: (-turnover.get(s.id, 0.0), s.yahoo_ticker),

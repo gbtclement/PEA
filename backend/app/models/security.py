@@ -1,4 +1,6 @@
-from sqlalchemy import String
+from datetime import datetime
+
+from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -22,6 +24,8 @@ class Security(TimestampMixin, Base):
     industry: Mapped[str | None] = mapped_column(String(128))
     active: Mapped[bool] = mapped_column(default=True)
     history_complete: Mapped[bool] = mapped_column(default=False)  # cours chargés depuis la première cotation
+    # Dernière demande de fondamentaux, réussie ou non : la rotation hebdomadaire part des plus anciennes.
+    fundamentals_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     envelopes: Mapped[list[SecurityEnvelope]] = relationship(
         lazy="selectin", cascade="all, delete-orphan", passive_deletes=True, order_by=SecurityEnvelope.envelope,
     )

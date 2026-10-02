@@ -189,9 +189,11 @@ def refresh_fundamentals(ctx: JobContext) -> int:
     count = 0
     for security_id, ticker in targets:
         fundamentals = ctx.market.get_fundamentals(ticker)
-        if fundamentals is None:
-            continue
         with ctx.session_factory() as session:
+            session.get(Security, security_id).fundamentals_checked_at = ctx.now()
+            if fundamentals is None:
+                session.commit()
+                continue
             upsert_fundamentals(session, security_id, fundamentals)
             session.flush()
             update_classification(session.get(Security, security_id), fundamentals.sector, fundamentals.industry,

@@ -126,12 +126,16 @@ def price_date_range(session: Session, security_id: int) -> tuple[date | None, d
 
 
 def fundamentals_due(session: Session, share: int) -> list[tuple[int, str]]:
-    """La part du jour des actions actives : jamais chargées d'abord, puis les plus anciennes."""
+    """La part du jour des actions actives et cotées : jamais essayées d'abord, puis les plus anciennes.
+
+    Chaque tentative, réussie ou non, est datée : un ticker que Yahoo ignore repasse en fin de file.
+    Un titre sans aucun cours (inconnu de Yahoo) n'est pas demandé.
+    """
+    priced = select(SecurityQuote.security_id).where(SecurityQuote.security_id == Security.id).exists()
     rows = session.execute(
         select(Security.id, Security.yahoo_ticker)
-        .outerjoin(SecurityFundamentals, SecurityFundamentals.security_id == Security.id)
-        .where(Security.active.is_(True), Security.kind == "stock")
-        .order_by(SecurityFundamentals.updated_at.asc().nulls_first(), Security.id)
+        .where(Security.active.is_(True), Security.kind == "stock", priced)
+        .order_by(Security.fundamentals_checked_at.asc().nulls_first(), Security.id)
     ).all()
     return [(sid, ticker) for sid, ticker in rows[:math.ceil(len(rows) / share)]]
 
@@ -141,13 +145,16 @@ def latest_price_dates(session: Session) -> dict[int, date]:
     return {security_id: last for security_id, last in rows}
 
 
-def average_turnover(session: Session, days: int = 20) -> dict[int, float]:
-    """Montant moyen échangé (cours × volume) sur les `days` dernières séances."""
+def average_turnover(session: Session, since: date, days: int = 20) -> dict[int, float]:
+    """Montant moyen échangé (cours × volume) sur les `days` dernières séances depuis `since`.
+
+    `since` évite de relire tout l'historique (des dizaines de millions de lignes) à chaque palier.
+    """
     ranked = select(
         DailyPrice.security_id,
         (DailyPrice.close * DailyPrice.volume).label("turnover"),
         func.row_number().over(partition_by=DailyPrice.security_id, order_by=DailyPrice.date.desc()).label("rn"),
-    ).subquery()
+    ).where(DailyPrice.date >= since).subquery()
     stmt = (
         select(ranked.c.security_id, func.avg(ranked.c.turnover))
         .where(ranked.c.rn <= days)

@@ -10,7 +10,7 @@ from app.jobs.market import refresh_daily_history, refresh_fundamentals, refresh
 from app.models import DailyPrice, Security, SecurityFundamentals, SecurityQuote
 from app.providers.base import DailyBar, Fundamentals, Quote
 from app.repositories.envelopes import set_envelope_override
-from tests.factories import make_security
+from tests.factories import make_quote, make_security
 from tests.fakes import FakeMarket
 
 NOW = datetime(2026, 9, 28, 8, 0, tzinfo=UTC)
@@ -25,6 +25,13 @@ def add_prices(db, security, close: float, volume: int, days: int = 20) -> None:
         db.add(DailyPrice(security_id=security.id, date=date(2026, 9, 25) - timedelta(days=i),
                           open=close, high=close, low=close, close=close, volume=volume))
     db.flush()
+
+
+def quoted(db, ticker: str, **kwargs) -> Security:
+    """Action déjà cotée : seules celles-ci passent dans la rotation des fondamentaux."""
+    security = make_security(db, ticker, **kwargs)
+    make_quote(db, security, 10.0)
+    return security
 
 
 def setup_universe(db):
@@ -139,7 +146,7 @@ def test_history_reloads_after_split(db, make_ctx):
 
 
 def test_fundamentals_without_industry_keep_known_one(db, make_ctx):
-    stock = make_security(db, "GFC.PA")
+    stock = quoted(db, "GFC.PA")
     stock.industry = "REIT - Office"
     stock.envelope("pea").status = "a_verifier"
     db.flush()
@@ -178,7 +185,7 @@ def test_history_follows_every_active_security(db, make_ctx):
 
 
 def test_fundamentals_store_and_reclassify(db, make_ctx):
-    stock = make_security(db, "GFC.PA")
+    stock = quoted(db, "GFC.PA")
     etf = make_security(db, "CW8.PA", kind="etf")
     market = FakeMarket(fundamentals={"GFC.PA": fundamentals(industry="REIT - Office")})
     assert refresh_fundamentals(make_ctx(market=market, now=NOW)) == 1
@@ -190,7 +197,7 @@ def test_fundamentals_store_and_reclassify(db, make_ctx):
 
 
 def test_fundamentals_keep_override(db, make_ctx):
-    stock = make_security(db, "GFC.PA")
+    stock = quoted(db, "GFC.PA")
     set_envelope_override(stock, "pea", "eligible", None)
     db.flush()
     market = FakeMarket(fundamentals={"GFC.PA": fundamentals(industry="REIT - Office")})
@@ -201,8 +208,8 @@ def test_fundamentals_keep_override(db, make_ctx):
 
 def test_fundamentals_compute_pea_pme(db, make_ctx, monkeypatch):
     monkeypatch.setattr(market_module, "FUNDAMENTALS_DAYS", 1)  # les deux actions dans le même passage
-    small = make_security(db, "ALCAR.PA")
-    big = make_security(db, "MC.PA")
+    small = quoted(db, "ALCAR.PA")
+    big = quoted(db, "MC.PA")
     market = FakeMarket(fundamentals={
         "ALCAR.PA": fundamentals(employees=800, revenue=9e7, revenue_currency="EUR", market_cap=3e8),
         "MC.PA": fundamentals(employees=200_000, revenue=8e10, revenue_currency="EUR", market_cap=3e11),
@@ -214,7 +221,7 @@ def test_fundamentals_compute_pea_pme(db, make_ctx, monkeypatch):
 
 
 def test_partial_fundamentals_keep_known_size_and_never_drop_pea(db, make_ctx):
-    stock = make_security(db, "ALCAR.PA")
+    stock = quoted(db, "ALCAR.PA")
     full = FakeMarket(fundamentals={"ALCAR.PA": fundamentals(employees=800, revenue=9e7, revenue_currency="EUR", market_cap=3e8)})
     refresh_fundamentals(make_ctx(market=full, now=NOW))
     partial = FakeMarket(fundamentals={"ALCAR.PA": fundamentals(employees=None, revenue=None, revenue_currency=None, market_cap=3e8)})
@@ -226,7 +233,7 @@ def test_partial_fundamentals_keep_known_size_and_never_drop_pea(db, make_ctx):
 
 
 def test_unknown_size_is_to_check_for_pea_pme(db, make_ctx):
-    stock = make_security(db, "ALNEW.PA")
+    stock = quoted(db, "ALNEW.PA")
     market = FakeMarket(fundamentals={"ALNEW.PA": fundamentals(employees=None, revenue=None, revenue_currency=None)})
     refresh_fundamentals(make_ctx(market=market, now=NOW))
     refreshed = db.get(Security, stock.id)
@@ -262,11 +269,24 @@ def test_closing_quote_uses_the_place_close_time(db, make_ctx):
 
 
 def test_fundamentals_are_spread_over_the_week(db, make_ctx):
-    stocks = [make_security(db, f"S{i}.PA") for i in range(10)]
+    stocks = [quoted(db, f"S{i}.PA") for i in range(10)]
     for i, s in enumerate(stocks[:8]):
-        db.add(SecurityFundamentals(security_id=s.id, updated_at=datetime(2026, 9, 20 + i, tzinfo=UTC)))
+        s.fundamentals_checked_at = datetime(2026, 9, 20 + i, tzinfo=UTC)
     db.flush()
     market = FakeMarket()
     refresh_fundamentals(make_ctx(market=market))
-    # 10 actions / 5 jours = 2 : les deux jamais chargées passent en premier
+    # 10 actions / 5 jours = 2 : les deux jamais essayées passent en premier
     assert market.fundamental_calls == ["S8.PA", "S9.PA"]
+
+
+def test_unanswered_tickers_go_to_the_back_of_the_rotation(db, make_ctx):
+    # Un ticker que Yahoo ne connaît pas ne doit pas revenir en tête chaque jour et bloquer les autres.
+    stocks = [quoted(db, f"S{i}.PA") for i in range(5)]
+    make_security(db, "NEVER.PA")  # jamais coté : hors rotation
+    market = FakeMarket()
+    ctx = make_ctx(market=market, now=NOW)
+    for _ in range(5):
+        refresh_fundamentals(ctx)
+    assert sorted(market.fundamental_calls) == sorted(s.yahoo_ticker for s in stocks)
+    db.expire_all()
+    assert all(db.get(Security, s.id).fundamentals_checked_at is not None for s in stocks)
