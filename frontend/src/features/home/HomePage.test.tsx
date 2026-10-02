@@ -1,5 +1,5 @@
 import { screen } from "@testing-library/react";
-import { mockFetch, renderWithProviders } from "@/test/utils";
+import { ME, mockFetch, renderWithProviders } from "@/test/utils";
 import { HomePage } from "./HomePage";
 
 vi.mock("@/components/charts/EChart", () => ({ EChart: () => <div data-testid="echart" /> }));
@@ -7,12 +7,14 @@ afterEach(() => vi.unstubAllGlobals());
 
 const row = (id: number, symbol: string, name: string, change: number) => ({
   id, yahoo_ticker: `${symbol}.PA`, symbol, name, kind: "stock", market: "Euronext Paris", country: "FR", sector: "Luxe",
-  eligibility: "eligible", price: 100, change_pct: change, perf_1w: 1, perf_1m: 2, perf_1y: 3, score: 80, pe: 15,
+  envelopes: ["pea"], price: 100, change_pct: change, perf_1w: 1, perf_1m: 2, perf_1y: 3, score: 80, pe: 15,
   dividend_yield: 0.02, liquid: true, is_favorite: false, sparkline: [1, 2, 3],
 });
 
-function api(top: unknown[]) {
+function api(top: unknown[], { me = { status: 401, body: { detail: "x" } } as { status?: number; body: unknown }, envelopes = [] as string[] } = {}) {
   return mockFetch((url) => {
+    if (url === "/api/me") return me;
+    if (url === "/api/settings/envelopes") return { body: { envelopes } };
     if (url.startsWith("/api/rankings/top")) return { body: top };
     if (url.startsWith("/api/rankings/movers")) return { body: { gainers: [row(3, "AIR", "Airbus", 4.2)], losers: [row(4, "KER", "Kering", -3.1)] } };
     if (url.startsWith("/api/market/heatmap")) return { body: [] };
@@ -38,4 +40,16 @@ test("test_home_empty_state : message d'attente sans classement", async () => {
   api([]);
   renderWithProviders(<HomePage />);
   expect(await screen.findByText(/Le classement sera disponible/)).toBeInTheDocument();
+});
+
+test("visiteur : le top 10 porte sur toutes les actions", async () => {
+  api([]);
+  renderWithProviders(<HomePage />);
+  expect(await screen.findByText("Actions les mieux notées par le score mixte (technique + fondamentaux).")).toBeInTheDocument();
+});
+
+test("membre avec le PEA : le top 10 le dit", async () => {
+  api([], { me: { body: ME }, envelopes: ["pea"] });
+  renderWithProviders(<HomePage />);
+  expect(await screen.findByText(/parmi les titres compatibles avec vos enveloppes \(PEA\)/)).toBeInTheDocument();
 });

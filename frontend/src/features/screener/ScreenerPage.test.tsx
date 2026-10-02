@@ -8,7 +8,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 const row = (id: number, symbol: string, name: string, score: number | null, change: number) => ({
   id, yahoo_ticker: `${symbol}.PA`, symbol, name, kind: "stock", market: "Euronext Paris", country: "FR", sector: "Luxe",
-  eligibility: "eligible", price: 100 + id, change_pct: change, perf_1w: 1, perf_1m: 2, perf_1y: 3, score, pe: 15,
+  envelopes: ["pea"], price: 100 + id, change_pct: change, perf_1w: 1, perf_1m: 2, perf_1y: 3, score, pe: 15,
   dividend_yield: 0.02, liquid: true, available_ratio: 1, isin: null, is_favorite: false, sparkline: [1, 2],
 });
 const ROWS = [row(1, "MC", "LVMH", 80, 2.07), row(2, "AIR", "Airbus", 60, -1.2), row(3, "BN", "Danone", null, 0.5)];
@@ -78,4 +78,10 @@ test("le favori change immédiatement sans recharger toute la liste", async () =
   expect(await within(lvmhRow).findByRole("button", { name: "Retirer des favoris" })).toBeInTheDocument();
   await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/favorites/1", expect.objectContaining({ method: "PUT" })));
   expect(fetchMock.mock.calls.filter(([url]) => String(url).startsWith("/api/screener"))).toHaveLength(1);
+});
+
+test("le filtre Enveloppe propose Toutes, PEA et PEA-PME, sans « à vérifier »", async () => {
+  renderPage();
+  const select = await screen.findByRole("combobox", { name: "Enveloppe" });
+  expect([...select.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Enveloppe : toutes", "PEA", "PEA-PME"]);
 });

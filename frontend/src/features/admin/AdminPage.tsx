@@ -1,7 +1,7 @@
 import { usePageMeta } from "@/seo/usePageMeta";
 import { AssistantAdminCard } from "./AssistantAdminCard";
 import { ConfigStatusCard } from "./ConfigStatusCard";
-import { EligibilityOverridesCard } from "./EligibilityOverridesCard";
+import { EnvelopeOverridesCard } from "./EnvelopeOverridesCard";
 import { UsersCard } from "./UsersCard";
 
 export function AdminPage() {
@@ -20,7 +20,7 @@ export function AdminPage() {
         <AssistantAdminCard />
         <ConfigStatusCard />
       </div>
-      <EligibilityOverridesCard />
+      <EnvelopeOverridesCard />
     </section>
   );
 }

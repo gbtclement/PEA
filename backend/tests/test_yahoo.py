@@ -162,3 +162,14 @@ def test_yahoo_calls_are_serialized_across_threads():
 def test_real_yahoo_quote():
     quotes = YahooProvider().get_quotes(["MC.PA"])
     assert quotes["MC.PA"].price > 0
+
+
+def test_fundamentals_read_size_for_pea_pme():
+    f = fundamentals_from_info({"fullTimeEmployees": 1234, "totalRevenue": 2.5e8, "financialCurrency": "USD",
+                                "currency": "EUR", "marketCap": 4e8})
+    assert (f.employees, f.revenue, f.revenue_currency, f.currency) == (1234, 2.5e8, "USD", "EUR")
+
+
+def test_fundamentals_size_missing_or_garbage():
+    f = fundamentals_from_info({"fullTimeEmployees": "n/a", "totalRevenue": None})
+    assert (f.employees, f.revenue, f.revenue_currency) == (None, None, None)

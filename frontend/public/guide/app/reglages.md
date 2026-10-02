@@ -1,6 +1,6 @@
 # Réglages
 
-Les Réglages regroupent votre compte, votre abonnement et vos frais de courtage.
+Les Réglages regroupent votre compte, votre abonnement, vos enveloppes et vos frais de courtage.
 
 ## Profil
 
@@ -56,6 +56,26 @@ Si vous vous connectez uniquement avec Google, vous n'avez pas de mot de passe :
 
 !> Pensez à exporter vos données **avant** de supprimer votre compte si vous voulez garder votre historique d'ordres.
 
+## Mes enveloppes
+
+Indiquez les comptes sur lesquels vous investissez :
+
+| Case | Ce que vous verrez |
+|---|---|
+| **PEA** | Les actions et ETF qu'on peut loger dans un PEA (siège dans l'UE ou l'EEE) |
+| **PEA-PME** | Les actions de petites et moyennes entreprises européennes (estimation) |
+| **Compte-titres** | Tous les titres |
+
+Si vous ne cochez rien, ou si vous cochez le compte-titres, vous voyez **tous les titres**. Sinon, un titre doit être compatible avec au moins une des enveloppes cochées.
+
+Vos enveloppes s'appliquent :
+- au **top 10** de l'accueil, aux plus fortes hausses et baisses, et à la carte du marché ;
+- aux **prévisions** (case « Mes enveloppes uniquement », cochée par défaut) ;
+- aux **mails** du samedi et « entrée dans le top 10 », qui suivent votre propre top 10 ;
+- à l'**assistant**, qui en tient compte dans ses réponses.
+
+L'Explorer montre toujours tous les titres : son filtre **Enveloppe** restreint à la demande. Les badges sont déduits automatiquement : voir [Le PEA](bourse/pea.md).
+
 ## Frais et compteur d'ordres
 
 Les valeurs par défaut ne sont qu'un exemple : la formule **Invest Store Intégral** du Crédit Agricole. Remplacez-les par celles de votre courtier (brochure tarifaire de votre banque).
@@ -70,6 +90,6 @@ Les valeurs par défaut ne sont qu'un exemple : la formule **Invest Store Intég
 
 Cette grille sert partout : frais proposés à la saisie d'un ordre, simulateur, estimation sur la fiche d'un titre, calcul « après frais » des prévisions.
 
-## Corrections d'éligibilité
+## Corrections d'enveloppe
 
-Les badges d'éligibilité sont communs à tous les membres : seul l'**administrateur** du site peut les corriger, depuis son onglet Admin. Si un badge vous semble faux, par exemple si votre banque refuse une action marquée « Éligible », signalez-le à l'administrateur. Sa correction est **toujours prioritaire** et n'est jamais écrasée par les mises à jour automatiques.
+Les badges d'enveloppe (PEA, PEA-PME) sont communs à tous les membres : seul l'**administrateur** du site peut les corriger, depuis son onglet Admin. Si un badge vous semble faux, par exemple si votre banque refuse dans votre PEA une action marquée « PEA », signalez-le à l'administrateur. Sa correction est **toujours prioritaire** et n'est jamais écrasée par les mises à jour automatiques.

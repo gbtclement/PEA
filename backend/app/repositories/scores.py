@@ -1,10 +1,12 @@
+from collections.abc import Sequence
 from statistics import median
 
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
-from app.models import Favorite, PriceAlert, SecurityScore
+from app.models import Favorite, PriceAlert, Security, SecurityScore
+from app.repositories.envelopes import envelope_clause
 
 
 def upsert_score(session: Session, security_id: int, values: dict) -> None:
@@ -15,14 +17,16 @@ def upsert_score(session: Session, security_id: int, values: dict) -> None:
     ))
 
 
-def top_security_ids(session: Session, limit: int) -> list[int]:
+def top_security_ids(session: Session, limit: int, envelopes: Sequence[str] = ()) -> list[int]:
     stmt = (
         select(SecurityScore.security_id)
-        .where(SecurityScore.eligible_for_top.is_(True))
+        .join(Security, Security.id == SecurityScore.security_id)
+        .where(SecurityScore.eligible_for_top.is_(True), Security.active.is_(True))
         .order_by(SecurityScore.total.desc(), SecurityScore.avg_turnover_eur.desc())
         .limit(limit)
     )
-    return list(session.scalars(stmt))
+    clause = envelope_clause(envelopes)
+    return list(session.scalars(stmt.where(clause) if clause is not None else stmt))
 
 
 def favorite_security_ids(session: Session) -> set[int]:

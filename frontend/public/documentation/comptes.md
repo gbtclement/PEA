@@ -222,7 +222,7 @@ Les Réglages (`/reglages`) regroupent ce qui concerne le compte connecté (rout
 - **Supprimer** : il faut retaper l'adresse du compte. Toutes ses données partent avec lui (`ON DELETE CASCADE`) et un mail `account_deleted` lui est envoyé.
 - **Garde-fous** : un admin ne peut ni retirer son propre rôle (`self_demotion`), ni supprimer son propre compte ici (`self_delete`), et il reste toujours au moins un admin (`last_admin`).
 - **État de la configuration** : pour chaque réglage de `.env` (Claude, SMTP, Google, Turnstile, `APP_SECRET`, `ADMIN_EMAIL`, Stripe), « Renseigné » ou « Manquant ». Pour Stripe, le mode (test ou réel, déduit du début de la clé) et l'heure du dernier webhook reçu. **Aucune valeur n'est jamais renvoyée.** Un bouton envoie un mail de test à l'admin.
-- **Corrections d'éligibilité PEA** (voir [Éligibilité](eligibilite.md)) et lien vers cette documentation.
+- **Corrections des enveloppes** (voir [Enveloppes](enveloppes.md)) et lien vers cette documentation.
 
 ## Assistant : Premium et limite de coût
 

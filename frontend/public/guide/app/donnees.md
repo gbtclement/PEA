@@ -27,7 +27,7 @@ Avec le retard de la source, un cours affiché a donc entre 15 et 20 minutes de 
 
 | Information | Mise à jour |
 |---|---|
-| Liste des actions et éligibilité PEA | chaque matin de semaine à 7 h |
+| Liste des actions et leurs enveloppes | chaque matin de semaine à 7 h |
 | Données des entreprises (bénéfices, dette, dividende…) | chaque matin de semaine |
 | Prévisions | chaque soir à 18 h 15, et le matin à 7 h 30 |
 | Actualités d'une action | à l'ouverture de sa fiche |

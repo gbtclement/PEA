@@ -23,7 +23,7 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
 
 - **Couches** : `api/routes` → `services` → `repositories` / `providers`.
   - Les services ne connaissent ni HTTP ni Yahoo.
-  - Les calculs (indicateurs, score, frais, positions, éligibilité) sont des fonctions pures, testées sans base ni réseau.
+  - Les calculs (indicateurs, score, frais, positions, enveloppes) sont des fonctions pures, testées sans base ni réseau.
 - **Contenu des dossiers** :
   - `core/` : configuration (`config.py`, surchargée par variables d'environnement), base de données, `security.py` (Argon2, empreintes de jetons), `current_user.py`.
   - `services/auth/` : comptes, codes et liens par mail, sessions, appareils connus, reprise par l'admin (`bootstrap.py`), Google (`google.py`), Turnstile (`captcha.py`), fuites de mots de passe (`breach.py`). `services/ratelimit.py` (limites anti-abus) et `services/security_log.py` (journal `security_events`). `services/mail/` : rendu des mails et file d'envoi (`enqueue`), envoyée par la tâche `jobs/mail.py` toutes les 5 s. `services/notifications/` : notifications N1 à N6 (préférences, jeton de désinscription signé, `notify()`), tâches dans `jobs/notifications.py`. `services/billing/` : abonnement Premium (passerelle Stripe `gateway.py` / `stripe_gateway.py`, règle d'accès `access.py`, `apply_subscription()` dans `state.py`, webhook `webhook.py`), tâches dans `jobs/billing.py` (synchronisation de nuit, rappel annuel P5, résiliations des comptes supprimés).
@@ -39,7 +39,7 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
     - `stats.py` et `predict.py` : statistiques par signal et horizon (1, 5, 21 séances), fiabilité (t de Student corrigé du chevauchement), prédiction pondérée et ramenée vers la moyenne.
     - `engine.py` : calcul complet et test sur l'année écoulée, avec des statistiques d'entraînement limitées aux fenêtres terminées avant la date de coupure.
     - Tâches `jobs/forecasts.py` : statistiques recalculées si elles ont plus de 7 jours (environ 45 s), prédictions du jour et vérification des anciennes chaque matin après l'historique (environ 10 s).
-  - `services/eligibility/rules.py` : pays du siège déduit du préfixe ISIN (UE/EEE → éligible, foncières REIT → « à vérifier »). Une correction manuelle (`eligibility_override`) est toujours prioritaire.
+  - `services/envelopes/rules.py` : registre des enveloppes (`pea`, `pea_pme`, `cto`). PEA par le pays du siège déduit du préfixe ISIN (UE/EEE → éligible, foncières REIT → « à vérifier »), PEA-PME en plus par la taille (effectif, CA, capitalisation). Statuts stockés dans `security_envelopes` ; une correction manuelle est toujours prioritaire. Le compte-titres accepte tout et n'est pas stocké.
   - `services/assistant/` : chat Claude (SDK `anthropic`) avec une boucle d'outils manuelle, en streaming SSE, et le catalogue des modèles et de leurs prix.
   - `seeds/` : CSV de secours (instantané Euronext, ETF, indices, actions hors Euronext).
 
@@ -117,9 +117,9 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
 
 ## Points d'attention
 
-- **Éligibilité PEA** :
+- **Enveloppes (PEA, PEA-PME)** :
   - il n'existe pas de liste officielle complète, l'univers est reconstruit (Euronext + grands indices + PEA-PME + ETF de `seeds/`) ;
-  - l'éligibilité est une déduction, à présenter comme telle ;
+  - les enveloppes sont une déduction (le PEA-PME une estimation), à présenter comme telle ;
   - **ne jamais scraper le Crédit Agricole** (connexion bancaire, conditions d'utilisation).
 - **Yahoo (yfinance)** : source gratuite, non officielle et limitée en débit.
   - Respecter les pauses (`yahoo_pause_seconds`, `fundamentals_pause_seconds`) et les paquets de `yahoo_chunk_size` titres.
@@ -131,7 +131,7 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
   - moins de 12 ordres par an coûtent environ 96 € ;
   - tout est modifiable dans les Réglages (`services/fees.py`).
 - **Score** : il sert à trier et à expliquer, pas à prédire.
-  - Le top 10 exclut les titres peu liquides (`min_turnover_eur`), à l'historique trop court (< 200 jours) ou non confirmés éligibles.
+  - Le top 10 exclut les titres peu liquides (`min_turnover_eur`) ou à l'historique trop court (< 200 jours) ; il est ensuite filtré à la lecture selon les enveloppes de l'utilisateur.
   - Chaque composante renvoie un message lisible, affiché tel quel dans l'interface.
 - **Secrets** (clé Claude, SMTP, Google, Turnstile, `APP_SECRET`, Stripe : `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY`) :
   - uniquement dans `.env` : **jamais en base, jamais renvoyés au navigateur ni écrits dans les logs**. La clé Claude est lue seulement dans `ANTHROPIC_API_KEY` ;

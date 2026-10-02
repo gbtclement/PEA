@@ -14,7 +14,7 @@ PRIVATE = [
     ("GET", "/api/assistant/status"), ("GET", "/api/assistant/conversations"),
     ("GET", "/api/forecasts"), ("GET", "/api/forecasts/signals"), ("GET", "/api/forecasts/track-record"),
     ("GET", "/api/securities/1/forecast"),
-    ("PATCH", "/api/securities/1/eligibility"),
+    ("PATCH", "/api/securities/1/envelopes/pea"),
     ("GET", "/api/billing/subscription"), ("POST", "/api/billing/checkout"),
     ("POST", "/api/billing/sync"), ("POST", "/api/billing/portal"),
 ]
@@ -47,11 +47,11 @@ def test_unsafe_request_without_csrf_header_is_refused(client):
     assert response.status_code == 403 and response.json()["detail"]["code"] == "csrf"
 
 
-def test_eligibility_override_is_admin_only(client, anon_client, db):
+def test_envelope_override_is_admin_only(client, anon_client, db):
     security = make_security(db, "MC.PA")
-    assert client.patch(f"/api/securities/{security.id}/eligibility", json={"override": "non_eligible"}).status_code == 403
+    assert client.patch(f"/api/securities/{security.id}/envelopes/pea", json={"override": "non_eligible"}).status_code == 403
     sign_in(anon_client, db, make_user(db, "admin@example.com", role="admin"))
-    assert anon_client.patch(f"/api/securities/{security.id}/eligibility", json={"override": "non_eligible"}).status_code == 200
+    assert anon_client.patch(f"/api/securities/{security.id}/envelopes/pea", json={"override": "non_eligible"}).status_code == 200
 
 
 def test_users_never_see_each_other_orders_or_favourites(client, anon_client, db, user):

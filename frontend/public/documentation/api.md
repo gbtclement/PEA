@@ -98,10 +98,10 @@ Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_no
 
 | Méthode | Route | Rôle |
 |---|---|---|
-| GET | `/securities?q=&kind=&eligibility=&overridden=&limit=&offset=` | Recherche paginée (nom, ticker, ISIN) |
-| GET | `/securities/{id}` | Fiche : cours, score détaillé, fondamentaux, éligibilité, favori |
+| GET | `/securities?q=&kind=&envelope=&overridden=&limit=&offset=` | Recherche paginée (nom, ticker, ISIN) ; `envelope=pea` ou `envelope=pea_pme` garde les titres éligibles à cette enveloppe |
+| GET | `/securities/{id}` | Fiche : cours, score détaillé, fondamentaux, enveloppes, favori |
 | GET | `/securities/{id}/history?period=1D\|1W\|1M\|6M\|1Y\|5Y` | Barres OHLCV, MM50/MM200, RSI, MACD. `1D` (barres de 5 min) et `1W` (30 min) sont en intraday, chargés depuis Yahoo et mis en cache |
-| PATCH | `/securities/{id}/eligibility` | **Admin.** Correction manuelle : `{"override": "eligible" \| "non_eligible" \| null}` |
+| PATCH | `/securities/{id}/envelopes/{pea\|pea_pme}` | **Admin.** Correction manuelle d'une enveloppe : `{"override": "eligible" \| "a_verifier" \| "non_eligible" \| null}` ; renvoie le titre avec ses `envelopes` |
 | GET | `/securities/{id}/news` | Actualités Yahoo, mises en cache |
 | GET | `/securities/{id}/simulate?amount=&period=1W\|1M\|6M\|1Y` | « Si j'avais investi », frais inclus |
 | GET | `/screener?kind=stock\|etf` | Toutes les lignes de l'Explorer ou des ETF. Le filtrage et le tri se font côté navigateur |
@@ -110,9 +110,9 @@ Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_no
 
 | Méthode | Route | Rôle |
 |---|---|---|
-| GET | `/rankings/top?limit=10` | Top du score mixte (filtres du top 10 appliqués) |
-| GET | `/rankings/movers?limit=5` | Plus fortes hausses et baisses du jour, titres liquides |
-| GET | `/market/heatmap` | Données de la carte du marché |
+| GET | `/rankings/top?limit=10` | Top du score mixte (filtres du top 10 appliqués, puis enveloppes du compte connecté) |
+| GET | `/rankings/movers?limit=5` | Plus fortes hausses et baisses du jour, titres liquides, filtrées par les enveloppes du compte |
+| GET | `/market/heatmap` | Données de la carte du marché, filtrées par les enveloppes du compte |
 
 ## Favoris et frais
 
@@ -139,6 +139,7 @@ Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_no
 | Méthode | Route | Rôle |
 |---|---|---|
 | GET / PUT | `/settings` | Ordres minimum par an, frais de non-respect, grille de courtage |
+| GET / PUT | `/settings/envelopes` | Enveloppes choisies : `{"envelopes": ["pea", "pea_pme", "cto"]}` (rien ou `cto` = tous les titres) |
 
 ## Assistant
 

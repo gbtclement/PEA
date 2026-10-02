@@ -56,7 +56,7 @@ Des allers-retours fréquents coûtent cher : environ 1 % par aller-retour de 50
 - Le **score** décrit la situation **actuelle**. Il ne prédit pas l'avenir.
 - Les **prévisions** sont des statistiques : même les meilleures se trompent souvent.
 - L'**assistant IA** peut se tromper.
-- L'**éligibilité PEA** est déduite, pas officielle.
+- Les **enveloppes** (PEA, PEA-PME) sont déduites, pas officielles.
 
 Utilisez l'application pour **trier, comprendre et vous poser les bonnes questions**, pas comme un pilote automatique.
 

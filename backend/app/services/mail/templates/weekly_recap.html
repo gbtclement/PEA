@@ -5,7 +5,7 @@
 <p>Valeur de votre portefeuille : <strong>{{ total_value|eur }}</strong><br>Sur les 5 dernières séances : <strong>{{ week_change|eur }}</strong> ({{ week_change_pct|pct }})</p>
 {% endif %}
 {% if entered or left %}
-<p style="margin-bottom:4px"><strong>Top 10 des actions éligibles</strong></p>
+<p style="margin-bottom:4px"><strong>Votre top 10 (selon vos enveloppes)</strong></p>
 <ul style="margin-top:0">
 {% for item in entered %}
   <li>Entrée : <a href="{{ base_url }}/titres/{{ item.security_id }}" style="color:#4f46e5">{{ item.name }}</a></li>

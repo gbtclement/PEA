@@ -1,9 +1,7 @@
 from app.jobs.context import JobContext
 from app.repositories.securities import SecurityUpsert, deactivate_missing, upsert_securities
 from app.seeds.loader import load_all_seeds
-from app.services.eligibility.rules import ELIGIBLE, NOT_ELIGIBLE, country_from_isin
-
-_FIXED_BY_KIND = {"etf": ELIGIBLE, "index": NOT_ELIGIBLE}
+from app.services.envelopes.rules import country_from_isin
 
 
 def refresh_universe(ctx: JobContext) -> int:
@@ -20,7 +18,7 @@ def refresh_universe(ctx: JobContext) -> int:
     items += [
         SecurityUpsert(
             yahoo_ticker=s.yahoo_ticker, symbol=s.symbol, name=s.name, kind=s.kind, market=s.market,
-            isin=None, country=s.country, fixed_eligibility=_FIXED_BY_KIND.get(s.kind),
+            isin=None, country=s.country,
         )
         for s in load_all_seeds()
     ]

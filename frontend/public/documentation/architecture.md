@@ -107,7 +107,7 @@ api/routes  ──►  services  ──►  repositories (SQL)
 ```
 
 - Les **services** ne connaissent ni HTTP ni Yahoo.
-- Les **calculs** (indicateurs, score, frais, positions, éligibilité, signaux) sont des **fonctions pures**, testées sans base ni réseau.
+- Les **calculs** (indicateurs, score, frais, positions, enveloppes, signaux) sont des **fonctions pures**, testées sans base ni réseau.
 - Les pages ne lisent que la base : les appels externes lents se font dans le worker.
 
 ## Plusieurs utilisateurs

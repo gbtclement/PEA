@@ -3,21 +3,22 @@ import userEvent from "@testing-library/user-event";
 import { ME, PREMIUM_ME, mockFetch, renderWithProviders } from "@/test/utils";
 import { ForecastsPage } from "./ForecastsPage";
 
-afterEach(() => vi.unstubAllGlobals());
+let chosen: string[] = ["pea"];
+afterEach(() => { vi.unstubAllGlobals(); chosen = ["pea"]; });
 
 const h = (expected: number, rank: number, reliability = "elevee") => ({ expected_return: expected, prob_up: 0.56, reliability, rank });
-const security = (id: number, name: string, eligibility = "eligible", price = 100) => ({
-  id, name, symbol: name.slice(0, 3).toUpperCase(), market: "Euronext Paris", eligibility, price, change_pct: 1.2,
+const security = (id: number, name: string, envelopes: string[] = ["pea"], price = 100) => ({
+  id, name, symbol: name.slice(0, 3).toUpperCase(), market: "Euronext Paris", envelopes, price, change_pct: 1.2,
 });
 const LIST = {
   as_of: "2026-09-25",
   round_trip_cost: 0.0096,
   rows: [
-    { security: security(2, "Airbus", "eligible", 150), signals: [{ key: "trend_strong", label: "Tendance haussière forte", bullish: true }],
+    { security: security(2, "Airbus", ["pea"], 150), signals: [{ key: "trend_strong", label: "Tendance haussière forte", bullish: true }],
       horizons: { "1d": null, "1w": h(0.009, 1), "1m": h(0.004, 2, "moyenne") } },
-    { security: security(1, "LVMH", "eligible", 600), signals: [{ key: "high_52w", label: "Plus haut sur 1 an", bullish: true }],
+    { security: security(1, "LVMH", ["pea"], 600), signals: [{ key: "high_52w", label: "Plus haut sur 1 an", bullish: true }],
       horizons: { "1d": h(0.002, 1), "1w": h(0.004, 2), "1m": h(0.02, 1) } },
-    { security: security(3, "Étranger", "non_eligible"), signals: [{ key: "surge_week", label: "Forte hausse sur 1 semaine", bullish: false }],
+    { security: security(3, "Étranger", []), signals: [{ key: "surge_week", label: "Forte hausse sur 1 semaine", bullish: false }],
       horizons: { "1d": null, "1w": h(-0.01, 3, "faible"), "1m": null } },
   ],
 };
@@ -43,6 +44,7 @@ const TRACK = {
 function renderPage(route = "/previsions", { empty = false, me = PREMIUM_ME as object } = {}) {
   const fetchMock = mockFetch((url) => {
     if (url === "/api/me") return { body: me };
+    if (url === "/api/settings/envelopes") return { body: { envelopes: chosen } };
     if (url.startsWith("/api/forecasts/signals")) return { body: empty ? { ...SIGNALS, as_of: null, signals: [] } : SIGNALS };
     if (url.startsWith("/api/forecasts/track-record")) return { body: TRACK };
     return { body: empty ? { as_of: null, round_trip_cost: null, rows: [] } : LIST };
@@ -66,18 +68,18 @@ test("premier calcul en cours", async () => {
   expect(await screen.findByText(/premier calcul en cours/i)).toBeInTheDocument();
 });
 
-test("prédictions triées par 1 semaine, puis par 1 mois, filtre des éligibles", async () => {
+test("prédictions triées par 1 semaine, puis par 1 mois, filtre des enveloppes", async () => {
   renderPage();
   await screen.findByText("Airbus");
   expect(rowNames()[0]).toMatch(/^Airbus/);
-  expect(rowNames()).toHaveLength(2);  // « Éligibles PEA uniquement » coché par défaut
+  expect(rowNames()).toHaveLength(2);  // « Mes enveloppes uniquement » coché par défaut
   expect(screen.getAllByText("+0,90 %").length).toBeGreaterThan(0);
   expect(screen.getAllByText("56 % de hausse").length).toBeGreaterThan(0);
 
   await userEvent.click(screen.getByRole("button", { name: /^1 mois/ }));
   expect(rowNames()[0]).toMatch(/^LVMH/);
 
-  await userEvent.click(screen.getByRole("checkbox", { name: "Éligibles PEA uniquement" }));
+  await userEvent.click(screen.getByRole("checkbox", { name: "Mes enveloppes uniquement" }));
   expect(rowNames()).toHaveLength(3);
   await userEvent.click(screen.getByRole("button", { name: /^1 semaine/ }));  // le sens s'applique à l'horizon trié
   await userEvent.selectOptions(screen.getByRole("combobox", { name: "Sens" }), "baisse");
@@ -163,4 +165,21 @@ test("membre gratuit : la page s'ouvre sur le bulletin et les prédictions sont 
   await userEvent.click(screen.getByRole("button", { name: "Prédictions" }));
   expect(await screen.findByText("Réservé aux membres Premium")).toBeInTheDocument();
   expect(fetchMock.mock.calls.some(([url]) => String(url) === "/api/forecasts")).toBe(false);
+});
+
+test("« Mes enveloppes uniquement » est coché par défaut quand l'utilisateur en a choisi", async () => {
+  chosen = ["pea"];
+  renderPage();
+  const box = await screen.findByRole("checkbox", { name: "Mes enveloppes uniquement" });
+  expect(box).toBeChecked();
+  expect(screen.queryByText("Étranger")).not.toBeInTheDocument();
+  await userEvent.click(box);
+  expect(await screen.findByText("Étranger")).toBeInTheDocument();
+});
+
+test("sans enveloppe choisie, pas de case et tous les titres", async () => {
+  chosen = [];
+  renderPage();
+  expect(await screen.findByText("Étranger")).toBeInTheDocument();
+  expect(screen.queryByRole("checkbox", { name: "Mes enveloppes uniquement" })).not.toBeInTheDocument();
 });

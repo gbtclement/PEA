@@ -2,7 +2,7 @@ Bonjour {{ first_name }},
 
 Votre compte est prêt. Trois premiers pas :
 
-- explorez le top 10 des actions éligibles au PEA ;
+- choisissez vos enveloppes (PEA, PEA-PME, compte-titres) dans Réglages, puis explorez le top 10 ;
 - ajoutez vos favoris avec l'étoile ;
 - enregistrez vos ordres dans Portefeuille.
 

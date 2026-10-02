@@ -5,7 +5,7 @@ export type ScreenerFilters = {
   sector: string | null;
   country: string | null;
   market: string | null;
-  eligibility: string | null;
+  envelope: string | null;
   minScore: number | null;
   minPrice: number | null;
   maxPrice: number | null;
@@ -29,7 +29,7 @@ export function filtersFromParams(params: URLSearchParams): ScreenerFilters {
     sector: params.get("sector"),
     country: params.get("country"),
     market: params.get("market"),
-    eligibility: params.get("eligibility"),
+    envelope: params.get("envelope"),
     minScore: numberParam(params, "minScore"),
     minPrice: numberParam(params, "minPrice"),
     maxPrice: numberParam(params, "maxPrice"),
@@ -47,7 +47,7 @@ export function filterRows(rows: ScreenerRow[], f: ScreenerFilters): ScreenerRow
     && (!f.sector || r.sector === f.sector)
     && (!f.country || r.country === f.country)
     && (!f.market || r.market === f.market)
-    && (!f.eligibility || r.eligibility === f.eligibility)
+    && (!f.envelope || r.envelopes.includes(f.envelope))
     && (f.minScore === null || (r.score !== null && r.score >= f.minScore))
     && (f.minPrice === null || (r.price !== null && r.price >= f.minPrice))
     && (f.maxPrice === null || (r.price !== null && r.price <= f.maxPrice))

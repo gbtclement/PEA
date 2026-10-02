@@ -32,7 +32,7 @@ def _url(settings: Settings, path: str) -> str:
 
 
 def _public_securities():
-    return (Security.active.is_(True), Security.eligibility == "eligible", Security.kind.in_(("stock", "etf")))
+    return (Security.active.is_(True), Security.kind.in_(("stock", "etf")))
 
 
 @router.get("/robots.txt")

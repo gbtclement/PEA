@@ -35,7 +35,7 @@ Pour vous, le résultat est quasiment le même que si vous déteniez l'indice.
 
 ## Dans Cotalyx
 
-- L'onglet **ETF** liste les ETF éligibles au PEA suivis par l'application.
+- L'onglet **ETF** liste les ETF suivis par l'application ; le badge PEA indique ceux qu'on peut loger dans un PEA.
 - Leur score est **uniquement technique**, puisqu'un ETF n'a ni bénéfices ni dettes à analyser.
 - Ils n'entrent pas dans le top 10, qui ne classe que des actions.
 

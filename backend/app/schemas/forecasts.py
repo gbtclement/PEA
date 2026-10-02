@@ -21,7 +21,7 @@ class ForecastSecurityOut(BaseModel):
     name: str
     symbol: str
     market: str
-    eligibility: str
+    envelopes: list[str]
     price: float | None
     change_pct: float | None
 

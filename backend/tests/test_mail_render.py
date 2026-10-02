@@ -87,3 +87,10 @@ def test_subjects_and_footer_use_new_name():
     assert mail.subject == "Votre code Cotalyx : 042917"
     assert "Cotalyx" in mail.html and "Cotalyx" in mail.text
     assert "PEA Radar" not in mail.html + mail.text
+
+
+@pytest.mark.parametrize("kind", ["welcome", "weekly_recap"])
+def test_mails_do_not_assume_a_pea_top(kind):
+    mail = render(kind, CONTEXTS[kind], base_url=BASE)
+    for body in (mail.html, mail.text):
+        assert "actions éligibles" not in body

@@ -81,3 +81,13 @@ def test_status_indices_have_id(client, db, user):
     seed(db, user)
     index = client.get("/api/status").json()["indices"][0]
     assert isinstance(index["id"], int)
+
+
+def test_screener_rows_list_eligible_envelopes(client, db):
+    make_security(db, "ALCAR.PA", name="Carmat", pea_pme="eligible")
+    make_security(db, "AAPL.PA", name="Apple", eligibility="non_eligible", country="US")
+    make_security(db, "GFC.PA", name="Gecina", eligibility="a_verifier")
+    rows = {r["name"]: r for r in client.get("/api/screener").json()}
+    assert rows["Carmat"]["envelopes"] == ["pea", "pea_pme"]
+    assert rows["Apple"]["envelopes"] == [] and rows["Gecina"]["envelopes"] == []
+    assert "eligibility" not in rows["Carmat"]

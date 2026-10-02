@@ -6,9 +6,10 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import Favorite, Forecast, ScoreSnapshot, Security, SecurityQuote, SecurityScore
+from app.repositories.user_envelopes import user_envelopes
 from app.services.market_calendar import PARIS, is_trading_day
 from app.services.notifications.prefs import recipients
-from app.services.notifications.scores import previous_day, snapshot
+from app.services.notifications.scores import previous_day, snapshot, user_top_ids
 from app.services.notifications.send import notify
 from app.services.portfolio_value import value_portfolio
 
@@ -56,15 +57,20 @@ def send_weekly_recaps(db: Session, now: datetime) -> int:
     today = now.astimezone(PARIS).date()
     latest = db.scalar(select(func.max(ScoreSnapshot.day)).where(ScoreSnapshot.day <= today))
     start = previous_day(db, latest - timedelta(days=6)) if latest else None
-    top_now = {sid for sid, row in snapshot(db, latest).items() if row.top_rank} if latest else set()
-    top_before = {sid for sid, row in snapshot(db, start).items() if row.top_rank} if start else top_now
-    entered, left = _names(db, top_now - top_before), _names(db, top_before - top_now)
+    after = snapshot(db, latest) if latest else {}
+    before = snapshot(db, start) if start else after
     checked = db.scalars(select(Forecast).where(Forecast.horizon == "1w", Forecast.rank <= 10,
                                                 Forecast.actual_return.is_not(None),
                                                 Forecast.resolved_on > today - timedelta(days=7))).all()
     right = sum(1 for f in checked if (f.actual_return > 0) == (f.expected_return > 0))
     sent = 0
     for user, _ in recipients(db, "weekly_recap"):
+        envelopes = user_envelopes(db, user.id)  # entrées et sorties du top 10 de ce membre
+        top_now, top_before = user_top_ids(db, after, envelopes), user_top_ids(db, before, envelopes)
+        if top_now is None or top_before is None:  # photo antérieure aux enveloppes : entrées et sorties inconnues
+            entered, left = [], []
+        else:
+            entered, left = _names(db, top_now - top_before), _names(db, top_before - top_now)
         valued = value_portfolio(db, user.id, today)
         week_change = 0.0
         for v in valued.positions:

@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import type { ScreenerRow } from "@/lib/api/client";
+import { ENVELOPE_LABELS } from "@/lib/envelopes";
 import type { ScreenerFilters as Filters } from "./filters";
 
 type Props = {
@@ -11,10 +12,10 @@ type Props = {
 
 const unique = (values: (string | null)[]) => [...new Set(values.filter((v): v is string => !!v))].sort((a, b) => a.localeCompare(b, "fr"));
 
-const ELIGIBILITY_LABELS: Record<string, string> = { eligible: "Éligibles PEA", a_verifier: "À vérifier", non_eligible: "Non éligibles" };
 
-function Select({ label, value, options, onChange, labels = {} }: {
+function Select({ label, value, options, onChange, labels = {}, allLabel = `${label} : tous` }: {
   label: string; value: string | null; options: string[]; onChange: (v: string | null) => void; labels?: Record<string, string>;
+  allLabel?: string;
 }) {
   return (
     <select
@@ -23,7 +24,7 @@ function Select({ label, value, options, onChange, labels = {} }: {
       onChange={(e) => onChange(e.target.value || null)}
       className="h-8 rounded-lg border border-input bg-white px-2 text-sm"
     >
-      <option value="">{label} : tous</option>
+      <option value="">{allLabel}</option>
       {options.map((o) => <option key={o} value={o}>{labels[o] ?? o}</option>)}
     </select>
   );
@@ -39,8 +40,8 @@ export function ScreenerFilters({ rows, filters, onChange, count }: Props) {
       <Select label="Secteur" value={filters.sector} options={unique(rows.map((r) => r.sector))} onChange={(v) => onChange("sector", v)} />
       <Select label="Pays" value={filters.country} options={unique(rows.map((r) => r.country))} onChange={(v) => onChange("country", v)} />
       <Select label="Place" value={filters.market} options={unique(rows.map((r) => r.market))} onChange={(v) => onChange("market", v)} />
-      <Select label="Éligibilité" value={filters.eligibility} options={Object.keys(ELIGIBILITY_LABELS)} labels={ELIGIBILITY_LABELS}
-              onChange={(v) => onChange("eligibility", v)} />
+      <Select label="Enveloppe" allLabel="Enveloppe : toutes" value={filters.envelope} options={["pea", "pea_pme"]}
+              labels={ENVELOPE_LABELS} onChange={(v) => onChange("envelope", v)} />
       <Input type="number" aria-label="Score minimum" placeholder="Score min" className="w-28 bg-white" min={0} max={100}
              value={filters.minScore ?? ""} onChange={(e) => onChange("minScore", e.target.value || null)} />
       <Input type="number" aria-label="Prix minimum" placeholder="Prix min" className="w-24 bg-white" min={0}

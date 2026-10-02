@@ -3,7 +3,7 @@ import { filterRows, filtersFromParams } from "./filters";
 
 const row = (over: Partial<ScreenerRow>): ScreenerRow => ({
   id: 1, yahoo_ticker: "MC.PA", symbol: "MC", name: "LVMH", kind: "stock", market: "Euronext Paris", country: "FR",
-  sector: "Luxe", eligibility: "eligible", price: 600, change_pct: 1, perf_1w: 1, perf_1m: 1, perf_1y: 1, score: 80,
+  sector: "Luxe", envelopes: ["pea"], price: 600, change_pct: 1, perf_1w: 1, perf_1m: 1, perf_1y: 1, score: 80,
   pe: 20, dividend_yield: 0.02, liquid: true, available_ratio: 1, isin: null, is_favorite: false, sparkline: [], ...over,
 });
 const rows = [
@@ -39,9 +39,13 @@ test("paramètres invalides ignorés", () => {
   expect(filterRows(rows, filtersFromParams(new URLSearchParams("minScore=abc")))).toHaveLength(3);
 });
 
-test("recherche par ISIN et filtre d'éligibilité", () => {
-  const withIsin = [row({ isin: "FR0000121014" }), row({ id: 9, symbol: "X", name: "Exclue", isin: null, eligibility: "non_eligible" })];
+test("recherche par ISIN et filtre d'enveloppe", () => {
+  const withIsin = [row({ isin: "FR0000121014" }), row({ id: 9, symbol: "X", name: "Exclue", isin: null, envelopes: [] })];
   expect(filterRows(withIsin, filtersFromParams(new URLSearchParams("q=fr0000121014"))).map((r) => r.id)).toEqual([1]);
-  expect(filterRows(withIsin, filtersFromParams(new URLSearchParams("eligibility=eligible"))).map((r) => r.id)).toEqual([1]);
-  expect(filterRows(withIsin, filtersFromParams(new URLSearchParams("eligibility=non_eligible"))).map((r) => r.id)).toEqual([9]);
+  const rows = [row({ isin: "FR0000121014", envelopes: ["pea", "pea_pme"] }),
+                row({ id: 9, symbol: "X", name: "Étrangère", isin: null, envelopes: [] }),
+                row({ id: 10, symbol: "Y", name: "Grande", isin: null, envelopes: ["pea"] })];
+  expect(filterRows(rows, filtersFromParams(new URLSearchParams("envelope=pea"))).map((r) => r.id)).toEqual([1, 10]);
+  expect(filterRows(rows, filtersFromParams(new URLSearchParams("envelope=pea_pme"))).map((r) => r.id)).toEqual([1]);
+  expect(filterRows(rows, filtersFromParams(new URLSearchParams("eligibility=non_eligible"))).map((r) => r.id)).toEqual([1, 9, 10]); // ancien lien : ignoré
 });

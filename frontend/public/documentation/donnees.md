@@ -2,7 +2,7 @@
 
 ## L'univers des titres
 
-Il n'existe **aucune liste officielle complète** des titres éligibles au PEA, et les données du Crédit Agricole sont hors de portée : connexion bancaire et conditions d'utilisation. L'univers est donc **reconstruit** (`jobs/universe.py`, `seeds/loader.py`) :
+Il n'existe **aucune liste officielle complète** des titres éligibles au PEA ni au PEA-PME, et les données du Crédit Agricole sont hors de portée : connexion bancaire et conditions d'utilisation. L'univers est donc **reconstruit** (`jobs/universe.py`, `seeds/loader.py`) :
 
 1. **Actions Euronext** (Paris, Amsterdam, Bruxelles, Milan, Lisbonne, Dublin, Oslo), téléchargées depuis Euronext. Si le téléchargement échoue, l'instantané `seeds/euronext_snapshot.csv` sert de secours.
 2. **Actions hors Euronext** des grands indices, par exemple du DAX (`.DE`) ou de l'IBEX (`.MC`) : `seeds/extra_stocks.csv`.
@@ -40,17 +40,18 @@ Planifiées dans `jobs/scheduler.py` (APScheduler, fuseau Paris) :
 | Tâche | Quand | Ce qu'elle fait |
 |---|---|---|
 | `bootstrap` | Au démarrage du worker | Rattrape ce qui manque ou a vieilli, puis charge tous les cours et calcule les scores |
-| `universe` | 7 h 00, lundi à vendredi | Met à jour la liste des titres et leur éligibilité |
+| `universe` | 7 h 00, lundi à vendredi | Met à jour la liste des titres et leurs enveloppes |
 | `daily` | 7 h 30, lundi à vendredi | Historique journalier → scores → prévisions → fondamentaux |
 | `evening` | 18 h 15, lundi à vendredi | Clôtures officielles du jour → scores → prévisions. Le soir et le week-end, l'app affiche ainsi les chiffres exacts de la dernière séance, fixing de clôture compris |
-| `quotes_t1` | Toutes les minutes, **en séance** | Cours des indices, favoris, titres détenus et top 10 |
+| `quotes_t1` | Toutes les minutes, **en séance** | Cours des indices, favoris, titres détenus et top 10 (tous titres, PEA, PEA-PME) |
 | `quotes_t2` | Toutes les 5 min, en séance | Cours des 150 titres les plus échangés, **puis recalcul des scores** |
-| `quotes_t3` | Toutes les 5 min, en séance | Cours de tous les autres titres (environ 1 600 ; un passage dure environ 2 min 30) |
+| `quotes_t3` | Toutes les 5 min, en séance | Cours de tous les autres titres (environ 1 700 ; un passage dure environ 2 min 30) |
 
 Détails :
 
 - Les tâches **lourdes** (univers, historique, fondamentaux) passent l'une après l'autre grâce au verrou `HEAVY_JOBS_LOCK`. Elles ne se marchent pas dessus et ne saturent pas Yahoo.
 - Une tâche quotidienne manquée (PC en veille) est rattrapée si le PC se réveille dans les **3 heures**. Au-delà, c'est `bootstrap` qui rattrape au prochain démarrage.
+- Le worker suit les cours de **tous** les titres actifs, quelle que soit leur enveloppe.
 - Chaque exécution passe par `jobs/runner.py`, qui enregistre dans `data_status` la dernière réussite, la dernière erreur et le nombre d'éléments traités. C'est ce que lit `GET /api/status`.
 - L'historique est conservé sur **5 ans**. Après une division d'action détectée, l'historique du titre est rechargé à la nouvelle échelle.
 

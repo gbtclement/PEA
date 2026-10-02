@@ -7,7 +7,6 @@ function exclusionReason(detail: SecurityDetail): string {
   const score = detail.score_detail!;
   if (!score.liquid) return "titre peu échangé";
   if (score.history_days < 200) return "historique trop court";
-  if (detail.eligibility !== "eligible") return "éligibilité PEA non confirmée";
   return "données insuffisantes";
 }
 

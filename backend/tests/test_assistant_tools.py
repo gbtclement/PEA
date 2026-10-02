@@ -3,6 +3,7 @@ from datetime import UTC, date, datetime, timedelta
 import pytest
 
 from app.models import DailyPrice, SecurityQuote
+from app.services.assistant.prompt import system_prompt
 from app.services.assistant.tools import TOOL_LABELS, TOOL_SPECS, ToolError, run_tool
 from tests.factories import make_security, make_user
 
@@ -92,3 +93,8 @@ def test_simulate_invalid_input_is_tool_error(db, user, tool_input):
 def test_unknown_tool_is_tool_error(db, user):
     with pytest.raises(ToolError):
         run_tool(db, user, "rm_rf", {})
+
+
+def test_prompt_mentions_the_chosen_envelopes():
+    assert "PEA, PEA-PME" in system_prompt(date(2026, 10, 2), 12, ["pea", "pea_pme"], None)
+    assert "ne suppose pas qu'il investit via un PEA" in system_prompt(date(2026, 10, 2), 12, ["cto"], None)

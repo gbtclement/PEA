@@ -64,6 +64,9 @@ class Fundamentals:
     sector: str | None
     industry: str | None
     currency: str | None
+    employees: int | None = None
+    revenue: float | None = None  # chiffre d'affaires annuel, en `revenue_currency`
+    revenue_currency: str | None = None
 
 
 class ListingProvider(Protocol):
