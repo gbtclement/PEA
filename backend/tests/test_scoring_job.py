@@ -136,3 +136,28 @@ def test_non_pea_stock_can_enter_the_top(db, make_ctx):
     _liquid_history(db, aapl)
     refresh_scores(make_ctx(now=NOW))
     assert db.get(SecurityScore, aapl.id).eligible_for_top is True
+
+
+def test_tiers_only_fetch_open_places(db):
+    make_security(db, "MC.PA", market="Euronext Paris")
+    make_security(db, "AAPL", market="Nasdaq", country="US")
+    evening = datetime(2026, 10, 2, 17, 0, tzinfo=UTC)  # 19 h à Paris : Europe fermée, New York ouverte
+    assert tier_tickers(db, 2, 150, evening) + tier_tickers(db, 3, 150, evening) == ["AAPL"]
+    afternoon = datetime(2026, 10, 2, 14, 0, tzinfo=UTC)  # 16 h à Paris : les deux
+    assert set(tier_tickers(db, 2, 150, afternoon) + tier_tickers(db, 3, 150, afternoon)) == {"MC.PA", "AAPL"}
+
+
+def test_intraday_scores_only_touch_open_places(db, make_ctx):
+    paris = make_security(db, "MC.PA", market="Euronext Paris")
+    ny = make_security(db, "AAPL", market="Nasdaq", country="US")
+    for s in (paris, ny):
+        add_series(db, s, 260, volume=1_000_000)
+    refresh_scores(make_ctx(now=datetime(2026, 9, 28, 14, 0, tzinfo=UTC)))
+    db.expire_all()
+    before = {s.id: db.get(SecurityScore, s.id).computed_at for s in (paris, ny)}
+    eligible = db.get(SecurityScore, paris.id).eligible_for_top
+    refresh_scores(make_ctx(now=datetime(2026, 9, 28, 17, 0, tzinfo=UTC)), open_only=True)
+    db.expire_all()
+    assert db.get(SecurityScore, paris.id).computed_at == before[paris.id]
+    assert db.get(SecurityScore, ny.id).computed_at > before[ny.id]
+    assert db.get(SecurityScore, paris.id).eligible_for_top == eligible

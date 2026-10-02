@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from datetime import date
 
 from sqlalchemy import Row, delete, func, select, update
@@ -85,13 +86,12 @@ def all_daily_prices(session: Session, security_id: int) -> list[DailyPrice]:
     ))
 
 
-def daily_series(session: Session, since: date) -> dict[int, list[Row]]:
-    """Colonnes utiles seulement (pas d'objets ORM) : ~500 000 lignes lues toutes les 5 minutes."""
-    rows = session.execute(
-        select(DailyPrice.security_id, DailyPrice.date, DailyPrice.close, DailyPrice.volume)
-        .where(DailyPrice.date >= since)
-        .order_by(DailyPrice.security_id, DailyPrice.date)
-    )
+def daily_series(session: Session, since: date, security_ids: Collection[int] | None = None) -> dict[int, list[Row]]:
+    """Colonnes utiles seulement (pas d'objets ORM) : des millions de lignes, relues toutes les 5 minutes."""
+    stmt = select(DailyPrice.security_id, DailyPrice.date, DailyPrice.close, DailyPrice.volume).where(DailyPrice.date >= since)
+    if security_ids is not None:
+        stmt = stmt.where(DailyPrice.security_id.in_(security_ids))
+    rows = session.execute(stmt.order_by(DailyPrice.security_id, DailyPrice.date))
     result: dict[int, list[Row]] = {}
     for row in rows:
         result.setdefault(row.security_id, []).append(row)

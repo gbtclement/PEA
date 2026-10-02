@@ -232,3 +232,31 @@ def test_unknown_size_is_to_check_for_pea_pme(db, make_ctx):
     refresh_fundamentals(make_ctx(market=market, now=NOW))
     refreshed = db.get(Security, stock.id)
     assert (refreshed.envelope_status("pea"), refreshed.envelope_status("pea_pme")) == ("eligible", "a_verifier")
+
+
+def _store(db, security, day: date, close: float) -> None:
+    db.add(DailyPrice(security_id=security.id, date=day, open=close, high=close, low=close, close=close, volume=1))
+    db.flush()
+
+
+def _bar(day: date, close: float) -> DailyBar:
+    return DailyBar(day, close, close, close, close, 10)
+
+
+def test_daily_history_by_region(db, make_ctx):
+    paris = make_security(db, "MC.PA", market="Euronext Paris")
+    ny = make_security(db, "AAPL", market="Nasdaq", country="US")
+    for s in (paris, ny):
+        _store(db, s, date(2026, 10, 1), 10.0)
+    market = FakeMarket(history={"MC.PA": [_bar(date(2026, 10, 2), 11.0)], "AAPL": [_bar(date(2026, 10, 2), 12.0)]})
+    refresh_daily_history(make_ctx(market=market), region="us")
+    assert [tickers for tickers, _ in market.history_calls] == [["AAPL"]]
+
+
+def test_closing_quote_uses_the_place_close_time(db, make_ctx):
+    ny = make_security(db, "AAPL", market="Nasdaq", country="US")
+    _store(db, ny, date(2026, 10, 1), 10.0)
+    history = {"AAPL": [_bar(date(2026, 10, 1), 10.0), _bar(date(2026, 10, 2), 12.0)]}
+    refresh_daily_history(make_ctx(market=FakeMarket(history=history)))
+    db.expire_all()
+    assert db.get(SecurityQuote, ny.id).as_of == datetime(2026, 10, 2, 22, 0, tzinfo=PARIS)

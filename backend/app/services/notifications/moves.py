@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.models import Favorite, MoveNotice, Security, SecurityQuote
 from app.repositories.orders import order_lines
 from app.services.fx import security_currency
-from app.services.market_calendar import PARIS
+from app.services.market_calendar import PARIS, calendar_for_market
 from app.services.notifications.prefs import recipients
 from app.services.notifications.send import notify
 from app.services.portfolio import compute_positions
@@ -34,7 +34,9 @@ def notify_price_moves(db: Session, now: datetime) -> int:
             .where(Security.id.in_(ids), SecurityQuote.change_pct.is_not(None),
                    func.abs(SecurityQuote.change_pct) >= prefs.move_threshold_pct)
         ).all()
-        moves = [(s, q) for s, q in rows if q.as_of.astimezone(PARIS).date() == today]  # cours du jour seulement
+        # Cours du jour seulement, et place encore ouverte : le soir, New York ne relance pas les titres européens.
+        moves = [(s, q) for s, q in rows
+                 if q.as_of.astimezone(PARIS).date() == today and calendar_for_market(s.market).is_open(now)]
         if not moves:
             continue
         items = sorted(({"security_id": s.id, "name": s.name, "change_pct": q.change_pct, "price": q.price,

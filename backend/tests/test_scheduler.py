@@ -45,7 +45,7 @@ def test_build_scheduler_registers_jobs(make_ctx):
     assert {job.id for job in scheduler.get_jobs()} == {
         "bootstrap", "universe", "daily", "evening", "quotes_t1", "quotes_t2", "quotes_t3", "cleanup", "exports",
         "price_moves", "daily_recap", "order_reminders", "weekly_recap", "billing_sync", "renewal_notices",
-        "stripe_cancellations", "history_backfill",
+        "stripe_cancellations", "history_backfill", "us_evening",
     }
 
 
@@ -216,7 +216,7 @@ def test_scheduler_sends_emails_only_with_a_mailer(make_ctx):
 def test_quotes_job_checks_price_alerts(make_ctx, monkeypatch):
     calls = []
     monkeypatch.setattr(scheduler_module, "_refresh_tier", lambda ctx, tier: None)
-    monkeypatch.setattr(scheduler_module, "_refresh_scores", lambda ctx: None)
+    monkeypatch.setattr(scheduler_module, "_refresh_scores", lambda ctx, **kw: None)
     monkeypatch.setattr(scheduler_module, "run_price_alerts", lambda ctx: calls.append(ctx) or 0)
     scheduler_module.quotes_job(make_ctx(now=datetime(2026, 9, 29, 10, 0, tzinfo=ZoneInfo("Europe/Paris"))), 1)
     assert len(calls) == 1
@@ -236,3 +236,23 @@ def test_bootstrap_runs_history_backfill(db, make_ctx):
     ctx, market, _ = seeded_ctx(db, make_ctx, OPEN_MONDAY, fresh)
     bootstrap_job(ctx)
     assert (["MC.PA"], None) in market.history_calls
+
+
+def test_quotes_job_runs_while_only_new_york_is_open(make_ctx, monkeypatch):
+    calls = []
+    monkeypatch.setattr(scheduler_module, "_refresh_tier", lambda ctx, tier: calls.append(tier))
+    monkeypatch.setattr(scheduler_module, "_refresh_scores", lambda ctx, **kw: None)
+    scheduler_module.quotes_job(make_ctx(now=datetime(2026, 10, 2, 17, 0, tzinfo=UTC)), 2)  # 19 h à Paris
+    assert calls == [2]
+
+
+def test_us_evening_job_is_scheduled_at_22_30(make_ctx):
+    job = build_scheduler(make_ctx(), BackgroundScheduler(timezone="Europe/Paris")).get_job("us_evening")
+    fields = {f.name: str(f) for f in job.trigger.fields}
+    assert (fields["hour"], fields["minute"], fields["day_of_week"]) == ("22", "30", "mon-fri")
+
+
+def test_us_evening_job_loads_us_closes_then_scores(db, make_ctx, monkeypatch):
+    names = record_jobs(monkeypatch)
+    scheduler_module.us_evening_job(make_ctx(now=datetime(2026, 9, 28, 20, 30, tzinfo=UTC)))
+    assert names[:3] == ["fx", "daily_history_us", "scores"]

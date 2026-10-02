@@ -24,7 +24,7 @@ from app.jobs.runner import run_job
 from app.jobs.scoring import refresh_scores
 from app.jobs.universe import refresh_universe
 from app.models import DailyPrice, DataStatus, Security, SecurityFundamentals
-from app.services.market_calendar import is_market_open, last_session_close
+from app.services.market_calendar import any_market_open, last_session_close
 
 # Univers, historique et fondamentaux s'exécutent l'un après l'autre (charge Yahoo, conflits d'insertion).
 HEAVY_JOBS_LOCK = threading.Lock()
@@ -35,8 +35,8 @@ def _refresh_tier(ctx: JobContext, tier: int) -> None:
     run_job(ctx, f"quotes_t{tier}", lambda c: refresh_quotes(c, tier))
 
 
-def _refresh_scores(ctx: JobContext) -> None:
-    run_job(ctx, "scores", refresh_scores)
+def _refresh_scores(ctx: JobContext, open_only: bool = False) -> None:
+    run_job(ctx, "scores", lambda c: refresh_scores(c, open_only=open_only))
 
 
 def _quietly(ctx: JobContext, fn) -> None:
@@ -48,11 +48,11 @@ def _quietly(ctx: JobContext, fn) -> None:
 
 
 def quotes_job(ctx: JobContext, tier: int) -> None:
-    if is_market_open(ctx.now()):
+    if any_market_open(ctx.now()):
         _refresh_tier(ctx, tier)
         _quietly(ctx, run_price_alerts)  # N2 : après chaque mise à jour des cours
         if tier == 2:
-            _refresh_scores(ctx)
+            _refresh_scores(ctx, open_only=True)  # les places fermées n'ont pas bougé
 
 
 def price_moves_job(ctx: JobContext) -> None:
@@ -89,10 +89,19 @@ def evening_job(ctx: JobContext) -> None:
     """Après la clôture : cours de clôture officiels du jour, puis scores et prévisions (soirée et week-end exacts)."""
     with HEAVY_JOBS_LOCK:
         run_job(ctx, "fx", refresh_fx)
-        run_job(ctx, "daily_history", refresh_daily_history)
+        run_job(ctx, "daily_history", lambda c: refresh_daily_history(c, region="europe"))
         _refresh_scores(ctx)
         _refresh_forecasts(ctx)
         _quietly(ctx, run_score_notifications)  # photo des scores du soir, puis N6
+
+
+def us_evening_job(ctx: JobContext) -> None:
+    """Après la clôture de New York : clôtures officielles des titres américains, puis scores et prévisions."""
+    with HEAVY_JOBS_LOCK:
+        run_job(ctx, "fx", refresh_fx)
+        run_job(ctx, "daily_history_us", lambda c: refresh_daily_history(c, region="us"))
+        _refresh_scores(ctx)
+        _refresh_forecasts(ctx)
 
 
 def history_backfill_job(ctx: JobContext) -> None:
@@ -195,6 +204,8 @@ def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> 
                       args=[ctx], id="daily", **daily)
     scheduler.add_job(evening_job, CronTrigger(day_of_week="mon-fri", hour=18, minute=15, timezone=tz),
                       args=[ctx], id="evening", **daily)
+    scheduler.add_job(us_evening_job, CronTrigger(day_of_week="mon-fri", hour=22, minute=30, timezone=tz),
+                      args=[ctx], id="us_evening", **daily)
     scheduler.add_job(history_backfill_job, CronTrigger(hour=20, minute=0, timezone=tz),
                       args=[ctx], id="history_backfill", **daily)
     scheduler.add_job(daily_recap_job, CronTrigger(day_of_week="mon-fri", hour=18, minute=45, timezone=tz),

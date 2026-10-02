@@ -1,7 +1,8 @@
 import logging
 from collections import defaultdict
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.jobs.context import JobContext
@@ -14,7 +15,7 @@ from app.repositories.market_data import (
     upsert_quotes,
 )
 from app.repositories.securities import update_classification
-from app.services.market_calendar import CLOSE, PARIS
+from app.services.market_calendar import PARIS, calendar_for_market
 
 # En dessous de cette part de titres reçus, on considère que Yahoo est indisponible.
 MIN_RESPONSE_RATIO = 0.2
@@ -35,7 +36,7 @@ def _ensure_response(requested: int, received: int, what: str) -> None:
 
 def refresh_quotes(ctx: JobContext, tier: int) -> int:
     with ctx.session_factory() as session:
-        tickers = tier_tickers(session, tier, ctx.settings.tier2_size)
+        tickers = tier_tickers(session, tier, ctx.settings.tier2_size, ctx.now())
     if not tickers:
         return 0
     quotes = ctx.market.get_quotes(tickers)
@@ -58,6 +59,7 @@ def _write_closing_quotes(ctx: JobContext, security_ids: list[int]) -> None:
     """La clôture de la veille devient le cours affiché le soir et le week-end (sans écraser un cours plus récent)."""
     with ctx.session_factory() as session:
         quotes: dict[int, Quote] = {}
+        markets = dict(session.execute(select(Security.id, Security.market).where(Security.id.in_(security_ids))).all())
         for security_id, rows in last_two_closes(session, security_ids).items():
             last = rows[0]
             previous = rows[1].close if len(rows) > 1 else None
@@ -66,19 +68,22 @@ def _write_closing_quotes(ctx: JobContext, security_ids: list[int]) -> None:
                 previous_close=previous,
                 change_pct=(last.close / previous - 1) * 100 if previous else None,
                 volume=last.volume,
-                as_of=datetime.combine(last.date, CLOSE, tzinfo=PARIS),
+                as_of=calendar_for_market(markets[security_id]).session_close(last.date),
             )
         upsert_quotes(session, quotes, only_if_newer=True)
         session.commit()
 
 
-def refresh_daily_history(ctx: JobContext) -> int:
+def refresh_daily_history(ctx: JobContext, region: str | None = None) -> int:
+    """Clôtures du jour ; `region` (europe, us) limite le passage aux titres d'une séance."""
     ids: dict[str, int] = {}
     # Clé None : titre sans aucun cours, chargé en entier (period="max").
     by_start: dict[date | None, list[str]] = defaultdict(list)
     with ctx.session_factory() as session:
         last_dates = latest_price_dates(session)
         for security in refreshable_securities(session):
+            if region is not None and calendar_for_market(security.market).code != region:
+                continue
             ids[security.yahoo_ticker] = security.id
             # On repart du dernier jour connu (inclus) pour corriger une séance incomplète.
             by_start[last_dates.get(security.id)].append(security.yahoo_ticker)
