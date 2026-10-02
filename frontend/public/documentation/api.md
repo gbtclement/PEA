@@ -92,19 +92,19 @@ Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_no
 | Méthode | Route | Rôle |
 |---|---|---|
 | GET | `/health` | `{"status": "ok"}`, utilisé par le healthcheck Docker |
-| GET | `/status` | Marché ouvert ou non, dernière réussite ou erreur de chaque tâche, valeur des indices |
+| GET | `/status` | État de chaque place (`markets` : `europe`, `us`, ouverte ou non ; `market_open` = Europe), dernière réussite ou erreur de chaque tâche, valeur des indices |
 
 ## Titres
 
 | Méthode | Route | Rôle |
 |---|---|---|
-| GET | `/securities?q=&kind=&envelope=&overridden=&limit=&offset=` | Recherche paginée (nom, ticker, ISIN) ; `envelope=pea` ou `envelope=pea_pme` garde les titres éligibles à cette enveloppe |
+| GET | `/securities?q=&kind=&envelope=&overridden=&limit=&offset=` | Recherche paginée (nom, ticker, ISIN) ; `envelope=pea` ou `envelope=pea_pme` garde les titres éligibles à cette enveloppe ; un titre sans aucun cours n'est pas trouvé (sauf avec `overridden`) |
 | GET | `/securities/{id}` | Fiche : cours, score détaillé, fondamentaux, enveloppes, favori |
 | GET | `/securities/{id}/history?period=1D\|1W\|1M\|6M\|1Y\|5Y\|10Y\|MAX\|custom` | Barres OHLCV, MM50/MM200, RSI, MACD, et bornes de l'historique stocké (`first_date`, `last_date`). `1D` (barres de 5 min) et `1W` (30 min) sont en intraday, chargés depuis Yahoo et mis en cache. `custom` exige `start` et `end` (fin ≥ début, sinon 422). Au-delà de 2 500 séances, les barres sont regroupées par semaine (jusqu'à 10 ans) ou par mois (champ `interval`) |
 | PATCH | `/securities/{id}/envelopes/{pea\|pea_pme}` | **Admin.** Correction manuelle d'une enveloppe : `{"override": "eligible" \| "a_verifier" \| "non_eligible" \| null}` ; renvoie le titre avec ses `envelopes` |
 | GET | `/securities/{id}/news` | Actualités Yahoo, mises en cache |
 | GET | `/securities/{id}/simulate?amount=&period=1W\|1M\|6M\|1Y` ou `&duration=&unit=days\|weeks\|months\|years` | « Si j'avais investi », frais inclus. La durée libre (1 à 36 500) l'emporte sur `period` ; si l'historique commence plus tard, la simulation part de la première cotation et `note` le dit |
-| GET | `/screener?kind=stock\|etf` | Toutes les lignes de l'Explorer ou des ETF. Le filtrage et le tri se font côté navigateur |
+| GET | `/screener?kind=stock\|etf&region=europe\|us` | Lignes de l'Explorer ou des ETF d'une région (toutes si `region` est absent). Seuls les titres qui ont un cours sont listés. Le filtrage et le tri se font côté navigateur |
 
 ## Classements et marché
 

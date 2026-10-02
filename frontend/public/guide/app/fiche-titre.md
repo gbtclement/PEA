@@ -38,7 +38,7 @@ Tout est expliqué avec des exemples dans [Lire un graphique](bourse/analyse-tec
 |---|---|
 | **Score** | Les 8 composantes, avec les points obtenus sur le maximum et une phrase d'explication (voir [Comprendre le score](app/score.md)). Un badge « données incomplètes » apparaît s'il manque des informations. |
 | **Données fondamentales** | PER, bénéfice par action, croissance, dette, marge, dividende, capitalisation (voir [Juger une entreprise](bourse/analyse-fondamentale.md)). |
-| **Simulateur** | « Si j'avais investi X € il y a 1 semaine / 1 mois / 6 mois / 1 an », ou **Autre durée** (par exemple 2 semaines, 5 ans, 10 ans) : gain en euros et en %, frais compris. Si le titre est coté depuis moins longtemps, la simulation part de sa première cotation et le dit. |
+| **Simulateur** | « Si j'avais investi X € il y a 1 semaine / 1 mois / 6 mois / 1 an », ou **Autre durée** (par exemple 2 semaines, 5 ans, 10 ans) : gain en euros et en %, frais compris (un titre coté en dollars, en francs suisses ou en couronnes est converti au cours de change du jour). Si le titre est coté depuis moins longtemps, la simulation part de sa première cotation et le dit. |
 | **Frais estimés** | Ce que coûterait un ordre avec votre grille de frais. |
 | **Prévisions court terme** | Les signaux repérés aujourd'hui et la prévision à 1 jour, 1 semaine et 1 mois (voir [Prévisions](app/previsions.md)). Réservé aux membres [Premium](app/premium.md). |
 | **Actualités** | Les derniers articles publiés sur l'entreprise. |

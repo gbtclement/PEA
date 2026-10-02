@@ -19,15 +19,18 @@ De **Yahoo Finance**, une source gratuite. Comme toutes les sources gratuites, e
 
 Avec le retard de la source, un cours affiché a donc entre 15 et 20 minutes de retard environ.
 
-**Chaque soir de semaine à 18 h 15**, l'application charge les **cours de clôture officiels** de la séance, puis recalcule les scores et les prévisions.
+**Chaque soir de semaine à 18 h 15**, l'application charge les **cours de clôture officiels** de la séance européenne, puis recalcule les scores et les prévisions. Elle fait de même à **22 h 30** pour les actions américaines, après la clôture de New York.
 
-**Le soir, la nuit, le week-end et les jours fériés**, la bourse est fermée : aucun cours ne bouge. L'application affiche les chiffres exacts de la dernière séance.
+Les cours ne sont rafraîchis que pendant la séance de chaque bourse : le soir, seules les actions américaines bougent. En bas de la barre latérale, l'état de chaque bourse est indiqué (« Europe : fermée · New York : ouverte »).
+
+**La nuit, le week-end et les jours fériés**, les bourses sont fermées : aucun cours ne bouge. L'application affiche les chiffres exacts de la dernière séance.
 
 ## Et les autres informations ?
 
 | Information | Mise à jour |
 |---|---|
 | Liste des actions et leurs enveloppes | chaque matin de semaine à 7 h |
+| Cours de change (dollar, livre, franc suisse, couronnes…) pour les conversions en euros | chaque jour |
 | Données des entreprises (bénéfices, dette, dividende…) | chaque matin de semaine |
 | Prévisions | chaque soir à 18 h 15, et le matin à 7 h 30 |
 | Actualités d'une action | à l'ouverture de sa fiche |
