@@ -125,5 +125,9 @@ def upsert_fundamentals(session: Session, security_id: int, f: Fundamentals) -> 
     record.dividend_yield = f.dividend_yield
     record.market_cap = f.market_cap
     record.currency = f.currency
+    # Effectif et CA bougent peu : une réponse Yahoo qui ne les donne pas ne doit pas effacer la valeur connue.
+    record.employees = f.employees if f.employees is not None else record.employees
+    if f.revenue is not None:
+        record.revenue, record.revenue_currency = f.revenue, f.revenue_currency or f.currency
     record.updated_at = func.now()
     session.add(record)
