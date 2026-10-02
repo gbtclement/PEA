@@ -8,7 +8,7 @@ Sur les 5 dernières séances : {{ week_change|eur }} ({{ week_change_pct|pct }}
 
 {% endif %}
 {% if entered or left %}
-Top 10 des actions éligibles :
+Votre top 10 (selon vos enveloppes) :
 {% for item in entered %}
 - Entrée : {{ item.name }}
 {% endfor %}

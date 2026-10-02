@@ -67,7 +67,10 @@ def send_weekly_recaps(db: Session, now: datetime) -> int:
     for user, _ in recipients(db, "weekly_recap"):
         envelopes = user_envelopes(db, user.id)  # entrées et sorties du top 10 de ce membre
         top_now, top_before = user_top_ids(db, after, envelopes), user_top_ids(db, before, envelopes)
-        entered, left = _names(db, top_now - top_before), _names(db, top_before - top_now)
+        if top_now is None or top_before is None:  # photo antérieure aux enveloppes : entrées et sorties inconnues
+            entered, left = [], []
+        else:
+            entered, left = _names(db, top_now - top_before), _names(db, top_before - top_now)
         valued = value_portfolio(db, user.id, today)
         week_change = 0.0
         for v in valued.positions:

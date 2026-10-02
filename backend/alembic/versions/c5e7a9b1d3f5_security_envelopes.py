@@ -43,8 +43,9 @@ def upgrade() -> None:
     op.add_column("fundamentals", sa.Column("revenue_currency", sa.String(3), nullable=True))
     op.add_column("user_settings", sa.Column("envelopes", postgresql.JSONB(), nullable=False,
                                              server_default=sa.text("'[]'::jsonb")))
-    op.add_column("score_snapshots", sa.Column("top_pool", sa.Boolean(), nullable=False, server_default=sa.text("false")))
-    op.execute("UPDATE score_snapshots SET top_pool = (top_rank IS NOT NULL)")
+    # Photos déjà prises : on ne sait pas quels titres étaient candidats (l'ancien top était limité au PEA).
+    # NULL = inconnu ; les mails ne déduisent alors aucune entrée ni sortie du top 10.
+    op.add_column("score_snapshots", sa.Column("top_pool", sa.Boolean(), nullable=True))
 
 
 def downgrade() -> None:

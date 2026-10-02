@@ -55,8 +55,8 @@ def test_eligibility_columns_become_pea_rows(migration_url):
             (3, "pea", "eligible", "seed", None),
             (4, "pea", "non_eligible", "auto", None),
         ]
-        pool = dict(conn.execute(text("SELECT security_id, top_pool FROM score_snapshots")).all())
-        assert pool == {1: True, 4: False}
+        pool = dict(conn.execute(text("SELECT security_id, top_pool FROM score_snapshots")).all())  # inconnu avant les enveloppes
+        assert pool == {1: None, 4: None}
     inspector = inspect(engine)
     assert not {"eligibility", "eligibility_source", "eligibility_override"} & {c["name"] for c in inspector.get_columns("securities")}
     assert {"employees", "revenue", "revenue_currency"} <= {c["name"] for c in inspector.get_columns("fundamentals")}

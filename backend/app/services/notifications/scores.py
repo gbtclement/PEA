@@ -25,8 +25,13 @@ def take_score_snapshot(db: Session, day: date) -> None:
     db.flush()
 
 
-def user_top_ids(db: Session, rows: dict[int, ScoreSnapshot], envelopes: Sequence[str], size: int = TOP_SIZE) -> set[int]:
-    """Top 10 d'un membre ce jour-là : candidats du soir, filtrés par ses enveloppes (statut actuel), meilleurs scores."""
+def user_top_ids(db: Session, rows: dict[int, ScoreSnapshot], envelopes: Sequence[str], size: int = TOP_SIZE) -> set[int] | None:
+    """Top 10 d'un membre ce jour-là : candidats du soir, filtrés par ses enveloppes (statut actuel), meilleurs scores.
+
+    None si la photo est antérieure aux enveloppes (candidats inconnus) : aucune entrée ni sortie n'est alors déduite.
+    """
+    if any(row.top_pool is None for row in rows.values()):
+        return None
     candidates = [row for row in rows.values() if row.top_pool]
     clause = envelope_clause(envelopes)
     if clause is not None:
@@ -44,15 +49,16 @@ def previous_day(db: Session, before: date) -> date | None:
 
 
 def score_changes(before: dict[int, ScoreSnapshot], after: dict[int, ScoreSnapshot], ids: set[int],
-                  top_before: set[int], top_after: set[int]) -> list[dict]:
+                  top_before: set[int] | None, top_after: set[int] | None) -> list[dict]:
     items = []
+    known = top_before is not None and top_after is not None  # photo sans candidats : entrée ou sortie inconnue
     for sid in sorted(ids):
         old, new = before.get(sid), after.get(sid)
         if old is None or new is None:
             continue
-        if sid in top_after and sid not in top_before:
+        if known and sid in top_after and sid not in top_before:
             change = "entered"
-        elif sid in top_before and sid not in top_after:
+        elif known and sid in top_before and sid not in top_after:
             change = "left"
         elif abs(new.total - old.total) >= BIG_MOVE:
             change = "up" if new.total > old.total else "down"
