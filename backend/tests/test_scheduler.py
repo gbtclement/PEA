@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 
 import app.jobs.scheduler as scheduler_module
 from app.jobs.scheduler import bootstrap_job, build_scheduler, quotes_job
-from app.models import DataStatus, ForecastRun, Security
+from app.models import DailyPrice, DataStatus, ForecastRun, Security
 from app.providers.base import DailyBar, ListedSecurity, Quote
 from tests.factories import make_security
 from tests.fakes import FakeListing, FakeMarket
@@ -112,7 +112,9 @@ def test_heavy_jobs_are_serialized(db, make_ctx):
 
     from app.jobs.scheduler import HEAVY_JOBS_LOCK, daily_job
 
-    make_security(db, "MC.PA")
+    security = make_security(db, "MC.PA")
+    db.add(DailyPrice(security_id=security.id, date=date(2026, 9, 25), open=1, high=1, low=1, close=1.0, volume=1))
+    db.flush()
     market = FakeMarket()
     ctx = make_ctx(market=market, now=OPEN_MONDAY)
     HEAVY_JOBS_LOCK.acquire()
@@ -172,7 +174,8 @@ def test_bootstrap_recomputes_scores_once_fundamentals_are_loaded(db, make_ctx, 
     )
     bootstrap_job(make_ctx(market=market, listing=listing, now=OPEN_MONDAY))
     assert "fundamentals" in names
-    assert names[-2:] == ["scores", "history_backfill"]  # le rattrapage passe en dernier
+    # le rattrapage passe en dernier, puis note les titres qu'il vient de charger
+    assert names[-3:] == ["scores", "history_backfill", "scores"]
 
 
 def test_bootstrap_does_not_rescore_when_fundamentals_are_fresh(db, make_ctx, monkeypatch):
@@ -256,3 +259,36 @@ def test_us_evening_job_loads_us_closes_then_scores(db, make_ctx, monkeypatch):
     names = record_jobs(monkeypatch)
     scheduler_module.us_evening_job(make_ctx(now=datetime(2026, 9, 28, 20, 30, tzinfo=UTC)))
     assert names[:3] == ["fx", "daily_history_us", "scores"]
+
+
+def test_backfill_job_skips_when_already_running(make_ctx, monkeypatch):
+    calls = []
+    monkeypatch.setattr(scheduler_module, "backfill_history", lambda ctx, guard: calls.append(1) or 0)
+    assert scheduler_module.BACKFILL_LOCK.acquire(blocking=False)
+    try:
+        scheduler_module.history_backfill_job(make_ctx())
+    finally:
+        scheduler_module.BACKFILL_LOCK.release()
+    assert calls == []
+
+
+def test_backfill_job_does_not_hold_the_heavy_lock_between_batches(make_ctx, monkeypatch):
+    seen = []
+
+    def fake_backfill(ctx, guard):
+        seen.append(scheduler_module.HEAVY_JOBS_LOCK.locked())
+        with guard():
+            seen.append(scheduler_module.HEAVY_JOBS_LOCK.locked())
+        return 0
+
+    monkeypatch.setattr(scheduler_module, "backfill_history", fake_backfill)
+    scheduler_module.history_backfill_job(make_ctx())
+    assert seen == [False, True]
+
+
+def test_universe_job_then_backfills(make_ctx, monkeypatch):
+    calls = []
+    monkeypatch.setattr(scheduler_module, "run_job", lambda ctx, name, fn: calls.append(name) or 0)
+    monkeypatch.setattr(scheduler_module, "history_backfill_job", lambda ctx: calls.append("backfill"))
+    scheduler_module.universe_job(make_ctx())
+    assert calls == ["universe", "backfill"]

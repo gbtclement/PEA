@@ -5,6 +5,7 @@ from sqlalchemy import func, select
 
 from app.services.market_calendar import PARIS
 
+import app.jobs.market as market_module
 from app.jobs.market import refresh_daily_history, refresh_fundamentals, refresh_quotes
 from app.models import DailyPrice, Security, SecurityFundamentals, SecurityQuote
 from app.providers.base import DailyBar, Fundamentals, Quote
@@ -79,13 +80,14 @@ def test_refresh_quotes_raises_on_total_outage(db, make_ctx):
 
 
 def test_history_raises_on_total_outage(db, make_ctx):
-    make_security(db, "C.PA")
+    add_prices(db, make_security(db, "C.PA"), 1.0, 10, days=1)
     with pytest.raises(RuntimeError):
         refresh_daily_history(make_ctx(market=FakeMarket(history={}), now=NOW))
 
 
 def test_history_writes_closing_quote(db, make_ctx):
     security = make_security(db, "C.PA")
+    db.add(DailyPrice(security_id=security.id, date=date(2026, 9, 24), open=1, high=1, low=1, close=1.0, volume=10))
     intraday = datetime(2026, 9, 25, 15, 10, tzinfo=UTC)  # 17h10 à Paris
     db.add(SecurityQuote(security_id=security.id, price=1.5, previous_close=1.0, change_pct=50.0, volume=1, as_of=intraday))
     db.flush()
@@ -101,6 +103,7 @@ def test_history_writes_closing_quote(db, make_ctx):
 
 def test_history_keeps_newer_live_quote(db, make_ctx):
     security = make_security(db, "C.PA")
+    db.add(DailyPrice(security_id=security.id, date=date(2026, 9, 24), open=1, high=1, low=1, close=1.0, volume=10))
     live = datetime(2026, 9, 28, 8, 0, tzinfo=UTC)
     db.add(SecurityQuote(security_id=security.id, price=3.0, previous_close=2.0, change_pct=50.0, volume=1, as_of=live))
     db.flush()
@@ -146,19 +149,14 @@ def test_fundamentals_without_industry_keep_known_one(db, make_ctx):
     assert (refreshed.industry, refreshed.envelope_status("pea")) == ("REIT - Office", "a_verifier")
 
 
-def test_history_backfill_then_incremental(db, make_ctx):
+def test_daily_history_leaves_new_securities_to_the_backfill(db, make_ctx):
     security = make_security(db, "C.PA")
     bars = [DailyBar(date(2026, 9, 24), 1, 1, 1, 1.0, 10), DailyBar(date(2026, 9, 25), 1, 1, 1, 2.0, 10)]
     market = FakeMarket(history={"C.PA": bars})
-    ctx = make_ctx(market=market, now=NOW)
-    refresh_daily_history(ctx)
-    assert market.history_calls[0] == (["C.PA"], None)  # premier chargement : tout l'historique
-    db.expire_all()
-    assert db.get(Security, security.id).history_complete is True
-    refresh_daily_history(ctx)
-    assert market.history_calls[1] == (["C.PA"], date(2026, 9, 25))
+    refresh_daily_history(make_ctx(market=market, now=NOW))
+    assert market.history_calls == []  # tout l'historique d'un nouveau titre : par le rattrapage, par paquets
     count = db.scalar(select(func.count()).select_from(DailyPrice).where(DailyPrice.security_id == security.id))
-    assert count == 2
+    assert count == 0
 
 
 def test_incremental_refresh_keeps_history_incomplete(db, make_ctx):
@@ -171,8 +169,8 @@ def test_incremental_refresh_keeps_history_incomplete(db, make_ctx):
 
 
 def test_history_follows_every_active_security(db, make_ctx):
-    make_security(db, "US.PA", eligibility="non_eligible", country="US")
-    make_security(db, "OLD.PA", active=False)
+    add_prices(db, make_security(db, "US.PA", eligibility="non_eligible", country="US"), 1.0, 10, days=1)
+    add_prices(db, make_security(db, "OLD.PA", active=False), 1.0, 10, days=1)
     market = FakeMarket(history={"US.PA": [DailyBar(date(2026, 9, 25), 1, 1, 1, 1.0, 10)]})
     refresh_daily_history(make_ctx(market=market, now=NOW))
     assert any("US.PA" in tickers for tickers, _ in market.history_calls)
@@ -201,7 +199,8 @@ def test_fundamentals_keep_override(db, make_ctx):
     assert (refreshed.envelope_status("pea"), refreshed.envelope("pea").source) == ("eligible", "manual")
 
 
-def test_fundamentals_compute_pea_pme(db, make_ctx):
+def test_fundamentals_compute_pea_pme(db, make_ctx, monkeypatch):
+    monkeypatch.setattr(market_module, "FUNDAMENTALS_DAYS", 1)  # les deux actions dans le même passage
     small = make_security(db, "ALCAR.PA")
     big = make_security(db, "MC.PA")
     market = FakeMarket(fundamentals={
@@ -260,3 +259,14 @@ def test_closing_quote_uses_the_place_close_time(db, make_ctx):
     refresh_daily_history(make_ctx(market=FakeMarket(history=history)))
     db.expire_all()
     assert db.get(SecurityQuote, ny.id).as_of == datetime(2026, 10, 2, 22, 0, tzinfo=PARIS)
+
+
+def test_fundamentals_are_spread_over_the_week(db, make_ctx):
+    stocks = [make_security(db, f"S{i}.PA") for i in range(10)]
+    for i, s in enumerate(stocks[:8]):
+        db.add(SecurityFundamentals(security_id=s.id, updated_at=datetime(2026, 9, 20 + i, tzinfo=UTC)))
+    db.flush()
+    market = FakeMarket()
+    refresh_fundamentals(make_ctx(market=market))
+    # 10 actions / 5 jours = 2 : les deux jamais chargées passent en premier
+    assert market.fundamental_calls == ["S8.PA", "S9.PA"]

@@ -1,3 +1,4 @@
+import math
 from collections.abc import Collection
 from datetime import date
 
@@ -122,6 +123,17 @@ def price_date_range(session: Session, security_id: int) -> tuple[date | None, d
         select(func.min(DailyPrice.date), func.max(DailyPrice.date)).where(DailyPrice.security_id == security_id)
     ).one()
     return first, last
+
+
+def fundamentals_due(session: Session, share: int) -> list[tuple[int, str]]:
+    """La part du jour des actions actives : jamais chargées d'abord, puis les plus anciennes."""
+    rows = session.execute(
+        select(Security.id, Security.yahoo_ticker)
+        .outerjoin(SecurityFundamentals, SecurityFundamentals.security_id == Security.id)
+        .where(Security.active.is_(True), Security.kind == "stock")
+        .order_by(SecurityFundamentals.updated_at.asc().nulls_first(), Security.id)
+    ).all()
+    return [(sid, ticker) for sid, ticker in rows[:math.ceil(len(rows) / share)]]
 
 
 def latest_price_dates(session: Session) -> dict[int, date]:

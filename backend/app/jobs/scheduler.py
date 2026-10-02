@@ -28,6 +28,8 @@ from app.services.market_calendar import any_market_open, last_session_close
 
 # Univers, historique et fondamentaux s'exécutent l'un après l'autre (charge Yahoo, conflits d'insertion).
 HEAVY_JOBS_LOCK = threading.Lock()
+# Le rattrapage dure des heures au premier chargement : un seul à la fois, verrou lourd repris à chaque paquet.
+BACKFILL_LOCK = threading.Lock()
 _DAILY_MAX_AGE = timedelta(hours=20)  # « une fois par jour », même si la veille le PC a démarré plus tard
 
 
@@ -74,6 +76,7 @@ def weekly_recap_job(ctx: JobContext) -> None:
 def universe_job(ctx: JobContext) -> None:
     with HEAVY_JOBS_LOCK:
         run_job(ctx, "universe", refresh_universe)
+    history_backfill_job(ctx)  # nouveaux titres : cours chargés en arrière-plan, paquet par paquet
 
 
 def daily_job(ctx: JobContext) -> None:
@@ -105,9 +108,15 @@ def us_evening_job(ctx: JobContext) -> None:
 
 
 def history_backfill_job(ctx: JobContext) -> None:
-    """Historique complet des titres existants : ne fait plus rien une fois tous les titres rattrapés."""
-    with HEAVY_JOBS_LOCK:
-        run_job(ctx, "history_backfill", backfill_history)
+    """Historique complet des titres qui ne l'ont pas : ne fait plus rien une fois tous les titres rattrapés."""
+    if not BACKFILL_LOCK.acquire(blocking=False):
+        return  # un rattrapage tourne déjà (premier chargement : plusieurs heures)
+    try:
+        written = run_job(ctx, "history_backfill", lambda c: backfill_history(c, guard=lambda: HEAVY_JOBS_LOCK))
+    finally:
+        BACKFILL_LOCK.release()
+    if written:
+        _refresh_scores(ctx)  # les nouveaux titres ont maintenant de quoi être notés
 
 
 def _refresh_forecasts(ctx: JobContext) -> None:
