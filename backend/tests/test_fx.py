@@ -74,3 +74,10 @@ def test_security_currency_prefers_the_listing(db):
     assert fx.security_currency(us) == "EUR"
     assert fx.currency_for_market("Nasdaq Stockholm") == "SEK"
     assert fx.currency_for_market("Oslo Børs") == "NOK"
+
+
+def test_every_listing_currency_has_a_rate():
+    # Un ETF coté en yens compté 1 pour 1 paraîtrait ~170 fois plus liquide qu'il ne l'est.
+    for code in ("JPY", "AUD", "CAD", "SGD"):
+        assert code in fx.FX_PAIRS
+        assert 0 < fx.rate_to_eur(code) < 1

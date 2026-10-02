@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 # Valeur d'une unité en euros (octobre 2026), utilisée tant qu'aucun cours du jour n'est connu.
 FALLBACK_TO_EUR: dict[str, float] = {
     "EUR": 1.0, "USD": 0.89, "GBP": 1.17, "CHF": 1.07, "SEK": 0.087, "DKK": 0.134, "NOK": 0.085, "PLN": 0.23,
-    "ISK": 0.0066,
+    "ISK": 0.0066, "JPY": 0.0056, "AUD": 0.62, "CAD": 0.62, "SGD": 0.69,
 }
 FX_PAIRS: dict[str, str] = {code: f"EUR{code}=X" for code in FALLBACK_TO_EUR if code != "EUR"}
 _PENCE = ("GBp", "GBX")  # cotations londoniennes en pence

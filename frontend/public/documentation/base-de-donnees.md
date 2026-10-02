@@ -18,7 +18,7 @@ PostgreSQL 16, conteneur `db`, données dans le volume Docker `pgdata`. Modèles
 | `security_envelopes` | Statut de chaque titre par enveloppe à règle (`pea`, `pea_pme`) : statut, source `auto`/`seed`/`manual`, correction manuelle (voir [Enveloppes](enveloppes.md)) | non |
 | `quotes` | Dernier cours connu de chaque titre : prix, variation du jour, volume, horodatage | non |
 | `daily_prices` | Historique journalier OHLCV depuis la première cotation : de l'ordre de **5 à 10 Go** pour les quelque 20 000 titres de l'univers étendu | non |
-| `fx_rates` | Valeur en euros d'une unité de chaque devise (USD, GBP, CHF, SEK, DKK, NOK, PLN, ISK), mise à jour chaque jour | non |
+| `fx_rates` | Valeur en euros d'une unité de chaque devise (USD, GBP, CHF, SEK, DKK, NOK, PLN, ISK, JPY, AUD, CAD, SGD), mise à jour chaque jour | non |
 | `fundamentals` | PER, BPA, croissances, dette/capitaux propres, marge, dividende, capitalisation, effectif, chiffre d'affaires et sa devise (règle PEA-PME) | non |
 | `scores` | Dernier score : total, technique, fondamental, détail JSON, liquidité, montant moyen échangé, données incomplètes, entrée dans le top | non |
 | `favorites` | Titres favoris | **oui** |

@@ -55,7 +55,7 @@ Le ticker Yahoo est construit avec le suffixe de la place : `.PA`, `.AS`, `.BR`,
 
 ## Les cours de change
 
-`services/fx.py` convertit en euros (liquidité, capitalisation, PEA-PME, simulateur, portefeuille). La tâche `fx` lit chaque jour les cours Yahoo `EURUSD=X`, `EURGBP=X`, `EURCHF=X`, `EURSEK=X`, `EURDKK=X`, `EURNOK=X`, `EURPLN=X`, `EURISK=X` et les range dans la table `fx_rates`. Si Yahoo ne répond pas, la dernière valeur stockée reste en place ; sans aucune valeur, une table fixe sert de repli. Les cotations en pence (`GBp`, `GBX`) valent un centième de livre.
+`services/fx.py` convertit en euros (liquidité, capitalisation, PEA-PME, simulateur, portefeuille). La tâche `fx` lit chaque jour les cours Yahoo `EURUSD=X`, `EURGBP=X`, `EURCHF=X`, `EURSEK=X`, `EURDKK=X`, `EURNOK=X`, `EURPLN=X`, `EURISK=X`, `EURJPY=X`, `EURAUD=X`, `EURCAD=X`, `EURSGD=X` et les range dans la table `fx_rates`. Si Yahoo ne répond pas, la dernière valeur stockée reste en place ; sans aucune valeur, une table fixe sert de repli. Les cotations en pence (`GBp`, `GBX`) valent un centième de livre.
 
 ## Les tâches du worker
 
