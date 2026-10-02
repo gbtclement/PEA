@@ -21,7 +21,9 @@ def test_override_and_reset_eligibility(admin_client, db):
     security.industry = "REIT - Office"
     db.flush()
     body = admin_client.patch(f"/api/securities/{security.id}/eligibility", json={"override": "eligible"}).json()
-    assert (body["eligibility"], body["eligibility_source"], body["eligibility_override"]) == ("eligible", "override", "eligible")
+    assert (body["eligibility"], body["eligibility_source"], body["eligibility_override"]) == ("eligible", "manual", "eligible")
+    body = admin_client.patch(f"/api/securities/{security.id}/eligibility", json={"override": "a_verifier"}).json()
+    assert (body["eligibility"], body["eligibility_source"]) == ("a_verifier", "manual")
     body = admin_client.patch(f"/api/securities/{security.id}/eligibility", json={"override": None}).json()
     assert (body["eligibility"], body["eligibility_source"], body["eligibility_override"]) == ("a_verifier", "auto", None)
 

@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 
 from app.jobs.context import JobContext
 from app.jobs.tiers import tier_tickers
-from app.models import Security
+from app.models import Security, SecurityFundamentals
 from app.providers.base import DailyBar, Quote
 from app.repositories.market_data import (
     delete_daily_prices, last_two_closes, latest_price_dates, refreshable_securities, stored_close, ticker_ids,
@@ -108,7 +108,9 @@ def refresh_fundamentals(ctx: JobContext) -> int:
             continue
         with ctx.session_factory() as session:
             upsert_fundamentals(session, security_id, fundamentals)
-            update_classification(session.get(Security, security_id), fundamentals.sector, fundamentals.industry)
+            session.flush()
+            update_classification(session.get(Security, security_id), fundamentals.sector, fundamentals.industry,
+                                  session.get(SecurityFundamentals, security_id))
             session.commit()
         count += 1
     return count

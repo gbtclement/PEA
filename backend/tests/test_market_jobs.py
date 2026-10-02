@@ -8,6 +8,7 @@ from app.services.market_calendar import PARIS
 from app.jobs.market import refresh_daily_history, refresh_fundamentals, refresh_quotes
 from app.models import DailyPrice, Security, SecurityFundamentals, SecurityQuote
 from app.providers.base import DailyBar, Fundamentals, Quote
+from app.repositories.envelopes import set_envelope_override
 from tests.factories import make_security
 from tests.fakes import FakeMarket
 
@@ -49,7 +50,7 @@ def test_quote_tiers(db, make_ctx):
     refresh_quotes(ctx, 1)
     refresh_quotes(ctx, 2)
     refresh_quotes(ctx, 3)
-    assert market.quote_calls == [["^FCHI"], ["A.PA"], ["B.PA"]]
+    assert market.quote_calls == [["^FCHI"], ["A.PA"], ["B.PA", "US.PA"]]  # suivi quelle que soit l'enveloppe
 
 
 def test_refresh_quotes_stores_prices(db, make_ctx):
@@ -133,12 +134,12 @@ def test_history_reloads_after_split(db, make_ctx):
 def test_fundamentals_without_industry_keep_known_one(db, make_ctx):
     stock = make_security(db, "GFC.PA")
     stock.industry = "REIT - Office"
-    stock.eligibility = "a_verifier"
+    stock.envelope("pea").status = "a_verifier"
     db.flush()
     market = FakeMarket(fundamentals={"GFC.PA": fundamentals(industry=None)})
     refresh_fundamentals(make_ctx(market=market, now=NOW))
     refreshed = db.get(Security, stock.id)
-    assert (refreshed.industry, refreshed.eligibility) == ("REIT - Office", "a_verifier")
+    assert (refreshed.industry, refreshed.envelope_status("pea")) == ("REIT - Office", "a_verifier")
 
 
 def test_history_backfill_then_incremental(db, make_ctx):
@@ -154,11 +155,13 @@ def test_history_backfill_then_incremental(db, make_ctx):
     assert count == 2
 
 
-def test_history_skips_non_eligible(db, make_ctx):
+def test_history_follows_every_active_security(db, make_ctx):
     make_security(db, "US.PA", eligibility="non_eligible", country="US")
-    market = FakeMarket()
+    make_security(db, "OLD.PA", active=False)
+    market = FakeMarket(history={"US.PA": [DailyBar(date(2026, 9, 25), 1, 1, 1, 1.0, 10)]})
     refresh_daily_history(make_ctx(market=market, now=NOW))
-    assert all("US.PA" not in tickers for tickers, _ in market.history_calls)
+    assert any("US.PA" in tickers for tickers, _ in market.history_calls)
+    assert all("OLD.PA" not in tickers for tickers, _ in market.history_calls)
 
 
 def test_fundamentals_store_and_reclassify(db, make_ctx):
@@ -169,15 +172,15 @@ def test_fundamentals_store_and_reclassify(db, make_ctx):
     assert market.fundamental_calls == ["GFC.PA"]  # pas d'ETF
     assert db.get(SecurityFundamentals, stock.id).pe == 15.0
     refreshed = db.get(Security, stock.id)
-    assert (refreshed.industry, refreshed.eligibility) == ("REIT - Office", "a_verifier")
-    assert db.get(Security, etf.id).eligibility == "eligible"
+    assert (refreshed.industry, refreshed.envelope_status("pea")) == ("REIT - Office", "a_verifier")
+    assert db.get(Security, etf.id).envelope_status("pea") == "eligible"
 
 
 def test_fundamentals_keep_override(db, make_ctx):
     stock = make_security(db, "GFC.PA")
-    stock.eligibility_override = "eligible"
+    set_envelope_override(stock, "pea", "eligible", None)
     db.flush()
     market = FakeMarket(fundamentals={"GFC.PA": fundamentals(industry="REIT - Office")})
     refresh_fundamentals(make_ctx(market=market, now=NOW))
     refreshed = db.get(Security, stock.id)
-    assert (refreshed.eligibility, refreshed.eligibility_source) == ("eligible", "override")
+    assert (refreshed.envelope_status("pea"), refreshed.envelope("pea").source) == ("eligible", "manual")

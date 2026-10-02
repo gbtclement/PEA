@@ -24,12 +24,13 @@ class SecurityItem(BaseModel):
 
     @classmethod
     def build(cls, security: Security, quote: SecurityQuote | None) -> "SecurityItem":
+        pea = security.envelope("pea")
         return cls(
             id=security.id, yahoo_ticker=security.yahoo_ticker, symbol=security.symbol, name=security.name,
             kind=security.kind, market=security.market, country=security.country, sector=security.sector,
-            eligibility=security.eligibility,
-            eligibility_source=security.eligibility_source,
-            eligibility_override=security.eligibility_override,
+            eligibility=pea.status if pea else "a_verifier",
+            eligibility_source=pea.source if pea else "auto",
+            eligibility_override=pea.override if pea else None,
             price=quote.price if quote else None,
             change_pct=quote.change_pct if quote else None,
             as_of=quote.as_of if quote else None,
@@ -42,4 +43,4 @@ class SecurityList(BaseModel):
 
 
 class EligibilityUpdate(BaseModel):
-    override: Literal["eligible", "non_eligible"] | None
+    override: Literal["eligible", "a_verifier", "non_eligible"] | None

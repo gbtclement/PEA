@@ -18,7 +18,7 @@ HEATMAP_SIZE = 200
 def _liquid_eligible_stocks(db: Session, user_id: uuid.UUID | None) -> list:
     return [
         row for row in screener_rows(db, user_id, kind="stock")
-        if row[0].eligibility == "eligible" and row[2] is not None and row[2].liquid
+        if row[0].envelope_status("pea") == "eligible" and row[2] is not None and row[2].liquid
         and row[1] is not None and row[1].change_pct is not None
     ]
 

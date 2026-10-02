@@ -71,7 +71,7 @@ def _resolve(db: Session, ticker: object) -> Security:
     if found is None:
         # symbole seul : priorité aux titres éligibles, puis à Paris
         candidates = list(db.scalars(base.where(func.upper(Security.symbol) == value)))
-        candidates.sort(key=lambda s: (s.eligibility != "eligible", not s.yahoo_ticker.endswith(".PA")))
+        candidates.sort(key=lambda s: (s.envelope_status("pea") != "eligible", not s.yahoo_ticker.endswith(".PA")))
         found = candidates[0] if candidates else None
     if found is None:
         raise ToolError(f"Titre introuvable : {ticker}. Utilisez search_securities pour trouver le bon ticker.")
@@ -85,7 +85,7 @@ def _search(db: Session, user: User, args: dict) -> list[dict]:
     limit = args.get("limit") if isinstance(args.get("limit"), int) else 8
     rows, _ = search_securities(db, q=query, kind=None, eligibility=None, limit=max(1, min(limit, 10)), offset=0)
     return [{"ticker": s.yahoo_ticker, "symbol": s.symbol, "name": s.name, "kind": s.kind, "market": s.market,
-             "eligibility": s.eligibility, "price": q.price if q else None, "change_pct": q.change_pct if q else None}
+             "eligibility": s.envelope_status("pea"), "price": q.price if q else None, "change_pct": q.change_pct if q else None}
             for s, q in rows]
 
 

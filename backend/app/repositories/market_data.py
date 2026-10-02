@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Row, delete, func, or_, select
+from sqlalchemy import Row, delete, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -9,12 +9,8 @@ from app.providers.base import DailyBar, Fundamentals, Quote
 
 
 def refreshable_securities(session: Session) -> list[Security]:
-    """Titres actifs dont on suit les cours : indices + titres non exclus (règle revue au bloc B)."""
-    stmt = select(Security).where(
-        Security.active.is_(True),
-        or_(Security.kind == "index", Security.eligibility != "non_eligible"),
-    )
-    return list(session.scalars(stmt))
+    """Titres actifs dont on suit les cours : tous, quelle que soit leur enveloppe."""
+    return list(session.scalars(select(Security).where(Security.active.is_(True))))
 
 
 def ticker_ids(session: Session, tickers: list[str]) -> dict[str, int]:

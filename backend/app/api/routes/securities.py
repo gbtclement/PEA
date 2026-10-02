@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 
 from app.core.current_user import require_admin
 from app.core.db import get_db
-from app.models import Security, SecurityQuote, User
-from app.repositories.securities import search_securities, set_eligibility_override
+from app.models import Security, SecurityFundamentals, SecurityQuote, User
+from app.repositories.envelopes import set_envelope_override
+from app.repositories.securities import search_securities
 from app.schemas.securities import EligibilityUpdate, SecurityItem, SecurityList
 
 router = APIRouter(tags=["securities"])
@@ -36,6 +37,6 @@ def update_eligibility(
     security = db.get(Security, security_id)
     if security is None:
         raise HTTPException(status_code=404, detail="Titre introuvable")
-    set_eligibility_override(security, update.override)
+    set_envelope_override(security, "pea", update.override, db.get(SecurityFundamentals, security_id))
     db.commit()
     return SecurityItem.build(security, db.get(SecurityQuote, security_id))

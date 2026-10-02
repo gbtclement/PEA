@@ -32,7 +32,7 @@ class ScreenerRow(BaseModel):
         return dict(
             id=security.id, yahoo_ticker=security.yahoo_ticker, symbol=security.symbol, name=security.name,
             kind=security.kind, market=security.market, country=security.country, sector=security.sector,
-            eligibility=security.eligibility,
+            eligibility=security.envelope_status("pea") or "a_verifier",
             price=quote.price if quote else None,
             change_pct=quote.change_pct if quote else None,
             perf_1w=score.perf_1w if score else None,

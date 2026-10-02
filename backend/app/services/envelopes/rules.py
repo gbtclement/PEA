@@ -102,14 +102,3 @@ def filtering_envelopes(codes: Iterable[str]) -> frozenset[str]:
     if CTO in chosen:
         return frozenset()
     return frozenset(chosen & set(RULE_ENVELOPES))
-
-
-# Anciens noms, utilisés jusqu'à la tâche 2 du bloc B (stockage par enveloppe).
-def classify_eligibility(country: str | None, industry: str | None) -> str:
-    return pea_status(SecurityFacts(kind="stock", country=country, industry=industry))[0]
-
-
-def effective_eligibility(auto: str, override: str | None, auto_source: str = "auto") -> tuple[str, str]:
-    if override in (ELIGIBLE, NOT_ELIGIBLE):
-        return override, "override"
-    return auto, auto_source

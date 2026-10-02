@@ -4,6 +4,7 @@ from sqlalchemy import Row, literal, select
 from sqlalchemy.orm import Session
 
 from app.models import Favorite, Security, SecurityFundamentals, SecurityQuote, SecurityScore
+from app.repositories.envelopes import envelope_clause
 
 
 def screener_rows(
@@ -35,7 +36,7 @@ def screener_rows(
     if only_top:
         # L'éligibilité est revérifiée ici : une correction manuelle doit sortir le titre du top immédiatement.
         stmt = stmt.where(
-            SecurityScore.eligible_for_top.is_(True), Security.eligibility == "eligible", Security.kind == "stock",
+            SecurityScore.eligible_for_top.is_(True), envelope_clause(["pea"]), Security.kind == "stock",
         ).order_by(
             SecurityScore.total.desc(), SecurityScore.avg_turnover_eur.desc())
     else:

@@ -93,7 +93,7 @@ def refresh_scores(ctx: JobContext) -> int:
             turnover_eur = to_eur(turnover, currency_for_market(s.market)) or 0.0
             liquid = turnover_eur >= settings.min_turnover_eur
             eligible_for_top = (
-                s.kind == "stock" and s.eligibility == "eligible" and liquid
+                s.kind == "stock" and s.envelope_status("pea") == "eligible" and liquid
                 and len(bars) >= settings.min_history_days
                 and result.total is not None and result.available_ratio >= settings.min_available_ratio
             )
