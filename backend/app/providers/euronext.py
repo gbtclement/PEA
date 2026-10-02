@@ -8,6 +8,7 @@ import httpx
 
 from app.core.brand import APP_NAME
 from app.providers.base import ListedSecurity
+from app.providers.listing_source import SourceListing
 from app.providers.retry import with_retries
 
 logger = logging.getLogger(__name__)
@@ -111,3 +112,19 @@ class EuronextListingProvider:
         response = httpx.post(url, data=data, headers={"User-Agent": f"Mozilla/5.0 ({APP_NAME})"}, timeout=60)
         response.raise_for_status()
         return response.text
+
+
+EURONEXT_ETF_URL = ("https://live.euronext.com/en/pd_es/data/track/download"
+                    "?mics=XPAR,XAMS,XBRU,XMIL,XLIS,XDUB,XOSL,ETFP")  # dm_all_track ne renvoie aucune ligne
+
+
+class EuronextEtfListingProvider(SourceListing):
+    source = "euronext_etf"
+    min_rows = 1000
+
+    def __init__(self, http_post: Callable[[str, dict[str, str]], str] | None = None, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._http_post = http_post or EuronextListingProvider._default_post
+
+    def fetch_live(self) -> list[ListedSecurity]:
+        return parse_euronext_csv(self._http_post(EURONEXT_ETF_URL, FORM_DATA), kind="etf")
