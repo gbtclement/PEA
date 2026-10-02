@@ -4,7 +4,7 @@ On y arrive en cliquant sur un titre n'importe où dans l'application.
 
 ## En-tête
 
-Le nom, le ticker, la place de cotation, le cours, la variation du jour et le badge d'éligibilité. Trois boutons :
+Le nom, le ticker, la place de cotation, le cours, la variation du jour et les badges d'enveloppe (PEA, PEA-PME), avec un rappel qu'ils sont déduits automatiquement. Trois boutons :
 
 - ⭐ **Favori** : le titre apparaît dans le filtre « favoris », et son cours est rafraîchi en priorité (toutes les minutes pendant la séance).
 - ✨ **Demander à l'IA** : ouvre l'assistant avec ce titre comme sujet et des questions prêtes.

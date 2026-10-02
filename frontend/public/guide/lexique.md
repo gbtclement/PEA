@@ -19,6 +19,7 @@
 | **Dividende** | Part du bénéfice reversée aux actionnaires |
 | **Diversification** | Répartir son argent sur plusieurs placements pour limiter le risque |
 | **Éligible PEA** | Titre qui peut être détenu dans un PEA. Voir [Le PEA](bourse/pea.md) |
+| **Enveloppe** | Le compte sur lequel on investit : PEA, PEA-PME ou compte-titres. À choisir dans les [Réglages](app/reglages.md) |
 | **ETF (tracker)** | Fonds coté qui reproduit un indice. Voir [Les ETF](bourse/etf.md) |
 | **Euronext** | L'entreprise qui gère les bourses de Paris, Amsterdam, Bruxelles, Milan, Lisbonne, Dublin et Oslo |
 | **Fixing** | Moment où un prix unique est calculé pour équilibrer tous les ordres en attente (à l'ouverture et à la clôture) |
@@ -33,6 +34,7 @@
 | **Ordre** | Instruction d'achat ou de vente donnée à sa banque. Voir [Passer un ordre](bourse/ordres-et-frais.md) |
 | **Ordre à cours limité** | Ordre exécuté seulement à un prix maximum (achat) ou minimum (vente) choisi |
 | **PEA** | Plan d'épargne en actions : compte avec un avantage fiscal après 5 ans. Voir [Le PEA](bourse/pea.md) |
+| **PEA-PME** | Plan d'épargne réservé aux actions de petites et moyennes entreprises européennes, avec la fiscalité du PEA et un plafond commun. Voir [Le PEA](bourse/pea.md) |
 | **PER** | Cours ÷ bénéfice par action : combien on paie pour 1 € de bénéfice annuel |
 | **Plus-value latente** | Gain « sur le papier » sur des titres encore détenus |
 | **Plus-value réalisée** | Gain réellement encaissé lors d'une vente |

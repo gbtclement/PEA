@@ -14,7 +14,7 @@ Navigateur ──POST /api/assistant/conversations/{id}/messages──► api
                                           réponse et coût enregistrés en base
 ```
 
-1. Le message de l'utilisateur est enregistré, puis `chat.py` appelle Claude (SDK `anthropic`) en streaming, avec l'historique, la consigne système (`prompt.py`) et les outils.
+1. Le message de l'utilisateur est enregistré, puis `chat.py` appelle Claude (SDK `anthropic`) en streaming, avec l'historique, la consigne système (`prompt.py`) et les outils. La consigne système reçoit les enveloppes choisies par l'utilisateur : sans choix (ou avec le compte-titres), l'assistant ne suppose pas qu'il investit via un PEA ; sinon il sait que le top 10 qu'il reçoit est déjà filtré sur ces enveloppes.
 2. Quand Claude demande un outil, l'API l'exécute sur **ses propres données** (`tools.py`) et renvoie le résultat. Ce tour se répète au maximum `ASSISTANT_MAX_ROUNDS` fois (8).
 3. Le texte est relayé au navigateur en **Server-Sent Events** (`streaming.py`).
 4. La réponse tourne dans un **fil séparé, avec sa propre session de base**. Elle est enregistrée même si le navigateur se déconnecte, et l'appel à Claude est alors interrompu pour ne pas payer une réponse que personne ne lit.
@@ -24,7 +24,7 @@ Navigateur ──POST /api/assistant/conversations/{id}/messages──► api
 | Outil | Rôle |
 |---|---|
 | `search_securities` | Recherche par nom, ticker ou ISIN |
-| `get_security_overview` | Cours, score détaillé, fondamentaux, éligibilité |
+| `get_security_overview` | Cours, score détaillé, fondamentaux, enveloppes |
 | `get_price_history` | Clôtures et indicateurs sur une période |
 | `get_top10` | Top 10 actuel |
 | `get_portfolio` | Positions, performance, compteur d'ordres |

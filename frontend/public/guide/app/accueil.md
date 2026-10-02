@@ -14,7 +14,7 @@ C'est le tableau de bord du jour. Elle se met à jour toute seule pendant la sé
 
 ## Top 10
 
-Les 10 actions éligibles au PEA qui ont le meilleur **score** en ce moment. Pour chacune :
+Les 10 actions qui ont le meilleur **score** en ce moment, parmi celles compatibles avec vos enveloppes si vous en avez choisi (voir [Réglages](app/reglages.md)). Pour chacune :
 
 - le rang, le nom, le cours et la variation du jour ;
 - une **jauge** du score sur 100 ;
@@ -25,7 +25,7 @@ Les 10 actions éligibles au PEA qui ont le meilleur **score** en ce moment. Pou
 Un clic sur une ligne ouvre la [fiche du titre](app/fiche-titre.md). Le calcul du score est expliqué dans [Comprendre le score](app/score.md).
 
 Pour entrer dans le top 10, une action doit :
-- être **éligible au PEA** (confirmée, pas « à vérifier ») ;
+- (si vous avez choisi des enveloppes) être **compatible avec l'une d'elles** : un titre « à vérifier » n'entre pas ;
 - être **assez échangée** : au moins 500 000 € par jour en moyenne, pour pouvoir acheter et revendre facilement ;
 - être **cotée depuis au moins 200 séances**, soit environ 10 mois ;
 - être **assez bien renseignée** : au moins 60 % des points du score calculables.

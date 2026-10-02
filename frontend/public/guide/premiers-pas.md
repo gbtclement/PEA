@@ -6,13 +6,15 @@ Un parcours type, de la découverte d'une action jusqu'au suivi de votre achat.
 
 Cliquez sur **Créer un compte** en bas de la barre latérale, puis saisissez le code reçu par mail. Le compte est gratuit : il garde votre portefeuille, vos favoris et vos réglages. Voir [Votre compte](app/compte.md).
 
-## 2. Régler vos frais
+## 2. Régler vos enveloppes et vos frais
 
-Allez dans **Réglages** et saisissez la grille de frais de votre courtier. Les valeurs proposées ne sont qu'un exemple (formule *Invest Store Intégral* du Crédit Agricole). Les calculs de frais de toute l'application en dépendent. Voir [Réglages](app/reglages.md).
+Allez dans **Réglages**. Dans **Mes enveloppes**, cochez les comptes sur lesquels vous investissez (PEA, PEA-PME, compte-titres) : le top 10 et les classements s'y adapteront.
+
+Saisissez ensuite la grille de frais de votre courtier. Les valeurs proposées ne sont qu'un exemple (formule *Invest Store Intégral* du Crédit Agricole). Les calculs de frais de toute l'application en dépendent. Voir [Réglages](app/reglages.md).
 
 ## 3. Repérer des idées
 
-Sur la **page d'accueil**, regardez le **top 10** : les 10 actions éligibles au PEA les mieux notées en ce moment, avec leurs trois principales raisons.
+Sur la **page d'accueil**, regardez le **top 10** : les 10 actions les mieux notées en ce moment (parmi vos enveloppes si vous en avez choisi), avec leurs trois principales raisons.
 
 > Exemple : « ✅ Tendance haussière (cours au-dessus des moyennes 50 et 200 jours) », « ✅ Dividende de 3,8 % », « ⚠️ Valorisation élevée ».
 

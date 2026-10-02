@@ -20,7 +20,7 @@ Le **Plan d'épargne en actions** est un compte pour investir en bourse avec un 
 
 On **ne peut pas** y acheter directement des actions américaines (Apple, Microsoft), suisses (Nestlé), britanniques (Shell), ni des obligations.
 
-C'est pourquoi Cotalyx affiche un badge d'éligibilité sur chaque titre.
+C'est pourquoi Cotalyx affiche un badge **PEA** sur chaque titre compatible.
 
 ## La fiscalité
 
@@ -46,3 +46,11 @@ Un PEA peut être transféré d'une banque à une autre **sans perdre son ancien
 ## Et le PEA-PME ?
 
 Un second plan, destiné aux petites et moyennes entreprises, avec les mêmes avantages fiscaux. Son plafond est commun avec celui du PEA : 225 000 € de versements au total pour les deux.
+
+Il accepte les actions de PME et d'ETI européennes : en gros, moins de 5 000 salariés, un chiffre d'affaires d'au plus 1,5 Md€ et une capitalisation sous 1 Md€. Cotalyx **estime** ces critères à partir des chiffres publiés et affiche un badge **PEA-PME** ; vérifiez auprès de votre banque avant un achat important.
+
+## Et le compte-titres ?
+
+Le **compte-titres** (CTO) accepte tous les titres, du monde entier, mais sans avantage fiscal : les gains sont imposés chaque année où vous les réalisez.
+
+Choisissez vos enveloppes dans les [Réglages](app/reglages.md) : le top 10, les classements et les prévisions ne montreront que les titres compatibles. Si vous cochez le compte-titres, ou rien, vous verrez tous les titres.
