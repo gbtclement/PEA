@@ -62,7 +62,8 @@ def test_filters_and_pagination(client, db):
     seed(db)
     assert client.get("/api/securities", params={"kind": "etf"}).json()["total"] == 1
     assert client.get("/api/securities", params={"kind": "index"}).json()["items"][0]["yahoo_ticker"] == "^FCHI"
-    assert client.get("/api/securities", params={"eligibility": "non_eligible"}).json()["total"] == 1
+    assert client.get("/api/securities", params={"envelope": "pea"}).json()["total"] == 3  # L'Oréal, LVMH, l'ETF
+    assert client.get("/api/securities", params={"envelope": "livret"}).status_code == 422
     page = client.get("/api/securities", params={"limit": 2, "offset": 2}).json()
     assert page["total"] == 4 and len(page["items"]) == 2
 

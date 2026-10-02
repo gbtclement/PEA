@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Security, SecurityEnvelope, SecurityFundamentals, SecurityQuote
 from app.repositories.envelopes import refresh_envelopes
+from app.services.envelopes.rules import ELIGIBLE
 
 
 @dataclass(frozen=True)
@@ -71,7 +72,7 @@ def search_securities(
     *,
     q: str | None,
     kind: str | None,
-    eligibility: str | None,
+    envelope: str | None,
     limit: int,
     overridden: bool = False,
     offset: int,
@@ -82,9 +83,9 @@ def search_securities(
         .where(Security.active.is_(True))
     )
     stmt = stmt.where(Security.kind == kind) if kind else stmt.where(Security.kind != "index")
-    if eligibility:
-        stmt = stmt.where(exists().where(SecurityEnvelope.security_id == Security.id, SecurityEnvelope.envelope == "pea",
-                                         SecurityEnvelope.status == eligibility))
+    if envelope:
+        stmt = stmt.where(exists().where(SecurityEnvelope.security_id == Security.id, SecurityEnvelope.envelope == envelope,
+                                         SecurityEnvelope.status == ELIGIBLE))
     if overridden:
         stmt = stmt.where(exists().where(SecurityEnvelope.security_id == Security.id, SecurityEnvelope.override.is_not(None)))
     if q and q.strip():

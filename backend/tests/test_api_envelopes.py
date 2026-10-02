@@ -63,7 +63,7 @@ def test_top_follows_the_user_envelopes(client, db, user):
 def test_manual_correction_leaves_the_pea_top_at_once(client, db, user, admin_client):
     _, pea, _, _ = _top_universe(db)
     _choose(db, user, ["pea"])
-    admin_client.patch(f"/api/securities/{pea.id}/eligibility", json={"override": "non_eligible"})
+    admin_client.patch(f"/api/securities/{pea.id}/envelopes/pea", json={"override": "non_eligible"})
     assert "LVMH" not in _top_names(client)
 
 

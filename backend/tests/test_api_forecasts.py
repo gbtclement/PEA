@@ -74,7 +74,7 @@ def test_latest_predictions_ordered_by_one_week_rank(client, seeded):
     assert names == ["Airbus", "LVMH", "Étranger"]
     lvmh = body["rows"][1]
     assert lvmh["security"]["price"] == pytest.approx(612.4)
-    assert lvmh["security"]["eligibility"] == "eligible"
+    assert lvmh["security"]["envelopes"] == ["pea"]
     assert lvmh["horizons"]["1d"] == {"expected_return": 0.002, "prob_up": 0.56, "reliability": "elevee", "rank": 1}
     assert body["rows"][0]["horizons"]["1d"] is None
     assert body["rows"][0]["signals"] == [
