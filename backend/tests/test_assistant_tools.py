@@ -61,7 +61,10 @@ def test_price_history_sampled_with_indicators(db, user):
     assert result["indicators"]["sma50"] is not None and result["indicators"]["rsi14"] == pytest.approx(100.0)
     assert result["performance_pct"] > 0
     with pytest.raises(ToolError):
-        run_tool(db, user, "get_price_history", {"ticker": "MC.PA", "period": "10Y"})
+        run_tool(db, user, "get_price_history", {"ticker": "MC.PA", "period": "2Y"})
+    full = run_tool(db, user, "get_price_history", {"ticker": "MC.PA", "period": "MAX"})
+    month = run_tool(db, user, "get_price_history", {"ticker": "MC.PA", "period": "1M"})
+    assert full["first_date"] < month["first_date"] and full["closes"][-1]["close"] == 359.0
 
 
 def test_top10_and_portfolio_empty(db, user):
