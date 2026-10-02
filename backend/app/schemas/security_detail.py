@@ -107,6 +107,7 @@ class SimulationOut(BaseModel):
     gain: float
     gain_pct: float | None
     message: str | None
+    note: str | None = None  # « historique disponible depuis le … » quand la durée dépasse l'historique
 
 
 class FeeEstimate(BaseModel):

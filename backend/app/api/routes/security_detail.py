@@ -21,6 +21,7 @@ from app.schemas.security_detail import (
 )
 from app.services.fees import broker_fee
 from app.services.fx import currency_for_market, to_eur
+from app.services.durations import Unit, date_before
 from app.services.indicators import macd, rsi, sma
 from app.services.price_window import choose_interval, groups
 
@@ -156,12 +157,16 @@ def simulate(
     security_id: int,
     amount: float = Query(..., gt=0, le=1_000_000),
     period: Literal["1W", "1M", "6M", "1Y"] = "1M",
+    duration: int | None = Query(None, ge=1, le=36500),
+    unit: Unit = "days",
     db: Session = Depends(get_db),
     user: User | None = Depends(get_optional_user),
 ) -> SimulationOut:
+    """Boutons rapides (`period`) ou durée libre (`duration` + `unit`, prioritaire)."""
     prices = all_daily_prices(db, security_id)
     last = prices[-1].date if prices else date.today()
-    return simulate_since(db, user.id if user else None, security_id, amount, last - timedelta(days=SIMULATION_WINDOW[period]))
+    first_day = date_before(last, duration, unit) if duration is not None else last - timedelta(days=SIMULATION_WINDOW[period])
+    return simulate_since(db, user.id if user else None, security_id, amount, first_day)
 
 
 def simulate_since(db: Session, user_id: uuid.UUID | None, security_id: int, amount: float, first_day: date) -> SimulationOut:
@@ -175,6 +180,9 @@ def simulate_since(db: Session, user_id: uuid.UUID | None, security_id: int, amo
         return SimulationOut(start_date=None, start_price=None, current_price=None,
                              message="Pas assez d'historique pour simuler cet achat.", **empty)
     start = next((p for p in prices if p.date >= first_day), prices[-1])
+    note = None
+    if first_day < prices[0].date:
+        note = f"Historique disponible depuis le {prices[0].date:%d/%m/%Y} : la simulation part de cette date."
     start_price = round(start.close * rate, 4)
     current_price = round((quote.price if quote else prices[-1].close) * rate, 4)
     shares = math.floor(amount / start_price) if start_price > 0 else 0
@@ -182,7 +190,7 @@ def simulate_since(db: Session, user_id: uuid.UUID | None, security_id: int, amo
         return SimulationOut(
             start_date=start.date, start_price=start_price, current_price=current_price,
             message=f"Le montant ne permet pas d'acheter une action (cours de {start_price:.2f} €).".replace(".", ",", 1),
-            **empty,
+            note=note, **empty,
         )
     grid = user_fee_grid(db, user_id)
     invested = round(shares * start_price, 2)
@@ -193,5 +201,5 @@ def simulate_since(db: Session, user_id: uuid.UUID | None, security_id: int, amo
     return SimulationOut(
         start_date=start.date, start_price=start_price, current_price=current_price, shares=shares,
         invested=invested, buy_fee=buy_fee, sell_fee=sell_fee, current_value=current_value, gain=gain,
-        gain_pct=round(gain / (invested + buy_fee) * 100, 2), message=None,
+        gain_pct=round(gain / (invested + buy_fee) * 100, 2), message=None, note=note,
     )

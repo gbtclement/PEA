@@ -154,7 +154,32 @@ def test_simulate(client, db):
     assert body["buy_fee"] == 1.32 and body["current_value"] == 800.0 and body["sell_fee"] == 1.44
     assert body["gain"] == 61.24
     assert body["message"] is None
+    assert body["note"] is None
 
+
+
+def test_simulate_custom_duration(client, db):
+    security = with_history(db)  # clôture du jour i : 100 + i, dernier jour le 25/09
+    body = client.get(f"/api/securities/{security.id}/simulate",
+                      params={"amount": 1000, "duration": 2, "unit": "weeks"}).json()
+    assert body["start_date"] == "2026-09-11" and body["start_price"] == 385.0
+    assert body["note"] is None
+
+
+def test_simulate_beyond_history_starts_at_first_close(client, db):
+    security = with_history(db)
+    first = LAST - timedelta(days=299)
+    body = client.get(f"/api/securities/{security.id}/simulate",
+                      params={"amount": 1000, "duration": 10, "unit": "years"}).json()
+    assert body["start_date"] == first.isoformat() and body["start_price"] == 100.0
+    assert body["note"] == f"Historique disponible depuis le {first:%d/%m/%Y} : la simulation part de cette date."
+
+
+def test_simulate_rejects_invalid_duration(client, db):
+    security = with_history(db)
+    url = f"/api/securities/{security.id}/simulate"
+    assert client.get(url, params={"amount": 500, "duration": 0, "unit": "days"}).status_code == 422
+    assert client.get(url, params={"amount": 500, "duration": 2, "unit": "decades"}).status_code == 422
 
 def test_simulate_amount_below_price(client, db):
     security = with_history(db)
