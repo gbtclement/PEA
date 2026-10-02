@@ -32,11 +32,14 @@ def sync_subscriptions(ctx: JobContext) -> int:
                 with db.begin_nested():
                     user = db.get(User, row.user_id)
                     apply_subscription(db, user, ctx.billing.subscription(row.stripe_subscription_id), now=now)
-                    ctx.billing.update_customer_email(row.stripe_customer_id, user.email)
             except Exception:
                 logger.exception("Synchronisation Stripe impossible pour %s", row.stripe_subscription_id)
                 continue
             done += 1
+            try:  # à part : une adresse refusée par Stripe n'annule pas l'état relu juste avant
+                ctx.billing.update_customer_email(row.stripe_customer_id, user.email)
+            except Exception:
+                logger.exception("Mise à jour du mail Stripe impossible pour %s", row.stripe_customer_id)
         db.commit()
     return done
 
@@ -82,7 +85,10 @@ def process_cancellations(ctx: JobContext) -> int:
     with ctx.session_factory() as db:
         for row in db.scalars(select(StripeCancellation).with_for_update(skip_locked=True)).all():
             try:
-                ctx.billing.cancel_now(row.subscription_id)
+                if row.subscription_id.startswith("cs_"):  # page de paiement d'un compte supprimé
+                    ctx.billing.expire_checkout(row.subscription_id)
+                else:
+                    ctx.billing.cancel_now(row.subscription_id)
             except BillingUnavailable as error:
                 row.attempts += 1
                 row.last_error = str(error)[:500]

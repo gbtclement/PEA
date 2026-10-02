@@ -112,3 +112,9 @@ test("colonne Premium : abonné, offert, admin", async () => {
   expect(await screen.findByText("Abonné (annuel)")).toBeInTheDocument();
   expect(screen.getByText("Offert")).toBeInTheDocument();
 });
+
+test("signale les résiliations Stripe en attente", async () => {
+  api({ "/api/admin/config-status": { ...STATUS, stripe_pending_cancellations: 2 } });
+  renderWithProviders(<AdminPage />);
+  expect(await screen.findByText(/2 résiliations en attente/)).toBeInTheDocument();
+});

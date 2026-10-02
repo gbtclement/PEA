@@ -11,7 +11,7 @@ from app.api.routes.auth import fail
 from app.core.config import get_settings
 from app.core.current_user import get_now, require_admin
 from app.core.db import get_db
-from app.models import StripeEvent, User
+from app.models import StripeCancellation, StripeEvent, User
 from app.repositories.app_settings import get_app_settings
 from app.schemas.admin import (
     AdminSettingsIn, AdminSettingsOut, AdminUserListOut, AdminUserOut, AdminUserUpdate, ConfigStatusOut, DeleteUserIn,
@@ -112,7 +112,9 @@ def admin_config_status(google: GoogleClient | None = Depends(get_google_client)
                            app_secret=bool(s.app_secret) and s.app_secret != "change-me",
                            admin_email=bool(s.admin_email), stripe=billing is not None,
                            stripe_mode=billing.mode if billing else None,
-                           stripe_last_webhook_at=db.scalar(select(func.max(StripeEvent.received_at))))
+                           stripe_last_webhook_at=db.scalar(select(func.max(StripeEvent.received_at))),
+                           stripe_pending_cancellations=db.scalar(
+                               select(func.count()).select_from(StripeCancellation)) or 0)
 
 
 @router.post("/test-email", response_model=NoticeOut, status_code=202)

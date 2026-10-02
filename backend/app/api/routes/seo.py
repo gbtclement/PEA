@@ -42,6 +42,7 @@ def robots(settings: SettingsDep) -> Response:
         lines.append("Disallow: /")
     else:
         lines += ["Allow: /$", "Allow: /explorer", "Allow: /etf", "Allow: /premium$", "Allow: /cgv", "Allow: /titres/", "Allow: /llms.txt"]
+        lines.append("Allow: /api/billing/plans")  # prix publics de la page /premium (avant la règle /api/billing/)
         lines += [f"Disallow: {path}" for path in PRIVATE_PATHS]
         lines += [f"Disallow: {path}" for path in PRIVATE_API_PATHS]
         lines += ["", f"Sitemap: {_url(settings, '/sitemap.xml')}"]

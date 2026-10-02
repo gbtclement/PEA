@@ -86,3 +86,9 @@ def test_premium_and_sales_terms_are_indexable(online):
     assert "Disallow: /api/billing/" in lines
     sitemap = online.get("/api/seo/sitemap.xml").text
     assert "/premium</loc>" in sitemap and "/cgv</loc>" in sitemap
+
+
+def test_robots_lets_robots_read_the_public_prices(online):
+    lines = online.get("/api/seo/robots.txt").text.splitlines()
+    assert "Allow: /api/billing/plans" in lines
+    assert lines.index("Allow: /api/billing/plans") < lines.index("Disallow: /api/billing/")
