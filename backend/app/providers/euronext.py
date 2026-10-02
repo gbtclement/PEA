@@ -32,6 +32,7 @@ MARKET_SUFFIXES: dict[str, str] = {
     "Euronext Access Brussels": ".BR",
     "Euronext Access Lisbon": ".LS",
     "Euronext Access Dublin": ".IR",
+    "ETF Plus": ".MI",  # segment ETF de Milan
 }
 _PRIORITY = {market: rank for rank, market in enumerate(MARKET_SUFFIXES)}
 _EXPECTED_HEADER = "Name;ISIN;Symbol;Market"
@@ -54,7 +55,7 @@ def yahoo_ticker_for(symbol: str, market: str) -> str | None:
     return f"{symbol.strip()}{suffix}" if suffix else None
 
 
-def parse_euronext_csv(text: str) -> list[ListedSecurity]:
+def parse_euronext_csv(text: str, kind: str = "stock") -> list[ListedSecurity]:
     lines = text.lstrip("﻿").splitlines()
     if not lines or not lines[0].startswith(_EXPECTED_HEADER):
         raise ValueError("Format de fichier Euronext inattendu")
@@ -70,11 +71,16 @@ def parse_euronext_csv(text: str) -> list[ListedSecurity]:
         rank = _PRIORITY[primary]
         current = best.get(isin)
         if current is None or rank < current[0]:
-            best[isin] = (rank, ListedSecurity(isin=isin, symbol=symbol, name=name, market=primary, yahoo_ticker=ticker))
+            best[isin] = (rank, ListedSecurity(
+                isin=isin, symbol=symbol, name=name, market=primary, yahoo_ticker=ticker, kind=kind,
+                currency=(row[4].strip() or None) if len(row) > 4 else None,
+            ))
     return sorted((security for _, security in best.values()), key=lambda s: s.name)
 
 
 class EuronextListingProvider:
+    source = "euronext"
+
     def __init__(
         self,
         url: str,

@@ -15,6 +15,8 @@ class Security(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(255), index=True)
     kind: Mapped[str] = mapped_column(String(10))  # stock | etf | index
     market: Mapped[str] = mapped_column(String(64))
+    currency: Mapped[str | None] = mapped_column(String(8))  # devise de cotation (GBp possible) ; vide = selon la place
+    source: Mapped[str | None] = mapped_column(String(16))  # liste d'origine : euronext, euronext_etf, us, xetra, six, nordic, seed
     country: Mapped[str | None] = mapped_column(String(2))
     sector: Mapped[str | None] = mapped_column(String(128))
     industry: Mapped[str | None] = mapped_column(String(128))
