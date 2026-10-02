@@ -20,7 +20,7 @@ from app.schemas.security_detail import (
     SimulationOut,
 )
 from app.services.fees import broker_fee
-from app.services.fx import currency_for_market, to_eur
+from app.services.fx import security_currency, to_eur
 from app.services.durations import Unit, date_before
 from app.services.indicators import macd, rsi, sma
 from app.services.price_window import choose_interval, groups
@@ -56,7 +56,7 @@ def get_security(security_id: int, db: Session = Depends(get_db), user: User | N
     return SecurityDetail(
         **SecurityDetail.fields_from(row),
         industry=security.industry,
-        currency=currency_for_market(security.market),
+        currency=security_currency(security),
         as_of=quote.as_of if quote else None,
         fundamentals=FundamentalsOut.model_validate(fundamentals) if fundamentals else None,
         score_detail=score_detail,
@@ -173,7 +173,7 @@ def simulate_since(db: Session, user_id: uuid.UUID | None, security_id: int, amo
     """Achat simulé à la première clôture à partir de `first_day`, revendu au dernier cours, frais inclus."""
     row = _row_or_404(db, user_id, security_id)
     security, quote = row[0], row[1]
-    rate = to_eur(1.0, currency_for_market(security.market)) or 1.0  # le simulateur compte en euros
+    rate = to_eur(1.0, security_currency(security)) or 1.0  # le simulateur compte en euros
     prices = all_daily_prices(db, security_id)
     empty = dict(shares=0, invested=0.0, buy_fee=0.0, sell_fee=0.0, current_value=0.0, gain=0.0, gain_pct=None)
     if not prices:

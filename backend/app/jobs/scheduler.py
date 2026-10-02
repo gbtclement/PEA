@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.jobs.billing import process_cancellations, send_renewal_notices, sync_subscriptions
 from app.jobs.context import JobContext
 from app.jobs.privacy import build_pending_exports
+from app.jobs.fx import refresh_fx
 from app.jobs.forecasts import refresh_forecast_stats, refresh_forecasts, stats_are_stale
 from app.jobs.cleanup import purge_security_data
 from app.jobs.mail import send_pending_emails
@@ -77,6 +78,7 @@ def universe_job(ctx: JobContext) -> None:
 
 def daily_job(ctx: JobContext) -> None:
     with HEAVY_JOBS_LOCK:
+        run_job(ctx, "fx", refresh_fx)
         run_job(ctx, "daily_history", refresh_daily_history)
         _refresh_scores(ctx)
         _refresh_forecasts(ctx)
@@ -86,6 +88,7 @@ def daily_job(ctx: JobContext) -> None:
 def evening_job(ctx: JobContext) -> None:
     """Après la clôture : cours de clôture officiels du jour, puis scores et prévisions (soirée et week-end exacts)."""
     with HEAVY_JOBS_LOCK:
+        run_job(ctx, "fx", refresh_fx)
         run_job(ctx, "daily_history", refresh_daily_history)
         _refresh_scores(ctx)
         _refresh_forecasts(ctx)
@@ -128,6 +131,7 @@ def bootstrap_job(ctx: JobContext) -> None:
     with HEAVY_JOBS_LOCK:
         if not has_securities or _older_than(universe_at, now - _DAILY_MAX_AGE):
             run_job(ctx, "universe", refresh_universe)
+        run_job(ctx, "fx", refresh_fx)  # avant les scores : liquidité convertie au cours du jour
         if not has_prices or _older_than(history_at, last_session_close(now)):
             run_job(ctx, "daily_history", refresh_daily_history)
         if _older_than(forecasts_at, last_session_close(now)):

@@ -178,3 +178,13 @@ def app_secret(monkeypatch):
     from app.core.config import get_settings
 
     monkeypatch.setattr(get_settings(), "app_secret", "secret-de-test")
+
+
+@pytest.fixture(autouse=True)
+def _default_fx_rates():
+    """Chaque test part de la table fixe des devises (un test peut charger des cours du jour)."""
+    from app.services import fx
+
+    fx.reset()
+    yield
+    fx.reset()

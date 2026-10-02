@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Favorite, MoveNotice, Security, SecurityQuote
 from app.repositories.orders import order_lines
-from app.services.fx import currency_for_market
+from app.services.fx import security_currency
 from app.services.market_calendar import PARIS
 from app.services.notifications.prefs import recipients
 from app.services.notifications.send import notify
@@ -38,7 +38,7 @@ def notify_price_moves(db: Session, now: datetime) -> int:
         if not moves:
             continue
         items = sorted(({"security_id": s.id, "name": s.name, "change_pct": q.change_pct, "price": q.price,
-                         "currency": currency_for_market(s.market)} for s, q in moves),
+                         "currency": security_currency(s)} for s, q in moves),
                        key=lambda item: -abs(item["change_pct"]))
         notify(db, user, "price_move", {"threshold": prefs.move_threshold_pct, "items": items},
                dedupe_key=f"price_move:{user.id}:{now.astimezone(PARIS):%Y%m%d%H%M}")

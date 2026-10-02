@@ -8,7 +8,7 @@ from app.jobs.context import JobContext
 from app.models import SecurityFundamentals, SecurityQuote, SecurityScore
 from app.repositories.market_data import daily_series, refreshable_securities
 from app.repositories.scores import sector_median_pe, upsert_score
-from app.services.fx import currency_for_market, to_eur
+from app.services.fx import security_currency, to_eur
 from app.services.indicators import macd, performance, rsi, sma
 from app.services.market_calendar import PARIS
 from app.services.scoring.score import ScoreInputs, compute_score
@@ -90,7 +90,7 @@ def refresh_scores(ctx: JobContext) -> int:
             ), kind=s.kind)
             recent = bars[-20:]
             turnover = sum(b.close * (b.volume or 0) for b in recent) / len(recent) if recent else 0.0
-            turnover_eur = to_eur(turnover, currency_for_market(s.market)) or 0.0
+            turnover_eur = to_eur(turnover, security_currency(s)) or 0.0
             liquid = turnover_eur >= settings.min_turnover_eur
             eligible_for_top = (
                 s.kind == "stock" and liquid

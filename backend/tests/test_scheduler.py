@@ -193,7 +193,7 @@ def test_evening_job_loads_closes_then_scores_and_forecasts(db, make_ctx, monkey
     names = record_jobs(monkeypatch)
     ctx, market, listing = seeded_ctx(db, make_ctx, datetime(2026, 9, 28, 16, 15, tzinfo=UTC), {})  # lundi 18h15
     evening_job(ctx)
-    assert names[:2] == ["daily_history", "scores"]
+    assert names[:3] == ["fx", "daily_history", "scores"]
     assert "forecasts" in names
     assert "fundamentals" not in names and "universe" not in names
     assert market.history_calls

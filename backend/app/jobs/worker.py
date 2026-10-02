@@ -6,6 +6,8 @@ from app.jobs.context import JobContext
 from app.jobs.scheduler import build_scheduler
 from app.providers.euronext import EuronextListingProvider
 from app.providers.yahoo import YahooProvider
+from app.repositories.fx import store_loader
+from app.services import fx
 from app.services.billing.stripe_gateway import gateway_from_settings
 from app.services.mail.smtp import mailer_from_settings
 
@@ -29,6 +31,7 @@ def build_context() -> JobContext:
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("yfinance").setLevel(logging.WARNING)
+    fx.use_store(store_loader(get_session_factory()))  # cours de change stockés, relus toutes les 10 min
     build_scheduler(build_context()).start()
 
 
