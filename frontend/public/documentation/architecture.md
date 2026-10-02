@@ -14,7 +14,7 @@ Navigateur ────────► │ web  (nginx)                         
                                             ▼
             Claude API ◄──────────── api (FastAPI, :8000) ─────────► db (PostgreSQL 16)
  Google, Cloudflare, HIBP ◄──────────┘                                     ▲
-   Yahoo Finance / Euronext ◄──── worker (APScheduler, même image) ───────┘
+   Yahoo Finance / listes ◄────── worker (APScheduler, même image) ───────┘
                                      │
                                      └─ SMTP ──► mailpit (:8025, en local) ou Brevo (en ligne)
 ```
@@ -35,7 +35,7 @@ Cinq conteneurs Docker Compose :
 
 | Fournisseur | Appelé par | Pour | Si absent ou muet |
 |---|---|---|---|
-| Yahoo Finance, Euronext | `worker` (et `api` pour l'intraday) | Titres, cours, fondamentaux | Données non rafraîchies |
+| Yahoo Finance ; listes de titres (Euronext, Nasdaq Trader, Deutsche Börse, SIX, Nasdaq Nordic) | `worker` (et `api` pour l'intraday) | Titres, cours, cours de change, fondamentaux | Données non rafraîchies ; une liste en panne est remplacée par son instantané (`seeds/listings/`) |
 | Claude (Anthropic) | `api` | Assistant IA | Assistant indisponible |
 | SMTP (Mailpit, Brevo) | `worker` | Mails du compte | Mails gardés en file d'attente |
 | Google (OpenID Connect) | `api` | « Continuer avec Google » | Bouton masqué si non configuré |
@@ -80,7 +80,7 @@ PEA/
 │   │   ├── schemas/            # entrées/sorties Pydantic
 │   │   ├── repositories/       # requêtes SQL
 │   │   ├── services/           # logique métier (score, prévisions, frais, portefeuille, assistant…)
-│   │   ├── providers/          # Yahoo (yfinance) et Euronext
+│   │   ├── providers/          # Yahoo (yfinance) et listes de titres (euronext, us, xetra, six, nordic)
 │   │   ├── jobs/               # tâches du worker, dont l'envoi des mails
 │   │   ├── cli.py              # python -m app.cli bootstrap-admin | ensure-user
 │   │   └── seeds/              # CSV de départ et de secours
@@ -103,7 +103,7 @@ PEA/
 ```text
 api/routes  ──►  services  ──►  repositories (SQL)
                      │
-                     └──────►  providers (Yahoo, Euronext) via les interfaces de providers/base.py
+                     └──────►  providers (Yahoo, listes de titres) via les interfaces de providers/base.py
 ```
 
 - Les **services** ne connaissent ni HTTP ni Yahoo.

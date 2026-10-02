@@ -76,3 +76,14 @@ def test_provider_falls_back_on_html():
     provider = EuronextListingProvider("http://x", snapshot_path=SAMPLE,
                                        http_post=lambda url, data: "<html>Maintenance</html>", sleep=lambda s: None)
     assert len(provider.fetch_listed()) == 6
+
+
+def test_parse_reads_currency_and_kind():
+    listed = {s.yahoo_ticker: s for s in parse_euronext_csv(sample_text(), kind="etf")}
+    assert {s.kind for s in listed.values()} == {"etf"}
+    assert (listed["2020.OL"].currency, listed["MC.PA"].currency) == ("NOK", "EUR")
+    assert EuronextListingProvider("http://x").source == "euronext"
+
+
+def test_etf_plus_maps_to_milan():
+    assert yahoo_ticker_for("EBND", "ETF Plus") == "EBND.MI"

@@ -136,3 +136,46 @@ def test_non_pea_stock_can_enter_the_top(db, make_ctx):
     _liquid_history(db, aapl)
     refresh_scores(make_ctx(now=NOW))
     assert db.get(SecurityScore, aapl.id).eligible_for_top is True
+
+
+def test_tiers_only_fetch_open_places(db):
+    make_security(db, "MC.PA", market="Euronext Paris")
+    make_security(db, "AAPL", market="Nasdaq", country="US")
+    evening = datetime(2026, 10, 2, 17, 0, tzinfo=UTC)  # 19 h à Paris : Europe fermée, New York ouverte
+    assert tier_tickers(db, 2, 150, evening) + tier_tickers(db, 3, 150, evening) == ["AAPL"]
+    afternoon = datetime(2026, 10, 2, 14, 0, tzinfo=UTC)  # 16 h à Paris : les deux
+    assert set(tier_tickers(db, 2, 150, afternoon) + tier_tickers(db, 3, 150, afternoon)) == {"MC.PA", "AAPL"}
+
+
+def test_intraday_scores_only_touch_open_places(db, make_ctx):
+    paris = make_security(db, "MC.PA", market="Euronext Paris")
+    ny = make_security(db, "AAPL", market="Nasdaq", country="US")
+    for s in (paris, ny):
+        add_series(db, s, 260, volume=1_000_000)
+    refresh_scores(make_ctx(now=datetime(2026, 9, 28, 14, 0, tzinfo=UTC)))
+    db.expire_all()
+    before = {s.id: db.get(SecurityScore, s.id).computed_at for s in (paris, ny)}
+    eligible = db.get(SecurityScore, paris.id).eligible_for_top
+    refresh_scores(make_ctx(now=datetime(2026, 9, 28, 17, 0, tzinfo=UTC)), open_only=True)
+    db.expire_all()
+    assert db.get(SecurityScore, paris.id).computed_at == before[paris.id]
+    assert db.get(SecurityScore, ny.id).computed_at > before[ny.id]
+    assert db.get(SecurityScore, paris.id).eligible_for_top == eligible
+
+
+def test_tier2_turnover_only_reads_recent_sessions(db):
+    # Seules les séances récentes comptent : la table entière (des dizaines de millions de lignes) n'est pas relue.
+    old = make_security(db, "OLD.PA")
+    recent = make_security(db, "NEW.PA")
+    add_series(db, old, 20, volume=10_000_000)
+    for i in range(20):
+        day = LAST_DAY - timedelta(days=200 + i)
+        db.add(DailyPrice(security_id=old.id, date=day, open=1, high=1, low=1, close=1000.0, volume=10_000_000))
+    add_series(db, recent, 20, volume=1)
+    db.flush()
+    from app.repositories.market_data import average_turnover
+
+    turnover = average_turnover(db, since=LAST_DAY - timedelta(days=40))
+    assert set(turnover) == {old.id, recent.id}
+    assert turnover[old.id] < 1000.0 * 10_000_000  # les vieilles séances à 1 000 € ne comptent pas
+    assert average_turnover(db, since=LAST_DAY + timedelta(days=1)) == {}

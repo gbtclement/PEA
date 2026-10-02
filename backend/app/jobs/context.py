@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -22,7 +22,7 @@ def utcnow() -> datetime:
 class JobContext:
     session_factory: Callable[[], AbstractContextManager[Session]]
     market: MarketDataProvider
-    listing: ListingProvider
+    listings: Sequence[ListingProvider]
     settings: Settings
     now: Callable[[], datetime] = utcnow
     mailer: Mailer | None = None

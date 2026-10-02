@@ -48,7 +48,6 @@ class ScoreOut(BaseModel):
 class SecurityDetail(ScreenerRow):
     isin: str | None
     industry: str | None
-    currency: str
     as_of: datetime | None
     fundamentals: FundamentalsOut | None
     score_detail: ScoreOut | None

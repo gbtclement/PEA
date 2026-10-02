@@ -6,7 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import DailyPrice, PriceAlert, Security, SecurityQuote
-from app.services.fx import currency_for_market
+from app.services.fx import security_currency
 from app.services.notifications.prefs import recipients
 from app.services.notifications.send import notify
 
@@ -64,7 +64,7 @@ def check_price_alerts(db: Session, now: datetime) -> int:
         alert.active, alert.triggered_at = False, now
         notify(db, user, "price_alert",
                {"security_id": security.id, "name": security.name, "direction": alert.direction, "target": alert.price,
-                "price": price, "currency": currency_for_market(security.market)},
+                "price": price, "currency": security_currency(security)},
                dedupe_key=f"price_alert:{alert.id}:{int(now.timestamp())}")
         sent += 1
     db.flush()

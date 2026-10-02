@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
@@ -134,3 +135,49 @@ def test_backfill_skips_a_ticker_that_fails_to_save(db, make_ctx, monkeypatch):
     backfill_history(make_ctx(market=FakeMarket(history=history)))
     assert complete(db, good) is True and complete(db, bad) is False
     assert closes(db, good) == [(date(2000, 1, 3), 2.0)]
+
+
+def test_backfill_takes_the_guard_per_batch(db, make_ctx, monkeypatch):
+    monkeypatch.setattr(market_module, "BACKFILL_BATCH", 1)
+    make_security(db, "A.PA")
+    make_security(db, "B.PA")
+    entered = []
+
+    @contextmanager
+    def guard():
+        entered.append(1)
+        yield
+
+    history = {"A.PA": [bar(date(2000, 1, 3), 1.0)], "B.PA": [bar(date(2000, 1, 3), 2.0)]}
+    backfill_history(make_ctx(market=FakeMarket(history=history)), guard=guard)
+    assert len(entered) == 2
+
+
+def test_backfill_loads_new_securities_entirely(db, make_ctx):
+    new = make_security(db, "NEW.PA")
+    backfill_history(make_ctx(market=FakeMarket(history={"NEW.PA": [bar(date(2000, 1, 3), 1.0), bar(date(2026, 10, 1), 2.0)]})))
+    assert closes(db, new) == [(date(2000, 1, 3), 1.0), (date(2026, 10, 1), 2.0)]
+    assert complete(db, new) is True
+
+
+def test_backfill_gives_up_on_unknown_tickers_after_a_month(db, make_ctx):
+    unknown = make_security(db, "RAW.DE")
+    unknown.created_at = datetime(2026, 8, 1, tzinfo=UTC)
+    recent = make_security(db, "LATE.DE")
+    recent.created_at = datetime(2026, 9, 25, tzinfo=UTC)
+    db.flush()
+    backfill_history(make_ctx(market=FakeMarket(), now=datetime(2026, 9, 28, 20, 0, tzinfo=UTC)))
+    assert complete(db, unknown) is True
+    assert complete(db, recent) is False
+
+
+def test_backfill_gives_new_securities_a_displayed_price(db, make_ctx):
+    # Un titre ajouté bourse fermée (vendredi soir) doit apparaître dans les listes sans attendre la séance suivante.
+    from app.models import SecurityQuote
+
+    new = make_security(db, "NEW.ST", market="Nasdaq Stockholm")
+    history = {"NEW.ST": [bar(date(2026, 10, 1), 100.0), bar(date(2026, 10, 2), 110.0)]}
+    backfill_history(make_ctx(market=FakeMarket(history=history), now=datetime(2026, 10, 3, 9, 0, tzinfo=UTC)))
+    db.expire_all()
+    quote = db.get(SecurityQuote, new.id)
+    assert (quote.price, quote.previous_close) == (110.0, 100.0)

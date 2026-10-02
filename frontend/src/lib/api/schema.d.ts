@@ -1827,6 +1827,15 @@ export interface components {
             /** Histogram */
             histogram: number;
         };
+        /** MarketState */
+        MarketState: {
+            /** Code */
+            code: string;
+            /** Label */
+            label: string;
+            /** Open */
+            open: boolean;
+        };
         /** MeOut */
         MeOut: {
             /**
@@ -2233,6 +2242,8 @@ export interface components {
             envelopes: string[];
             /** Price */
             price: number | null;
+            /** Currency */
+            currency: string;
             /** Change Pct */
             change_pct: number | null;
             /** Perf 1W */
@@ -2289,6 +2300,8 @@ export interface components {
             envelopes: string[];
             /** Price */
             price: number | null;
+            /** Currency */
+            currency: string;
             /** Change Pct */
             change_pct: number | null;
             /** Perf 1W */
@@ -2315,8 +2328,6 @@ export interface components {
             sparkline: number[];
             /** Industry */
             industry: string | null;
-            /** Currency */
-            currency: string;
             /** As Of */
             as_of: string | null;
             fundamentals: components["schemas"]["FundamentalsOut"] | null;
@@ -2498,6 +2509,8 @@ export interface components {
         StatusResponse: {
             /** Market Open */
             market_open: boolean;
+            /** Markets */
+            markets: components["schemas"]["MarketState"][];
             /** Jobs */
             jobs: components["schemas"]["JobStatus"][];
             /** Indices */
@@ -2550,6 +2563,8 @@ export interface components {
             envelopes: string[];
             /** Price */
             price: number | null;
+            /** Currency */
+            currency: string;
             /** Change Pct */
             change_pct: number | null;
             /** Perf 1W */
@@ -4221,6 +4236,7 @@ export interface operations {
         parameters: {
             query?: {
                 kind?: ("stock" | "etf") | null;
+                region?: ("europe" | "us") | null;
             };
             header?: never;
             path?: never;

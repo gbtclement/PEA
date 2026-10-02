@@ -2,7 +2,13 @@
 
 ## Explorer
 
-La liste de **toutes les actions** suivies par l'application, environ 1 800, dans un tableau qui reste fluide même avec des milliers de lignes.
+La liste de **toutes les actions** suivies par l'application, dans un tableau qui reste fluide même avec des milliers de lignes : les bourses d'Euronext (Paris, Amsterdam, Bruxelles, Milan, Lisbonne, Dublin, Oslo), Francfort, la Suisse, Stockholm, Helsinki, Copenhague, Reykjavik et les États-Unis (NYSE et Nasdaq).
+
+### Choisir la région
+
+Les deux boutons en haut de l'écran choisissent la région affichée : **Europe** (par défaut) ou **États-Unis**. Changer de région remet à zéro le filtre **Place**.
+
+Une action qui n'a encore aucun cours (tout juste ajoutée, ou inconnue de notre source) n'apparaît pas dans la liste.
 
 ### Rechercher
 
@@ -35,7 +41,7 @@ Les filtres et le tri sont enregistrés dans l'adresse de la page. Vous pouvez a
 
 ## ETF
 
-Même écran, limité aux **ETF** suivis par l'application, avec leur badge PEA quand ils sont éligibles. Un ETF est un panier d'actions qui suit un indice entier : en achetant un ETF CAC 40, vous possédez un petit morceau des 40 entreprises. Voir [Les ETF](bourse/etf.md).
+Même écran, limité aux **ETF** suivis par l'application (plusieurs milliers, en Europe et aux États-Unis), avec leur badge PEA quand ils sont éligibles. Un ETF n'a le badge PEA que si son éligibilité est **confirmée** ou si son nom contient « PEA » ; les autres sont « à vérifier » : la plupart des ETF mondiaux domiciliés en Irlande ou au Luxembourg ne vont **pas** dans un PEA. Un ETF est un panier d'actions qui suit un indice entier : en achetant un ETF CAC 40, vous possédez un petit morceau des 40 entreprises. Voir [Les ETF](bourse/etf.md).
 
 Les ETF n'ont pas de bilan ni de bénéfices : leur score est **uniquement technique**, c'est-à-dire basé sur l'évolution de leur cours, puis ramené sur 100.
 

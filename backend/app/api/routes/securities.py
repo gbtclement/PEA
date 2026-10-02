@@ -23,7 +23,8 @@ def list_securities(
     overridden: bool = False,
     db: Session = Depends(get_db),
 ) -> SecurityList:
-    rows, total = search_securities(db, q=q, kind=kind, envelope=envelope, limit=limit, offset=offset, overridden=overridden)
+    rows, total = search_securities(db, q=q, kind=kind, envelope=envelope, limit=limit, offset=offset, overridden=overridden,
+                                     priced_only=not overridden)
     return SecurityList(items=[SecurityItem.build(s, quote) for s, quote in rows], total=total)
 
 

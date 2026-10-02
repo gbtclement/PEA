@@ -1,4 +1,6 @@
-from sqlalchemy import String
+from datetime import datetime
+
+from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -15,11 +17,15 @@ class Security(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(255), index=True)
     kind: Mapped[str] = mapped_column(String(10))  # stock | etf | index
     market: Mapped[str] = mapped_column(String(64))
+    currency: Mapped[str | None] = mapped_column(String(8))  # devise de cotation (GBp possible) ; vide = selon la place
+    source: Mapped[str | None] = mapped_column(String(16))  # liste d'origine : euronext, euronext_etf, us, xetra, six, nordic, seed
     country: Mapped[str | None] = mapped_column(String(2))
     sector: Mapped[str | None] = mapped_column(String(128))
     industry: Mapped[str | None] = mapped_column(String(128))
     active: Mapped[bool] = mapped_column(default=True)
     history_complete: Mapped[bool] = mapped_column(default=False)  # cours chargés depuis la première cotation
+    # Dernière demande de fondamentaux, réussie ou non : la rotation hebdomadaire part des plus anciennes.
+    fundamentals_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     envelopes: Mapped[list[SecurityEnvelope]] = relationship(
         lazy="selectin", cascade="all, delete-orphan", passive_deletes=True, order_by=SecurityEnvelope.envelope,
     )

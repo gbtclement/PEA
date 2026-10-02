@@ -26,10 +26,12 @@ export function MarketStatus() {
 
   return (
     <div className="space-y-1 text-xs">
-      <p className="flex items-center gap-2 font-medium">
-        <span className={cn("size-2 rounded-full", data.market_open ? "bg-up" : "bg-down")} aria-hidden />
-        {data.market_open ? "Bourse ouverte" : "Bourse fermée"}
-      </p>
+      {data.markets.map((m) => (
+        <p key={m.code} className="flex items-center gap-2 font-medium">
+          <span className={cn("size-2 rounded-full", m.open ? "bg-up" : "bg-down")} aria-hidden />
+          {m.label} : {m.open ? "ouverte" : "fermée"}
+        </p>
+      ))}
       <p className="text-muted-foreground">Cours mis à jour : {formatDateTime(latestSuccess(data.jobs))}</p>
       {hasFailingSource(data.jobs) && (
         <p className="text-amber-700">Source de données indisponible — dernières données affichées</p>

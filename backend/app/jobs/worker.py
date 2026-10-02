@@ -4,8 +4,14 @@ from app.core.config import get_settings
 from app.core.db import get_session_factory
 from app.jobs.context import JobContext
 from app.jobs.scheduler import build_scheduler
-from app.providers.euronext import EuronextListingProvider
+from app.providers.euronext import EuronextEtfListingProvider, EuronextListingProvider
+from app.providers.nordic import NordicListingProvider
+from app.providers.six import SixListingProvider
+from app.providers.us import UsListingProvider
+from app.providers.xetra import XetraListingProvider
 from app.providers.yahoo import YahooProvider
+from app.repositories.fx import store_loader
+from app.services import fx
 from app.services.billing.stripe_gateway import gateway_from_settings
 from app.services.mail.smtp import mailer_from_settings
 
@@ -19,7 +25,10 @@ def build_context() -> JobContext:
             pause_seconds=settings.yahoo_pause_seconds,
             fundamentals_pause_seconds=settings.fundamentals_pause_seconds,
         ),
-        listing=EuronextListingProvider(settings.euronext_list_url),
+        listings=[
+            EuronextListingProvider(settings.euronext_list_url), EuronextEtfListingProvider(), NordicListingProvider(),
+            SixListingProvider(), XetraListingProvider(), UsListingProvider(),
+        ],
         settings=settings,
         mailer=mailer_from_settings(settings),
         billing=gateway_from_settings(settings),
@@ -29,6 +38,7 @@ def build_context() -> JobContext:
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("yfinance").setLevel(logging.WARNING)
+    fx.use_store(store_loader(get_session_factory()))  # cours de change stockés, relus toutes les 10 min
     build_scheduler(build_context()).start()
 
 

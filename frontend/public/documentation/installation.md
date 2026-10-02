@@ -107,15 +107,14 @@ Le **worker** remplit la base tout seul, dans cet ordre :
 
 | Étape | Durée approximative |
 |---|---|
-| Liste des titres (Euronext, grands indices, ETF) | moins d'une minute |
-| Historique de cours complet (depuis la première cotation) pour tous les titres | environ une demi-heure |
-| Premières prévisions et premiers scores (techniques seulement) | une à deux minutes |
-| Données fondamentales (PER, dividende, dette…) | environ une heure |
-| Scores complets, et donc **premier top 10** | juste après les fondamentaux |
+| Liste des titres (Euronext, ETF, Francfort, Suisse, pays nordiques, États-Unis : environ 20 000) | quelques minutes |
+| Données fondamentales (PER, dividende, dette…) : un cinquième des actions par jour ouvré | environ une heure par jour ; toutes les actions en une semaine |
+| Historique de cours complet (depuis la première cotation), en arrière-plan par paquets de 100 titres | plusieurs heures (environ 6 à 8 h) |
+| Scores et prévisions des titres dont l'historique est arrivé | à chaque passage, puis après le rattrapage |
 
-Pendant ce temps, l'application fonctionne mais certaines pages sont vides ou partielles. En particulier, le **top 10 reste vide** jusqu'à la fin du chargement des fondamentaux : une action n'y entre que si au moins 60 % de son score est calculable, et la partie technique seule n'en représente que 50 %. En bas de la barre latérale, l'état du marché indique l'heure de la dernière mise à jour.
+Pendant ce temps, l'application fonctionne mais certaines pages sont vides ou partielles : un titre sans cours n'apparaît pas dans les listes. Le **top 10 se remplit progressivement** au fil de la première semaine : une action n'y entre que si au moins 60 % de son score est calculable, et la partie technique seule n'en représente que 50 %. En bas de la barre latérale, l'état du marché indique l'heure de la dernière mise à jour.
 
-Sur une installation mise à jour (titres déjà chargés sur 5 ans), la tâche `history_backfill` rattrape les cours plus anciens en arrière-plan, à la fin du démarrage du worker puis chaque soir à 20 h : voir [Données](donnees.md).
+Sur une installation mise à jour (titres déjà chargés sur 5 ans), la tâche `history_backfill` rattrape les cours plus anciens en arrière-plan, à la fin du démarrage du worker puis chaque soir à 20 h : voir [Données](donnees.md). Après la mise à jour vers l'univers étendu, la tâche `universe` ajoute environ 18 000 titres, chargés de la même façon (plusieurs heures, sans bloquer l'application).
 
 ?> Des messages `possibly delisted` dans les journaux du worker sont normaux : ce sont des titres radiés de la cote que Yahoo ne connaît plus.
 

@@ -8,6 +8,7 @@ import httpx
 
 from app.core.brand import APP_NAME
 from app.providers.base import ListedSecurity
+from app.providers.listing_source import SourceListing
 from app.providers.retry import with_retries
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ MARKET_SUFFIXES: dict[str, str] = {
     "Euronext Access Brussels": ".BR",
     "Euronext Access Lisbon": ".LS",
     "Euronext Access Dublin": ".IR",
+    "ETF Plus": ".MI",  # segment ETF de Milan
 }
 _PRIORITY = {market: rank for rank, market in enumerate(MARKET_SUFFIXES)}
 _EXPECTED_HEADER = "Name;ISIN;Symbol;Market"
@@ -54,7 +56,7 @@ def yahoo_ticker_for(symbol: str, market: str) -> str | None:
     return f"{symbol.strip()}{suffix}" if suffix else None
 
 
-def parse_euronext_csv(text: str) -> list[ListedSecurity]:
+def parse_euronext_csv(text: str, kind: str = "stock") -> list[ListedSecurity]:
     lines = text.lstrip("﻿").splitlines()
     if not lines or not lines[0].startswith(_EXPECTED_HEADER):
         raise ValueError("Format de fichier Euronext inattendu")
@@ -70,11 +72,16 @@ def parse_euronext_csv(text: str) -> list[ListedSecurity]:
         rank = _PRIORITY[primary]
         current = best.get(isin)
         if current is None or rank < current[0]:
-            best[isin] = (rank, ListedSecurity(isin=isin, symbol=symbol, name=name, market=primary, yahoo_ticker=ticker))
+            best[isin] = (rank, ListedSecurity(
+                isin=isin, symbol=symbol, name=name, market=primary, yahoo_ticker=ticker, kind=kind,
+                currency=(row[4].strip() or None) if len(row) > 4 else None,
+            ))
     return sorted((security for _, security in best.values()), key=lambda s: s.name)
 
 
 class EuronextListingProvider:
+    source = "euronext"
+
     def __init__(
         self,
         url: str,
@@ -105,3 +112,19 @@ class EuronextListingProvider:
         response = httpx.post(url, data=data, headers={"User-Agent": f"Mozilla/5.0 ({APP_NAME})"}, timeout=60)
         response.raise_for_status()
         return response.text
+
+
+EURONEXT_ETF_URL = ("https://live.euronext.com/en/pd_es/data/track/download"
+                    "?mics=XPAR,XAMS,XBRU,XMIL,XLIS,XDUB,XOSL,ETFP")  # dm_all_track ne renvoie aucune ligne
+
+
+class EuronextEtfListingProvider(SourceListing):
+    source = "euronext_etf"
+    min_rows = 1000
+
+    def __init__(self, http_post: Callable[[str, dict[str, str]], str] | None = None, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._http_post = http_post or EuronextListingProvider._default_post
+
+    def fetch_live(self) -> list[ListedSecurity]:
+        return parse_euronext_csv(self._http_post(EURONEXT_ETF_URL, FORM_DATA), kind="etf")

@@ -83,7 +83,8 @@ def _search(db: Session, user: User, args: dict) -> list[dict]:
     if not isinstance(query, str) or not query.strip():
         raise ToolError("Paramètre query manquant.")
     limit = args.get("limit") if isinstance(args.get("limit"), int) else 8
-    rows, _ = search_securities(db, q=query, kind=None, envelope=None, limit=max(1, min(limit, 10)), offset=0)
+    rows, _ = search_securities(db, q=query, kind=None, envelope=None, limit=max(1, min(limit, 10)), offset=0,
+                                 priced_only=True)
     return [{"ticker": s.yahoo_ticker, "symbol": s.symbol, "name": s.name, "kind": s.kind, "market": s.market,
              "envelopes": s.eligible_envelopes, "price": q.price if q else None, "change_pct": q.change_pct if q else None}
             for s, q in rows]

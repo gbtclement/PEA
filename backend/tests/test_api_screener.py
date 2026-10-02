@@ -19,6 +19,7 @@ def seed(db, user):
     quote(db, lvmh, 600, 2.5)
     quote(db, total, 60, -1.5)
     quote(db, small, 5, 9.0)
+    quote(db, etf, 50, 0.0)
     make_score(db, lvmh, total=80, components=[
         {"key": "trend", "label": "Tendance", "points": 20, "max_points": 20, "message": "✅ Tendance", "group": "technical"},
         {"key": "rsi", "label": "RSI", "points": 6, "max_points": 10, "message": "⚠️ RSI", "group": "technical"},
@@ -84,10 +85,39 @@ def test_status_indices_have_id(client, db, user):
 
 
 def test_screener_rows_list_eligible_envelopes(client, db):
-    make_security(db, "ALCAR.PA", name="Carmat", pea_pme="eligible")
-    make_security(db, "AAPL.PA", name="Apple", eligibility="non_eligible", country="US")
-    make_security(db, "GFC.PA", name="Gecina", eligibility="a_verifier")
+    for security in (make_security(db, "ALCAR.PA", name="Carmat", pea_pme="eligible"),
+                     make_security(db, "AAPL.PA", name="Apple", eligibility="non_eligible", country="US"),
+                     make_security(db, "GFC.PA", name="Gecina", eligibility="a_verifier")):
+        quote(db, security, 10, 0.0)
     rows = {r["name"]: r for r in client.get("/api/screener").json()}
     assert rows["Carmat"]["envelopes"] == ["pea", "pea_pme"]
     assert rows["Apple"]["envelopes"] == [] and rows["Gecina"]["envelopes"] == []
     assert "eligibility" not in rows["Carmat"]
+
+
+def test_screener_hides_unpriced_and_filters_region(client, db):
+    paris = make_security(db, "MC.PA", market="Euronext Paris")
+    ny = make_security(db, "AAPL", market="Nasdaq", country="US")
+    make_security(db, "RAW.DE", market="Xetra", country="AT")  # jamais coté sur Yahoo
+    quote(db, paris, 600, 1.0)
+    quote(db, ny, 200, 1.0)
+    db.flush()
+    assert {r["yahoo_ticker"] for r in client.get("/api/screener").json()} == {"MC.PA", "AAPL"}
+    assert [r["yahoo_ticker"] for r in client.get("/api/screener", params={"region": "us"}).json()] == ["AAPL"]
+    assert [r["yahoo_ticker"] for r in client.get("/api/screener", params={"region": "europe"}).json()] == ["MC.PA"]
+
+
+def test_status_lists_each_place(client):
+    markets = client.get("/api/status").json()["markets"]
+    assert [(m["code"], m["label"]) for m in markets] == [("europe", "Europe"), ("us", "New York")]
+    assert all(isinstance(m["open"], bool) for m in markets)
+
+
+def test_screener_rows_carry_the_quote_currency(client, db):
+    ny = make_security(db, "AAPL", market="Nasdaq", country="US")
+    paris = make_security(db, "MC.PA")
+    quote(db, ny, 200, 1.0)
+    quote(db, paris, 600, 1.0)
+    db.flush()
+    rows = {r["yahoo_ticker"]: r["currency"] for r in client.get("/api/screener").json()}
+    assert rows == {"AAPL": "USD", "MC.PA": "EUR"}

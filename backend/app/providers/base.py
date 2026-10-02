@@ -5,11 +5,13 @@ from typing import Protocol
 
 @dataclass(frozen=True)
 class ListedSecurity:
-    isin: str
+    isin: str | None  # absent de la liste américaine
     symbol: str
     name: str
     market: str
     yahoo_ticker: str
+    kind: str = "stock"  # stock | etf
+    currency: str | None = None
 
 
 @dataclass(frozen=True)
@@ -70,6 +72,8 @@ class Fundamentals:
 
 
 class ListingProvider(Protocol):
+    source: str  # nom de la source (euronext, us, xetra…), rangé sur chaque titre
+
     def fetch_listed(self) -> list[ListedSecurity]: ...
 
 

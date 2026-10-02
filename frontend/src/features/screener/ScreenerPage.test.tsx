@@ -8,7 +8,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 const row = (id: number, symbol: string, name: string, score: number | null, change: number) => ({
   id, yahoo_ticker: `${symbol}.PA`, symbol, name, kind: "stock", market: "Euronext Paris", country: "FR", sector: "Luxe",
-  envelopes: ["pea"], price: 100 + id, change_pct: change, perf_1w: 1, perf_1m: 2, perf_1y: 3, score, pe: 15,
+  envelopes: ["pea"], price: 100 + id, currency: "EUR", change_pct: change, perf_1w: 1, perf_1m: 2, perf_1y: 3, score, pe: 15,
   dividend_yield: 0.02, liquid: true, available_ratio: 1, isin: null, is_favorite: false, sparkline: [1, 2],
 });
 const ROWS = [row(1, "MC", "LVMH", 80, 2.07), row(2, "AIR", "Airbus", 60, -1.2), row(3, "BN", "Danone", null, 0.5)];
@@ -84,4 +84,28 @@ test("le filtre Enveloppe propose Toutes, PEA et PEA-PME, sans « à vérifier �
   renderPage();
   const select = await screen.findByRole("combobox", { name: "Enveloppe" });
   expect([...select.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Enveloppe : toutes", "PEA", "PEA-PME"]);
+});
+
+test("région Europe par défaut, puis États-Unis", async () => {
+  const fetch = mockFetch(() => ({ body: ROWS }));
+  renderWithProviders(
+    <Routes><Route path="/explorer" element={<ScreenerPage kind="stock" title="Explorer" description="d" />} /></Routes>,
+    { route: "/explorer" },
+  );
+  await screen.findByText("LVMH");
+  expect(String(fetch.mock.calls[0][0])).toContain("region=europe");
+  expect(screen.getByRole("button", { name: "Europe" })).toHaveAttribute("aria-pressed", "true");
+  await userEvent.click(screen.getByRole("button", { name: "États-Unis" }));
+  await waitFor(() => expect(fetch.mock.calls.some(([url]) => String(url).includes("region=us"))).toBe(true));
+  expect(screen.getByRole("button", { name: "États-Unis" })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("le cours affiche sa devise", async () => {
+  mockFetch(() => ({ body: [ROWS[0], { ...row(4, "AAPL", "Apple", 70, 1), yahoo_ticker: "AAPL", price: 250, currency: "USD" }] }));
+  renderWithProviders(
+    <Routes><Route path="/explorer" element={<ScreenerPage kind="stock" title="Explorer" description="d" />} /></Routes>,
+    { route: "/explorer" },
+  );
+  expect(await screen.findByText("101,00 €")).toBeInTheDocument();
+  expect(screen.getByText("250,00 USD")).toBeInTheDocument();
 });

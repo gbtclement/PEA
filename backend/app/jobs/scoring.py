@@ -8,9 +8,9 @@ from app.jobs.context import JobContext
 from app.models import SecurityFundamentals, SecurityQuote, SecurityScore
 from app.repositories.market_data import daily_series, refreshable_securities
 from app.repositories.scores import sector_median_pe, upsert_score
-from app.services.fx import currency_for_market, to_eur
+from app.services.fx import security_currency, to_eur
 from app.services.indicators import macd, performance, rsi, sma
-from app.services.market_calendar import PARIS
+from app.services.market_calendar import PARIS, calendar_for_market
 from app.services.scoring.score import ScoreInputs, compute_score
 
 HISTORY_WINDOW = timedelta(days=420)  # ≈ 290 séances : assez pour la moyenne 200 jours et la perf 1 an
@@ -30,13 +30,17 @@ def _last(values: list) -> float | None:
     return values[-1] if values else None
 
 
-def refresh_scores(ctx: JobContext) -> int:
+def refresh_scores(ctx: JobContext, open_only: bool = False) -> int:
+    """Scores de tous les titres ; `open_only` : seulement ceux dont la place est ouverte (passage en séance)."""
     now = ctx.now()
     today = now.astimezone(PARIS).date()
     settings = ctx.settings
     with ctx.session_factory() as session:
         securities = [s for s in refreshable_securities(session) if s.kind != "index" or s.yahoo_ticker == INDEX_TICKER]
-        series = daily_series(session, today - HISTORY_WINDOW)
+        targets = securities
+        if open_only:  # les places fermées n'ont pas bougé depuis leur dernier calcul
+            targets = [s for s in securities if s.yahoo_ticker == INDEX_TICKER or calendar_for_market(s.market).is_open(now)]
+        series = daily_series(session, today - HISTORY_WINDOW, [s.id for s in targets] if open_only else None)
         quotes = {q.security_id: q for q in session.scalars(select(SecurityQuote))}
         fundamentals = {f.security_id: f for f in session.scalars(select(SecurityFundamentals))}
 
@@ -55,12 +59,12 @@ def refresh_scores(ctx: JobContext) -> int:
                 closes.append(quote.price)  # séance en cours
             return closes
 
-        index = next((s for s in securities if s.yahoo_ticker == INDEX_TICKER), None)
+        index = next((s for s in targets if s.yahoo_ticker == INDEX_TICKER), None)
         index_perf_3m = performance(closes_for(index), 63) if index else None
 
         count = 0
         processed: list[int] = []
-        for s in securities:
+        for s in targets:
             if s.kind == "index":
                 continue
             processed.append(s.id)
@@ -90,7 +94,7 @@ def refresh_scores(ctx: JobContext) -> int:
             ), kind=s.kind)
             recent = bars[-20:]
             turnover = sum(b.close * (b.volume or 0) for b in recent) / len(recent) if recent else 0.0
-            turnover_eur = to_eur(turnover, currency_for_market(s.market)) or 0.0
+            turnover_eur = to_eur(turnover, security_currency(s)) or 0.0
             liquid = turnover_eur >= settings.min_turnover_eur
             eligible_for_top = (
                 s.kind == "stock" and liquid
@@ -115,11 +119,12 @@ def refresh_scores(ctx: JobContext) -> int:
                 "sparkline": [round(c, 4) for c in closes[-SPARKLINE_POINTS:]],
             })
             count += 1
-        # Titres sortis du périmètre (inactifs, devenus indices) : ils ne peuvent plus figurer dans le top.
-        session.execute(
-            update(SecurityScore)
-            .where(SecurityScore.security_id.notin_(processed), SecurityScore.eligible_for_top.is_(True))
-            .values(eligible_for_top=False)
-        )
+        if not open_only:
+            # Titres sortis du périmètre (inactifs, devenus indices) : ils ne peuvent plus figurer dans le top.
+            session.execute(
+                update(SecurityScore)
+                .where(SecurityScore.security_id.notin_(processed), SecurityScore.eligible_for_top.is_(True))
+                .values(eligible_for_top=False)
+            )
         session.commit()
     return count

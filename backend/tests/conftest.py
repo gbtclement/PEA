@@ -158,11 +158,11 @@ def session_factory(db):
 
 @pytest.fixture
 def make_ctx(session_factory):
-    def _make(market=None, listing=None, now: datetime | None = None, mailer=None, billing=None, **settings_overrides) -> JobContext:
+    def _make(market=None, listing=None, listings=None, now: datetime | None = None, mailer=None, billing=None, **settings_overrides) -> JobContext:
         return JobContext(
             session_factory=session_factory,
             market=market or FakeMarket(),
-            listing=listing or FakeListing(),
+            listings=listings or [listing or FakeListing()],
             settings=Settings(**settings_overrides),
             now=(lambda: now) if now else (lambda: datetime.now(UTC)),
             mailer=mailer,
@@ -178,3 +178,13 @@ def app_secret(monkeypatch):
     from app.core.config import get_settings
 
     monkeypatch.setattr(get_settings(), "app_secret", "secret-de-test")
+
+
+@pytest.fixture(autouse=True)
+def _default_fx_rates():
+    """Chaque test part de la table fixe des devises (un test peut charger des cours du jour)."""
+    from app.services import fx
+
+    fx.reset()
+    yield
+    fx.reset()

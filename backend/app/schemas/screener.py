@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from sqlalchemy import Row
 
+from app.services.fx import security_currency
+
 
 class ScreenerRow(BaseModel):
     id: int
@@ -13,6 +15,7 @@ class ScreenerRow(BaseModel):
     sector: str | None
     envelopes: list[str]  # enveloppes à règle où le titre est éligible (pea, pea_pme)
     price: float | None
+    currency: str  # devise du cours (EUR, USD, CHF…)
     change_pct: float | None
     perf_1w: float | None
     perf_1m: float | None
@@ -34,6 +37,7 @@ class ScreenerRow(BaseModel):
             kind=security.kind, market=security.market, country=security.country, sector=security.sector,
             envelopes=security.eligible_envelopes,
             price=quote.price if quote else None,
+            currency=security_currency(security),
             change_pct=quote.change_pct if quote else None,
             perf_1w=score.perf_1w if score else None,
             perf_1m=score.perf_1m if score else None,

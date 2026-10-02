@@ -9,7 +9,7 @@ from app.core.current_user import get_account_user, get_current_user
 from app.core.db import get_db
 from app.models import PriceAlert, Security, User
 from app.schemas.notifications import NotificationPrefsIn, NotificationPrefsOut, PriceAlertIn, PriceAlertOut, PriceAlertUpdate
-from app.services.fx import currency_for_market
+from app.services.fx import security_currency
 from app.services.notifications.prefs import get_prefs, save_prefs
 from app.services.notifications.price_alerts import AlertRefused, check_new_threshold, current_price
 
@@ -33,7 +33,7 @@ def write_notification_prefs(payload: NotificationPrefsIn, db: Session = Depends
 def _out(db: Session, alert: PriceAlert) -> PriceAlertOut:
     security = db.get(Security, alert.security_id)
     return PriceAlertOut(id=alert.id, security_id=security.id, symbol=security.symbol, name=security.name,
-                         currency=currency_for_market(security.market), direction=alert.direction, price=alert.price,
+                         currency=security_currency(security), direction=alert.direction, price=alert.price,
                          current_price=current_price(db, security.id), active=alert.active,
                          triggered_at=alert.triggered_at, created_at=alert.created_at)
 

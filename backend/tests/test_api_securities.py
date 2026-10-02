@@ -10,11 +10,13 @@ AS_OF = datetime(2026, 9, 25, 15, 35, tzinfo=UTC)
 def seed(db):
     oreal = make_security(db, "OR.PA", name="L'Oréal", isin="FR0000120321")
     lvmh = make_security(db, "MC.PA", name="LVMH", isin="FR0000121014")
-    make_security(db, "CW8.PA", name="Amundi MSCI World", kind="etf")
-    make_security(db, "^FCHI", name="CAC 40", kind="index", eligibility="non_eligible", country=None)
-    make_security(db, "MMM.PA", name="3M", eligibility="non_eligible", country="US")
+    cw8 = make_security(db, "CW8.PA", name="Amundi MSCI World", kind="etf")
+    cac = make_security(db, "^FCHI", name="CAC 40", kind="index", eligibility="non_eligible", country=None)
+    mmm = make_security(db, "MMM.PA", name="3M", eligibility="non_eligible", country="US")
     make_security(db, "OLD.PA", name="Ancienne", active=False)
     db.add(SecurityQuote(security_id=lvmh.id, price=612.4, previous_close=600, change_pct=2.07, volume=1, as_of=AS_OF))
+    for other in (oreal, cw8, cac, mmm):  # les titres sans aucun cours ne sont pas listés
+        db.add(SecurityQuote(security_id=other.id, price=10.0, previous_close=10.0, change_pct=0.0, volume=1, as_of=AS_OF))
     db.flush()
     return oreal, lvmh
 
@@ -33,7 +35,7 @@ def test_list_includes_quote(client, db):
     assert item["change_pct"] == 2.07
     assert item["as_of"].startswith("2026-09-25")
     oreal = next(i for i in client.get("/api/securities").json()["items"] if i["yahoo_ticker"] == "OR.PA")
-    assert oreal["price"] is None
+    assert oreal["price"] == 10.0
 
 
 def test_search_case_insensitive_by_name_symbol_isin(client, db):
@@ -82,3 +84,8 @@ def test_status(client, db):
     assert body["jobs"][0]["job"] == "quotes_t1"
     assert body["jobs"][0]["last_count"] == 3
     assert [i["yahoo_ticker"] for i in body["indices"]] == ["^FCHI"]
+
+
+def test_search_hides_unpriced(client, db):
+    make_security(db, "RAW.DE", market="Xetra", name="Raiffeisen")
+    assert client.get("/api/securities", params={"q": "Raiff"}).json()["total"] == 0

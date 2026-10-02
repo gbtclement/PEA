@@ -30,6 +30,7 @@ Le **cours** d'une action est le prix du dernier échange. Il bouge sans arrêt 
 
 Une journée de bourse s'appelle une **séance**.
 
+Les autres bourses européennes suivies (Francfort, Zurich, les pays nordiques) ont des horaires proches. **New York** ouvre de **15 h 30 à 22 h**, heure de Paris (une heure plus tôt pendant les deux ou trois semaines où les changements d'heure ne tombent pas le même jour), avec ses propres jours fériés, comme Thanksgiving fin novembre.
 ## La variation
 
 La variation compare le cours actuel au cours de clôture de la veille.

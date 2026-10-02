@@ -10,7 +10,7 @@ Une **enveloppe** est le compte sur lequel l'utilisateur investit : PEA, PEA-PME
 
 | Code | Libellé | Règle |
 |---|---|---|
-| `pea` | PEA | Action dont le siège est dans l'UE ou l'EEE (deux premières lettres de l'ISIN) et soumise à l'IS. Foncières cotées (industrie « REIT… ») : `a_verifier`. ISIN absent ou invalide : `a_verifier`. ETF : `eligible` par la liste de départ `seeds/etfs.csv` (source `seed`). Indices : `non_eligible` (source `seed`). |
+| `pea` | PEA | Action dont le siège est dans l'UE ou l'EEE (deux premières lettres de l'ISIN) et soumise à l'IS. Foncières cotées (industrie « REIT… ») : `a_verifier`. ISIN absent ou invalide : `a_verifier`. ETF : `eligible` s'il est confirmé dans `seeds/etfs.csv` (source `seed`) ou si son nom contient le mot « PEA » (source `auto`), sinon `a_verifier` ; jamais déduit du pays de l'émetteur (un ETF irlandais ou luxembourgeois n'est pas éligible par défaut). Actions américaines (sans ISIN dans la source) : pays `US`, donc `non_eligible`. Indices : `non_eligible` (source `seed`). |
 | `pea_pme` | PEA-PME | Éligible PEA, **et** moins de 5 000 salariés, **et** chiffre d'affaires ≤ 1,5 Md€, **et** capitalisation < 1 Md€. Une donnée manquante donne `a_verifier`. Un PEA non éligible ou « à vérifier » donne le même statut. ETF et indices : `non_eligible` (sauf correction). |
 | `cto` | Compte-titres | Tous les titres. Rien n'est stocké. |
 
@@ -60,7 +60,7 @@ Corriger le PEA d'un titre recalcule aussi son PEA-PME : passer une action en «
 
 - Le préfixe ISIN indique le pays d'émission, en général celui du siège, mais pas toujours.
 - Une société peut perdre son éligibilité pour d'autres raisons (régime fiscal, statut particulier).
-- Les ETF sont listés à la main dans `seeds/etfs.csv` : seuls des ETF éligibles au PEA y figurent.
+- `seeds/etfs.csv` liste à la main les ETF dont l'éligibilité au PEA est confirmée. Pour les milliers d'autres ETF, seul le mot « PEA » dans le nom vaut confirmation : les autres restent « à vérifier » tant qu'un admin ne les a pas corrigés.
 
 ## Migration d'octobre 2026
 

@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.models import DailyPrice, Forecast, ForecastRun, Security
+from app.services.fx import currency_for_market
 
 INDEX_TICKER = "^FCHI"
 
@@ -45,9 +46,10 @@ def stock_series(session: Session, since: date, *, include_inactive: bool = Fals
     return {sid: group.set_index("date")[["close", "volume"]].astype(float) for sid, group in frame.groupby("security_id")}
 
 
-def stock_markets(session: Session) -> dict[int, str]:
-    """Place de cotation de chaque action, pour en déduire la devise : {security_id: marché}."""
-    return dict(session.execute(select(Security.id, Security.market).where(Security.kind == "stock")).all())
+def stock_currencies(session: Session) -> dict[int, str]:
+    """Devise de cotation de chaque action : {security_id: devise}."""
+    rows = session.execute(select(Security.id, Security.currency, Security.market).where(Security.kind == "stock"))
+    return {sid: currency or currency_for_market(market) for sid, currency, market in rows}
 
 
 def index_closes(session: Session, since: date) -> pd.Series:

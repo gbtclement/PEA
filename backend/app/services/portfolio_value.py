@@ -8,12 +8,12 @@ from sqlalchemy.orm import Session
 
 from app.models import DailyPrice, Security, SecurityQuote
 from app.repositories.orders import order_lines
-from app.services.fx import currency_for_market, to_eur
+from app.services.fx import security_currency, to_eur
 from app.services.portfolio import Position, compute_positions
 
 
 def eur_rate(security: Security) -> float:
-    return to_eur(1.0, currency_for_market(security.market)) or 1.0
+    return to_eur(1.0, security_currency(security)) or 1.0
 
 
 def last_close(db: Session, security_id: int) -> float | None:

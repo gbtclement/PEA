@@ -83,3 +83,15 @@ def test_job_waits_for_the_session(db, user, make_ctx):
     make_quote(db, lvmh, 100.0, change_pct=6.0, as_of=OPEN)
     assert run_price_moves(make_ctx(now=datetime(2026, 10, 1, 19, 0, tzinfo=UTC))) == 0  # 21 h à Paris
     assert run_price_moves(make_ctx(now=OPEN)) == 1
+
+
+def test_evening_moves_only_cover_places_still_open(db, user, make_ctx):
+    lvmh = make_security(db, "MC.PA")
+    apple = make_security(db, "AAPL", market="Nasdaq", country="US")
+    evening = datetime(2026, 10, 1, 17, 0, tzinfo=UTC)  # 19 h à Paris : seul New York est ouvert
+    for s in (lvmh, apple):
+        _fav(db, user, s)
+        make_quote(db, s, 100.0, change_pct=6.0, as_of=evening)
+    assert run_price_moves(make_ctx(now=evening)) == 1
+    notices = set(db.scalars(select(MoveNotice.security_id)))
+    assert notices == {apple.id}

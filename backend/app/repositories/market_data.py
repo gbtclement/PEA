@@ -1,3 +1,5 @@
+import math
+from collections.abc import Collection
 from datetime import date
 
 from sqlalchemy import Row, delete, func, select, update
@@ -85,13 +87,12 @@ def all_daily_prices(session: Session, security_id: int) -> list[DailyPrice]:
     ))
 
 
-def daily_series(session: Session, since: date) -> dict[int, list[Row]]:
-    """Colonnes utiles seulement (pas d'objets ORM) : ~500 000 lignes lues toutes les 5 minutes."""
-    rows = session.execute(
-        select(DailyPrice.security_id, DailyPrice.date, DailyPrice.close, DailyPrice.volume)
-        .where(DailyPrice.date >= since)
-        .order_by(DailyPrice.security_id, DailyPrice.date)
-    )
+def daily_series(session: Session, since: date, security_ids: Collection[int] | None = None) -> dict[int, list[Row]]:
+    """Colonnes utiles seulement (pas d'objets ORM) : des millions de lignes, relues toutes les 5 minutes."""
+    stmt = select(DailyPrice.security_id, DailyPrice.date, DailyPrice.close, DailyPrice.volume).where(DailyPrice.date >= since)
+    if security_ids is not None:
+        stmt = stmt.where(DailyPrice.security_id.in_(security_ids))
+    rows = session.execute(stmt.order_by(DailyPrice.security_id, DailyPrice.date))
     result: dict[int, list[Row]] = {}
     for row in rows:
         result.setdefault(row.security_id, []).append(row)
@@ -124,18 +125,36 @@ def price_date_range(session: Session, security_id: int) -> tuple[date | None, d
     return first, last
 
 
+def fundamentals_due(session: Session, share: int) -> list[tuple[int, str]]:
+    """La part du jour des actions actives et cotées : jamais essayées d'abord, puis les plus anciennes.
+
+    Chaque tentative, réussie ou non, est datée : un ticker que Yahoo ignore repasse en fin de file.
+    Un titre sans aucun cours (inconnu de Yahoo) n'est pas demandé.
+    """
+    priced = select(SecurityQuote.security_id).where(SecurityQuote.security_id == Security.id).exists()
+    rows = session.execute(
+        select(Security.id, Security.yahoo_ticker)
+        .where(Security.active.is_(True), Security.kind == "stock", priced)
+        .order_by(Security.fundamentals_checked_at.asc().nulls_first(), Security.id)
+    ).all()
+    return [(sid, ticker) for sid, ticker in rows[:math.ceil(len(rows) / share)]]
+
+
 def latest_price_dates(session: Session) -> dict[int, date]:
     rows = session.execute(select(DailyPrice.security_id, func.max(DailyPrice.date)).group_by(DailyPrice.security_id))
     return {security_id: last for security_id, last in rows}
 
 
-def average_turnover(session: Session, days: int = 20) -> dict[int, float]:
-    """Montant moyen échangé (cours × volume) sur les `days` dernières séances."""
+def average_turnover(session: Session, since: date, days: int = 20) -> dict[int, float]:
+    """Montant moyen échangé (cours × volume) sur les `days` dernières séances depuis `since`.
+
+    `since` évite de relire tout l'historique (des dizaines de millions de lignes) à chaque palier.
+    """
     ranked = select(
         DailyPrice.security_id,
         (DailyPrice.close * DailyPrice.volume).label("turnover"),
         func.row_number().over(partition_by=DailyPrice.security_id, order_by=DailyPrice.date.desc()).label("rn"),
-    ).subquery()
+    ).where(DailyPrice.date >= since).subquery()
     stmt = (
         select(ranked.c.security_id, func.avg(ranked.c.turnover))
         .where(ranked.c.rn <= days)

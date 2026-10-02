@@ -5,7 +5,8 @@ le compte-titres accepte tous les titres et n'est pas stocké. Ajouter une envel
 et, si elle a une règle, une fonction appelée par `compute_envelopes`.
 
 PEA : siège dans l'UE ou l'EEE (approché par le préfixe ISIN) et société soumise à l'IS ; les foncières cotées
-(SIIC/REIT) en sont généralement exonérées, d'où « à vérifier ». ETF et indices : listes de départ (`seeds/`).
+(SIIC/REIT) en sont généralement exonérées, d'où « à vérifier ». Indices : jamais éligibles. ETF : éligibles s'ils sont
+confirmés (`seeds/etfs.csv`) ou si leur nom contient le mot « PEA », sinon « à vérifier ».
 PEA-PME : éligible PEA, moins de 5 000 salariés, CA ≤ 1,5 Md€ et capitalisation < 1 Md€. C'est une estimation.
 """
 import re
@@ -32,6 +33,7 @@ EU_EEA_COUNTRIES = frozenset({
 })
 
 _ISIN_RE = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
+_PEA_IN_NAME = re.compile(r"\bPEA\b")
 
 
 @dataclass(frozen=True)
@@ -42,6 +44,8 @@ class SecurityFacts:
     employees: int | None = None
     revenue_eur: float | None = None
     market_cap_eur: float | None = None
+    name: str = ""
+    confirmed_etf: bool = False  # ETF confirmé à la main (seeds/etfs.csv)
 
 
 @dataclass(frozen=True)
@@ -62,7 +66,10 @@ def pea_status(facts: SecurityFacts) -> tuple[str, str]:
     if facts.kind == "index":
         return NOT_ELIGIBLE, "seed"
     if facts.kind == "etf":
-        return ELIGIBLE, "seed"  # seuls des ETF éligibles figurent dans seeds/etfs.csv
+        if facts.confirmed_etf:
+            return ELIGIBLE, "seed"
+        # Jamais déduit du pays de l'émetteur : un ETF UCITS irlandais n'est pas éligible par défaut.
+        return (ELIGIBLE, "auto") if _PEA_IN_NAME.search(facts.name) else (TO_CHECK, "auto")
     if facts.country is None:
         return TO_CHECK, "auto"
     if facts.country.upper() not in EU_EEA_COUNTRIES:

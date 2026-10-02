@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkline } from "@/components/Sparkline";
 import { apiGet, type TopItem } from "@/lib/api/client";
 import { ENVELOPE_LABELS } from "@/lib/envelopes";
-import { formatPct, formatPrice } from "@/lib/format";
+import { currencyUnit, formatPct, formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export function TopList() {
@@ -55,7 +55,7 @@ export function TopList() {
                 </div>
                 <Sparkline values={item.sparkline} />
                 <div className="w-24 text-right">
-                  <p className="font-medium">{formatPrice(item.price)}</p>
+                  <p className="font-medium">{item.price == null ? "—" : `${formatPrice(item.price)} ${currencyUnit(item.currency)}`}</p>
                   <p className={cn("text-xs font-medium", (item.change_pct ?? 0) > 0 && "text-up", (item.change_pct ?? 0) < 0 && "text-down")}>
                     {formatPct(item.change_pct)}
                   </p>

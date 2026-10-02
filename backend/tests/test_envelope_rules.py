@@ -34,8 +34,8 @@ def test_pea_for_stocks(country, industry, expected):
     assert pea_status(stock(country=country, industry=industry)) == (expected, "auto")
 
 
-def test_pea_for_etf_and_index_comes_from_the_seed_lists():
-    assert pea_status(SecurityFacts(kind="etf", country=None, industry=None)) == (ELIGIBLE, "seed")
+def test_pea_for_confirmed_etf_and_index_comes_from_the_seed_lists():
+    assert pea_status(SecurityFacts(kind="etf", country=None, industry=None, confirmed_etf=True)) == (ELIGIBLE, "seed")
     assert pea_status(SecurityFacts(kind="index", country=None, industry=None)) == (NOT_ELIGIBLE, "seed")
 
 
@@ -75,7 +75,7 @@ def test_manual_pea_override_also_drives_pea_pme():
 
 def test_manual_override_accepts_the_three_statuses_and_ignores_garbage():
     assert compute_envelopes(stock(), {PEA_PME: TO_CHECK})[PEA_PME] == EnvelopeStatus(TO_CHECK, "manual", TO_CHECK)
-    etf = SecurityFacts(kind="etf", country=None, industry=None)
+    etf = SecurityFacts(kind="etf", country=None, industry=None, confirmed_etf=True)
     assert compute_envelopes(etf, {PEA_PME: ELIGIBLE})[PEA_PME] == EnvelopeStatus(ELIGIBLE, "manual", ELIGIBLE)
     assert compute_envelopes(etf, {PEA: "peut-être"})[PEA] == EnvelopeStatus(ELIGIBLE, "seed", None)
 
@@ -87,3 +87,10 @@ def test_manual_override_accepts_the_three_statuses_and_ignores_garbage():
 ])
 def test_filtering_envelopes(codes, expected):
     assert filtering_envelopes(codes) == expected
+
+
+def test_etf_eligibility_needs_confirmation_or_pea_in_name():
+    assert pea_status(SecurityFacts("etf", None, None, name="iShares Core MSCI World", confirmed_etf=True)) == (ELIGIBLE, "seed")
+    assert pea_status(SecurityFacts("etf", None, None, name="AM ASIP EXJ PEA")) == (ELIGIBLE, "auto")
+    assert pea_status(SecurityFacts("etf", "IE", None, name="iShares Core MSCI World")) == (TO_CHECK, "auto")
+    assert pea_status(SecurityFacts("etf", None, None, name="Speaker Corp")) == (TO_CHECK, "auto")  # « PEA » doit être un mot

@@ -28,11 +28,13 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
   - `core/` : configuration (`config.py`, surchargée par variables d'environnement), base de données, `security.py` (Argon2, empreintes de jetons), `current_user.py`.
   - `services/auth/` : comptes, codes et liens par mail, sessions, appareils connus, reprise par l'admin (`bootstrap.py`), Google (`google.py`), Turnstile (`captcha.py`), fuites de mots de passe (`breach.py`). `services/ratelimit.py` (limites anti-abus) et `services/security_log.py` (journal `security_events`). `services/mail/` : rendu des mails et file d'envoi (`enqueue`), envoyée par la tâche `jobs/mail.py` toutes les 5 s. `services/notifications/` : notifications N1 à N6 (préférences, jeton de désinscription signé, `notify()`), tâches dans `jobs/notifications.py`. `services/billing/` : abonnement Premium (passerelle Stripe `gateway.py` / `stripe_gateway.py`, règle d'accès `access.py`, `apply_subscription()` dans `state.py`, webhook `webhook.py`), tâches dans `jobs/billing.py` (synchronisation de nuit, rappel annuel P5, résiliations des comptes supprimés).
   - `models/` : SQLAlchemy 2 (API synchrone). Les migrations sont dans `backend/alembic/versions`.
-  - `providers/` : `yahoo.py` (yfinance) et `euronext.py`, derrière les interfaces `providers/base.py`.
+  - `providers/` : `yahoo.py` (yfinance) et les listes de titres (`euronext.py`, `us.py`, `xetra.py`, `six.py`, `nordic.py`, socle commun `listing_source.py` avec repli sur `seeds/listings/`), derrière les interfaces `providers/base.py`.
   - `jobs/` : tâches planifiées du worker :
-    - univers à 7 h et historique quotidien à 7 h 30, en semaine ; passage du soir à 18 h 15 (clôtures officielles du jour, puis scores et prévisions) ;
-    - historique complet : un nouveau titre est chargé depuis sa première cotation ; `history_backfill` (20 h et fin du démarrage) rattrape les anciens titres, marqués `history_complete` une fois faits ;
-    - cours par paliers T1/T2/T3 (1, 5 et 5 min), en séance seulement ;
+    - univers à 7 h et historique quotidien à 7 h 30, en semaine ; passage du soir à 18 h 15 (clôtures européennes, puis scores et prévisions) et à 22 h 30 (clôtures américaines) ; cours de change (`fx`, table `fx_rates`) avant chaque passage ;
+    - un calendrier par place (`services/market_calendar.py` : Europe, New York) : les paliers ne rafraîchissent que les titres dont la place est ouverte ;
+    - historique complet : `history_backfill` (20 h, après l'univers et en fin de démarrage) charge les titres pas encore marqués `history_complete`, par paquets de 100, en reprenant `HEAVY_JOBS_LOCK` à chaque paquet ;
+    - fondamentaux : un cinquième des actions par jour ouvré (chacune relue une fois par semaine) ;
+    - cours par paliers T1/T2/T3 (1, 5 et 5 min), pendant la séance de chaque place seulement ;
     - score après chaque passage T2.
   - `services/scoring/` : le score sur 100, avec 50 points techniques et 50 fondamentaux par défaut. Les maxima sont dans `scoring/config.py`, et les ETF n'ont que la partie technique.
   - `services/forecast/` : prévisions court terme sans API (pandas).
@@ -42,7 +44,7 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
     - Tâches `jobs/forecasts.py` : statistiques recalculées si elles ont plus de 7 jours (environ 45 s), prédictions du jour et vérification des anciennes chaque matin après l'historique (environ 10 s).
   - `services/envelopes/rules.py` : registre des enveloppes (`pea`, `pea_pme`, `cto`). PEA par le pays du siège déduit du préfixe ISIN (UE/EEE → éligible, foncières REIT → « à vérifier »), PEA-PME en plus par la taille (effectif, CA, capitalisation). Statuts stockés dans `security_envelopes` ; une correction manuelle est toujours prioritaire. Le compte-titres accepte tout et n'est pas stocké.
   - `services/assistant/` : chat Claude (SDK `anthropic`) avec une boucle d'outils manuelle, en streaming SSE, et le catalogue des modèles et de leurs prix.
-  - `seeds/` : CSV de secours (instantané Euronext, ETF, indices, actions hors Euronext).
+  - `seeds/` : CSV de secours (instantané Euronext, `listings/` pour les autres listes, rafraîchis par `python -m app.seeds.snapshots`), ETF confirmés PEA, indices, actions saisies à la main.
 
 ### Frontend (`frontend/src`)
 
@@ -119,7 +121,8 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
 ## Points d'attention
 
 - **Enveloppes (PEA, PEA-PME)** :
-  - il n'existe pas de liste officielle complète, l'univers est reconstruit (Euronext + grands indices + PEA-PME + ETF de `seeds/`) ;
+  - il n'existe pas de liste officielle complète, l'univers est reconstruit (environ 20 000 titres : Euronext et ses ETF, Xetra, SIX, Nasdaq Nordic, États-Unis, plus les `seeds/`), un titre par ISIN sur sa place d'origine ;
+  - un ETF n'est éligible au PEA que s'il est confirmé (`seeds/etfs.csv`, correction admin) ou si son nom contient « PEA » ;
   - les enveloppes sont une déduction (le PEA-PME une estimation), à présenter comme telle ;
   - **ne jamais scraper le Crédit Agricole** (connexion bancaire, conditions d'utilisation).
 - **Yahoo (yfinance)** : source gratuite, non officielle et limitée en débit.

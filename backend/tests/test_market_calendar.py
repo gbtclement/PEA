@@ -3,7 +3,8 @@ from datetime import UTC, date, datetime
 import pytest
 
 from app.services.market_calendar import (
-    PARIS, easter_sunday, euronext_holidays, is_market_open, is_trading_day, last_session_close,
+    EUROPE, PARIS, US, any_market_open, calendar_for_market, easter_sunday, euronext_holidays, is_market_open,
+    is_trading_day, last_session_close, open_calendars, us_holidays,
 )
 
 
@@ -48,3 +49,48 @@ def test_trading_days():
 ])
 def test_is_market_open(utc_dt, expected):
     assert is_market_open(utc_dt) is expected
+
+
+def test_us_holidays_2026():
+    assert us_holidays(2026) == {
+        date(2026, 1, 1), date(2026, 1, 19), date(2026, 2, 16), date(2026, 4, 3), date(2026, 5, 25),
+        date(2026, 6, 19), date(2026, 7, 3), date(2026, 9, 7), date(2026, 11, 26), date(2026, 12, 25),
+    }
+
+
+def test_new_year_on_saturday_is_not_moved_to_friday():
+    assert date(2027, 12, 31) not in us_holidays(2027)  # 01/01/2028 est un samedi
+
+
+def test_us_session_in_paris_time():
+    friday = date(2026, 10, 2)
+    assert not US.is_open(datetime(2026, 10, 2, 15, 29, tzinfo=PARIS))
+    assert US.is_open(datetime(2026, 10, 2, 15, 30, tzinfo=PARIS))
+    assert US.is_open(datetime(2026, 10, 2, 21, 59, tzinfo=PARIS))
+    assert not US.is_open(datetime(2026, 10, 2, 22, 0, tzinfo=PARIS))
+    assert US.session_close(friday) == datetime(2026, 10, 2, 22, 0, tzinfo=PARIS)
+
+
+def test_us_open_during_dst_gap():
+    # 09/03/2026 : New York est passé à l'heure d'été, pas encore Paris → ouverture à 14 h 30 heure de Paris
+    assert US.is_open(datetime(2026, 3, 9, 14, 45, tzinfo=PARIS))
+    assert not EUROPE.is_open(datetime(2026, 3, 9, 18, 0, tzinfo=PARIS))
+
+
+def test_us_early_close_after_thanksgiving():
+    assert not US.is_open(datetime(2026, 11, 27, 19, 30, tzinfo=PARIS))  # 13 h 30 à New York
+    assert US.is_open(datetime(2026, 11, 27, 18, 30, tzinfo=PARIS))
+
+
+def test_calendar_for_market():
+    assert calendar_for_market("Nasdaq") is US
+    assert calendar_for_market("NYSE Arca") is US
+    assert calendar_for_market("Nasdaq Stockholm") is EUROPE
+    assert calendar_for_market("Euronext Paris") is EUROPE
+
+
+def test_open_calendars_and_any_market_open():
+    evening = datetime(2026, 10, 2, 19, 0, tzinfo=PARIS)
+    assert open_calendars(evening) == [US]
+    assert any_market_open(evening)
+    assert not any_market_open(datetime(2026, 10, 3, 19, 0, tzinfo=UTC))  # samedi

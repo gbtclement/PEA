@@ -4,7 +4,7 @@ import { ScoreGauge } from "@/components/ScoreGauge";
 import { Sparkline } from "@/components/Sparkline";
 import { EnvelopeBadges } from "@/features/explorer/EnvelopeBadges";
 import type { ScreenerRow } from "@/lib/api/client";
-import { formatNumber, formatPct, formatPrice, formatRatioPct } from "@/lib/format";
+import { currencyUnit, formatNumber, formatPct, formatPrice, formatRatioPct } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 function Change({ value }: { value: number | null }) {
@@ -39,8 +39,12 @@ export function buildColumns(kind: "stock" | "etf"): ColumnSpec[] {
           </div>
         </div>
       ) },
-    { id: "price", header: "Cours", width: "80px", align: "right", ...numeric("price"),
-      cell: ({ row }) => <span className="font-medium">{formatPrice(row.original.price)}</span> },
+    { id: "price", header: "Cours", width: "110px", align: "right", ...numeric("price"),
+      cell: ({ row }) => (
+        <span className="font-medium whitespace-nowrap">
+          {row.original.price == null ? "—" : `${formatPrice(row.original.price)} ${currencyUnit(row.original.currency)}`}
+        </span>
+      ) },
     { id: "change_pct", header: "1 j", width: "80px", align: "right", ...numeric("change_pct"),
       cell: ({ row }) => <Change value={row.original.change_pct} /> },
     { id: "perf_1w", header: "1 sem", width: "80px", align: "right", ...numeric("perf_1w"),

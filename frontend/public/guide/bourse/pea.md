@@ -20,7 +20,7 @@ Le **Plan d'épargne en actions** est un compte pour investir en bourse avec un 
 
 On **ne peut pas** y acheter directement des actions américaines (Apple, Microsoft), suisses (Nestlé), britanniques (Shell), ni des obligations.
 
-C'est pourquoi Cotalyx affiche un badge **PEA** sur chaque titre compatible.
+C'est pourquoi Cotalyx affiche un badge **PEA** sur chaque titre compatible. Pour les ETF, le badge n'apparaît que si l'éligibilité est confirmée ou si le nom de l'ETF contient « PEA » : un ETF mondial domicilié en Irlande ou au Luxembourg n'est en général **pas** éligible, même s'il est coté à Paris.
 
 ## La fiscalité
 
