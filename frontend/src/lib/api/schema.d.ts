@@ -791,7 +791,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Simulate */
+        /**
+         * Simulate
+         * @description Boutons rapides (`period`) ou durée libre (`duration` + `unit`, prioritaire).
+         */
         get: operations["simulate_api_securities__security_id__simulate_get"];
         put?: never;
         post?: never;
@@ -1718,6 +1721,15 @@ export interface components {
             period: string;
             /** Intraday */
             intraday: boolean;
+            /**
+             * Interval
+             * @enum {string}
+             */
+            interval: "5m" | "30m" | "day" | "week" | "month";
+            /** First Date */
+            first_date: string | null;
+            /** Last Date */
+            last_date: string | null;
             /** Bars */
             bars: components["schemas"]["Bar"][];
             /** Sma50 */
@@ -2479,6 +2491,8 @@ export interface components {
             gain_pct: number | null;
             /** Message */
             message: string | null;
+            /** Note */
+            note?: string | null;
         };
         /** StatusResponse */
         StatusResponse: {
@@ -4084,7 +4098,9 @@ export interface operations {
     get_history_api_securities__security_id__history_get: {
         parameters: {
             query?: {
-                period?: "1D" | "1W" | "1M" | "6M" | "1Y" | "5Y";
+                period?: "1D" | "1W" | "1M" | "6M" | "1Y" | "5Y" | "10Y" | "MAX" | "custom";
+                start?: string | null;
+                end?: string | null;
             };
             header?: never;
             path: {
@@ -4150,6 +4166,8 @@ export interface operations {
             query: {
                 amount: number;
                 period?: "1W" | "1M" | "6M" | "1Y";
+                duration?: number | null;
+                unit?: "days" | "weeks" | "months" | "years";
             };
             header?: never;
             path: {
