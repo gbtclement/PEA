@@ -1,7 +1,7 @@
 from app.jobs.context import JobContext
 from app.repositories.securities import SecurityUpsert, deactivate_missing, upsert_securities
 from app.seeds.loader import load_all_seeds
-from app.services.eligibility.rules import ELIGIBLE, NOT_ELIGIBLE, country_from_isin
+from app.services.envelopes.rules import ELIGIBLE, NOT_ELIGIBLE, country_from_isin
 
 _FIXED_BY_KIND = {"etf": ELIGIBLE, "index": NOT_ELIGIBLE}
 

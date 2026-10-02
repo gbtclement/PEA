@@ -1,5 +1,5 @@
 from app.seeds.loader import load_all_seeds, load_etfs, load_extra_stocks, load_indices
-from app.services.eligibility.rules import EU_EEA_COUNTRIES
+from app.services.envelopes.rules import EU_EEA_COUNTRIES
 
 
 def test_seeds_have_unique_tickers():

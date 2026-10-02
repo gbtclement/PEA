@@ -4,7 +4,7 @@ from sqlalchemy import func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.models import Security, SecurityQuote
-from app.services.eligibility.rules import ELIGIBLE, NOT_ELIGIBLE, classify_eligibility, effective_eligibility
+from app.services.envelopes.rules import ELIGIBLE, NOT_ELIGIBLE, classify_eligibility, effective_eligibility
 
 
 @dataclass(frozen=True)
