@@ -111,3 +111,13 @@ def test_status_lists_each_place(client):
     markets = client.get("/api/status").json()["markets"]
     assert [(m["code"], m["label"]) for m in markets] == [("europe", "Europe"), ("us", "New York")]
     assert all(isinstance(m["open"], bool) for m in markets)
+
+
+def test_screener_rows_carry_the_quote_currency(client, db):
+    ny = make_security(db, "AAPL", market="Nasdaq", country="US")
+    paris = make_security(db, "MC.PA")
+    quote(db, ny, 200, 1.0)
+    quote(db, paris, 600, 1.0)
+    db.flush()
+    rows = {r["yahoo_ticker"]: r["currency"] for r in client.get("/api/screener").json()}
+    assert rows == {"AAPL": "USD", "MC.PA": "EUR"}

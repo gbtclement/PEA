@@ -11,7 +11,7 @@ import { EnvelopeBadges } from "@/features/explorer/EnvelopeBadges";
 import { ENVELOPE_LABELS } from "@/lib/envelopes";
 import { OrderDialog } from "@/features/portfolio/OrderDialog";
 import { ApiError, apiGet, type SecurityDetail } from "@/lib/api/client";
-import { formatDateTime, formatPct, formatPrice } from "@/lib/format";
+import { currencyUnit, formatDateTime, formatPct, formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ForecastCard } from "./ForecastCard";
 import { FundamentalsCard } from "./FundamentalsCard";
@@ -93,7 +93,7 @@ export function SecurityPage() {
           )}
         </div>
         <div className="text-right">
-          <p className="text-3xl font-semibold">{formatPrice(data.price)} {data.currency === "EUR" ? "€" : data.currency}</p>
+          <p className="text-3xl font-semibold">{formatPrice(data.price)} {currencyUnit(data.currency)}</p>
           <p className={cn("text-sm font-medium", change > 0 && "text-up", change < 0 && "text-down")}>{formatPct(data.change_pct)} aujourd'hui</p>
           <p className="text-xs text-muted-foreground">Mis à jour {formatDateTime(data.as_of)}</p>
         </div>

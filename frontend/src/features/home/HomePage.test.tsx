@@ -7,7 +7,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 const row = (id: number, symbol: string, name: string, change: number) => ({
   id, yahoo_ticker: `${symbol}.PA`, symbol, name, kind: "stock", market: "Euronext Paris", country: "FR", sector: "Luxe",
-  envelopes: ["pea"], price: 100, change_pct: change, perf_1w: 1, perf_1m: 2, perf_1y: 3, score: 80, pe: 15,
+  envelopes: ["pea"], price: 100, currency: "EUR", change_pct: change, perf_1w: 1, perf_1m: 2, perf_1y: 3, score: 80, pe: 15,
   dividend_yield: 0.02, liquid: true, is_favorite: false, sparkline: [1, 2, 3],
 });
 

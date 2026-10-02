@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { loginPath } from "@/features/auth/redirect";
 import { useMe } from "@/features/auth/useMe";
 import { apiSend } from "@/lib/api/client";
+import { currencyUnit } from "@/lib/format";
 
 type Security = { id: number; name: string; price: number | null; currency: string };
 
@@ -22,7 +23,7 @@ export function PriceAlertButton({ security }: { security: Security }) {
   const [open, setOpen] = useState(false);
   const [direction, setDirection] = useState<"above" | "below">("above");
   const [price, setPrice] = useState(toText(security.price));
-  const unit = security.currency === "EUR" ? "€" : security.currency;
+  const unit = currencyUnit(security.currency);
   const create = useMutation({
     mutationFn: () => apiSend("POST", "/api/me/price-alerts",
       { security_id: security.id, direction, price: Number(price.replace(",", ".")) }),

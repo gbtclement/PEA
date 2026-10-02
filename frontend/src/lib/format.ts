@@ -33,3 +33,8 @@ export function formatDate(isoDate: string | null | undefined): string {
   const [year, month, day] = isoDate.slice(0, 10).split("-");
   return `${day}/${month}/${year}`;
 }
+
+/** Unité d'un cours : « € » pour l'euro, sinon le code de la devise (USD, CHF…). */
+export function currencyUnit(currency: string | null | undefined): string {
+  return !currency || currency === "EUR" ? "€" : currency;
+}

@@ -2242,6 +2242,8 @@ export interface components {
             envelopes: string[];
             /** Price */
             price: number | null;
+            /** Currency */
+            currency: string;
             /** Change Pct */
             change_pct: number | null;
             /** Perf 1W */
@@ -2298,6 +2300,8 @@ export interface components {
             envelopes: string[];
             /** Price */
             price: number | null;
+            /** Currency */
+            currency: string;
             /** Change Pct */
             change_pct: number | null;
             /** Perf 1W */
@@ -2324,8 +2328,6 @@ export interface components {
             sparkline: number[];
             /** Industry */
             industry: string | null;
-            /** Currency */
-            currency: string;
             /** As Of */
             as_of: string | null;
             fundamentals: components["schemas"]["FundamentalsOut"] | null;
@@ -2561,6 +2563,8 @@ export interface components {
             envelopes: string[];
             /** Price */
             price: number | null;
+            /** Currency */
+            currency: string;
             /** Change Pct */
             change_pct: number | null;
             /** Perf 1W */

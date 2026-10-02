@@ -3,7 +3,7 @@ import { filterRows, filtersFromParams } from "./filters";
 
 const row = (over: Partial<ScreenerRow>): ScreenerRow => ({
   id: 1, yahoo_ticker: "MC.PA", symbol: "MC", name: "LVMH", kind: "stock", market: "Euronext Paris", country: "FR",
-  sector: "Luxe", envelopes: ["pea"], price: 600, change_pct: 1, perf_1w: 1, perf_1m: 1, perf_1y: 1, score: 80,
+  sector: "Luxe", envelopes: ["pea"], price: 600, currency: "EUR", change_pct: 1, perf_1w: 1, perf_1m: 1, perf_1y: 1, score: 80,
   pe: 20, dividend_yield: 0.02, liquid: true, available_ratio: 1, isin: null, is_favorite: false, sparkline: [], ...over,
 });
 const rows = [

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { apiGet, apiSend, type NotificationPrefs, type PriceAlert } from "@/lib/api/client";
-import { formatPrice } from "@/lib/format";
+import { currencyUnit, formatPrice } from "@/lib/format";
 
 type Kind = Exclude<keyof NotificationPrefs, "move_threshold_pct">;
 
@@ -23,7 +23,7 @@ const ITEMS: { key: Kind; label: string; hint: string }[] = [
     hint: "Après la séance : entrée ou sortie du top 10, ou score qui bouge d'au moins 10 points." },
 ];
 
-const unit = (currency: string) => (currency === "EUR" ? "€" : currency);
+const unit = currencyUnit;
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("fr-FR") : "");
 
 export function NotificationsCard() {
