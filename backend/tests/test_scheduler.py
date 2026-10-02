@@ -45,7 +45,7 @@ def test_build_scheduler_registers_jobs(make_ctx):
     assert {job.id for job in scheduler.get_jobs()} == {
         "bootstrap", "universe", "daily", "evening", "quotes_t1", "quotes_t2", "quotes_t3", "cleanup", "exports",
         "price_moves", "daily_recap", "order_reminders", "weekly_recap", "billing_sync", "renewal_notices",
-        "stripe_cancellations",
+        "stripe_cancellations", "history_backfill",
     }
 
 
@@ -98,6 +98,8 @@ def test_bootstrap_skips_fresh_data(db, make_ctx):
     ctx, market, listing = seeded_ctx(db, make_ctx, tuesday, {
         "universe": monday_evening, "daily_history": monday_evening, "fundamentals": monday_evening,
     })
+    db.get(Security, db.scalar(select(Security.id))).history_complete = True  # rattrapage déjà fait
+    db.flush()
     bootstrap_job(ctx)
     assert listing.calls == 0
     assert market.history_calls == []
@@ -170,7 +172,7 @@ def test_bootstrap_recomputes_scores_once_fundamentals_are_loaded(db, make_ctx, 
     )
     bootstrap_job(make_ctx(market=market, listing=listing, now=OPEN_MONDAY))
     assert "fundamentals" in names
-    assert names[-1] == "scores"
+    assert names[-2:] == ["scores", "history_backfill"]  # le rattrapage passe en dernier
 
 
 def test_bootstrap_does_not_rescore_when_fundamentals_are_fresh(db, make_ctx, monkeypatch):
@@ -227,3 +229,10 @@ def test_evening_job_snapshots_scores_then_notifies(make_ctx, monkeypatch):
     monkeypatch.setattr(scheduler_module, "run_score_notifications", lambda ctx: calls.append("score_notifications"))
     scheduler_module.evening_job(make_ctx())
     assert calls[-1] == "score_notifications"
+
+
+def test_bootstrap_runs_history_backfill(db, make_ctx):
+    fresh = {job: OPEN_MONDAY for job in ("universe", "daily_history", "fundamentals", "forecasts")}
+    ctx, market, _ = seeded_ctx(db, make_ctx, OPEN_MONDAY, fresh)
+    bootstrap_job(ctx)
+    assert (["MC.PA"], None) in market.history_calls

@@ -48,11 +48,61 @@ def test_history_daily_with_indicators(client, db):
     assert len(body["sma200"]) == len(body["bars"])  # 300 séances : la moyenne 200 jours existe sur tout le mois
     assert body["rsi"][-1]["value"] == 100.0
     assert set(body["macd"][-1]) == {"time", "macd", "signal", "histogram"}
+    assert body["interval"] == "day" and body["first_date"] == "2025-11-30" and body["last_date"] == "2026-09-25"
 
 
-def test_history_5y_returns_everything(client, db):
+def get_history(client, security, **params):
+    return client.get(f"/api/securities/{security.id}/history", params=params)
+
+
+def test_history_5y_keeps_five_years(client, db):
+    security = with_history(db, days=2000)
+    body = get_history(client, security, period="5Y").json()
+    assert len(body["bars"]) == 365 * 5 + 2  # 5 ans + 1 jour en arrière, jour de départ inclus
+    max_body = get_history(client, security, period="MAX").json()
+    assert len(max_body["bars"]) == 2000 and max_body["interval"] == "day"
+
+
+def test_history_10y_groups_by_week(client, db):
+    security = with_history(db, days=3700)
+    body = get_history(client, security, period="10Y").json()
+    assert body["interval"] == "week"
+    times = [b["time"] for b in body["bars"]]
+    assert 520 <= len(times) <= 524 and times == sorted(set(times))
+    assert body["bars"][-1]["close"] == 100.0 + 3699  # dernière clôture de la dernière semaine
+    for line in ("sma50", "sma200", "rsi"):
+        assert {p["time"] for p in body[line]} <= set(times)
+    assert {p["time"] for p in body["macd"]} <= set(times)
+
+
+def test_history_max_groups_by_month_beyond_ten_years(client, db):
+    security = with_history(db, days=4000)
+    body = get_history(client, security, period="MAX").json()
+    assert body["interval"] == "month"
+    last = body["bars"][-1]
+    assert last["time"] == "2026-09-01"
+    assert last["volume"] == 10 * 25 and last["high"] == 100.0 + 3999 and last["open"] == 100.0 + 3999 - 24
+    assert body["first_date"] == (LAST - timedelta(days=3999)).isoformat()
+
+
+def test_history_custom_range(client, db):
     security = with_history(db)
-    assert len(client.get(f"/api/securities/{security.id}/history", params={"period": "5Y"}).json()["bars"]) == 300
+    body = get_history(client, security, period="custom", start="2026-09-01", end="2026-09-10").json()
+    assert [b["time"] for b in body["bars"]][0] == "2026-09-01" and body["bars"][-1]["time"] == "2026-09-10"
+    assert len(body["bars"]) == 10 and body["interval"] == "day"
+    assert len(body["sma200"]) == 10  # indicateurs calculés sur tout l'historique, puis coupés
+
+
+def test_history_custom_range_requires_ordered_dates(client, db):
+    security = with_history(db)
+    assert get_history(client, security, period="custom", start="2026-09-01").status_code == 422
+    assert get_history(client, security, period="custom", start="2026-09-10", end="2026-09-01").status_code == 422
+
+
+def test_history_custom_range_outside_history(client, db):
+    security = with_history(db)
+    response = get_history(client, security, period="custom", start="1990-01-01", end="1990-12-31")
+    assert response.status_code == 200 and response.json()["bars"] == []
 
 
 def test_history_intraday(client, db, fake_market):
@@ -104,7 +154,32 @@ def test_simulate(client, db):
     assert body["buy_fee"] == 1.32 and body["current_value"] == 800.0 and body["sell_fee"] == 1.44
     assert body["gain"] == 61.24
     assert body["message"] is None
+    assert body["note"] is None
 
+
+
+def test_simulate_custom_duration(client, db):
+    security = with_history(db)  # clôture du jour i : 100 + i, dernier jour le 25/09
+    body = client.get(f"/api/securities/{security.id}/simulate",
+                      params={"amount": 1000, "duration": 2, "unit": "weeks"}).json()
+    assert body["start_date"] == "2026-09-11" and body["start_price"] == 385.0
+    assert body["note"] is None
+
+
+def test_simulate_beyond_history_starts_at_first_close(client, db):
+    security = with_history(db)
+    first = LAST - timedelta(days=299)
+    body = client.get(f"/api/securities/{security.id}/simulate",
+                      params={"amount": 1000, "duration": 10, "unit": "years"}).json()
+    assert body["start_date"] == first.isoformat() and body["start_price"] == 100.0
+    assert body["note"] == f"Historique disponible depuis le {first:%d/%m/%Y} : la simulation part de cette date."
+
+
+def test_simulate_rejects_invalid_duration(client, db):
+    security = with_history(db)
+    url = f"/api/securities/{security.id}/simulate"
+    assert client.get(url, params={"amount": 500, "duration": 0, "unit": "days"}).status_code == 422
+    assert client.get(url, params={"amount": 500, "duration": 2, "unit": "decades"}).status_code == 422
 
 def test_simulate_amount_below_price(client, db):
     security = with_history(db)

@@ -18,7 +18,7 @@ from app.jobs.mail import send_pending_emails
 from app.jobs.notifications import (
     run_daily_recaps, run_order_reminders, run_price_alerts, run_price_moves, run_score_notifications, run_weekly_recaps,
 )
-from app.jobs.market import refresh_daily_history, refresh_fundamentals, refresh_quotes
+from app.jobs.market import backfill_history, refresh_daily_history, refresh_fundamentals, refresh_quotes
 from app.jobs.runner import run_job
 from app.jobs.scoring import refresh_scores
 from app.jobs.universe import refresh_universe
@@ -92,6 +92,12 @@ def evening_job(ctx: JobContext) -> None:
         _quietly(ctx, run_score_notifications)  # photo des scores du soir, puis N6
 
 
+def history_backfill_job(ctx: JobContext) -> None:
+    """Historique complet des titres existants : ne fait plus rien une fois tous les titres rattrapés."""
+    with HEAVY_JOBS_LOCK:
+        run_job(ctx, "history_backfill", backfill_history)
+
+
 def _refresh_forecasts(ctx: JobContext) -> None:
     """Statistiques des signaux une fois par semaine, prédictions du jour à chaque passage."""
     if stats_are_stale(ctx):
@@ -134,6 +140,7 @@ def bootstrap_job(ctx: JobContext) -> None:
             run_job(ctx, "fundamentals", refresh_fundamentals)
             # Sans fondamentaux, aucune action n'atteint le taux de données exigé pour le top 10
             _refresh_scores(ctx)
+    history_backfill_job(ctx)  # rattrapage après tout le reste : les cours du jour passent d'abord
 
 
 def mail_job(ctx: JobContext) -> None:
@@ -184,6 +191,8 @@ def build_scheduler(ctx: JobContext, scheduler: BaseScheduler | None = None) -> 
                       args=[ctx], id="daily", **daily)
     scheduler.add_job(evening_job, CronTrigger(day_of_week="mon-fri", hour=18, minute=15, timezone=tz),
                       args=[ctx], id="evening", **daily)
+    scheduler.add_job(history_backfill_job, CronTrigger(hour=20, minute=0, timezone=tz),
+                      args=[ctx], id="history_backfill", **daily)
     scheduler.add_job(daily_recap_job, CronTrigger(day_of_week="mon-fri", hour=18, minute=45, timezone=tz),
                       args=[ctx], id="daily_recap", **daily)
     scheduler.add_job(order_reminders_job, CronTrigger(month="10-12", day=1, hour=9, minute=0, timezone=tz),

@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { mockFetch, renderWithProviders } from "@/test/utils";
 import { PriceChartPanel } from "./PriceChartPanel";
@@ -60,4 +60,51 @@ test("les heures intraday sont affichées à l'heure de Paris", async () => {
   await waitFor(() => expect(createChart).toHaveBeenCalled());
   const options = vi.mocked(createChart).mock.calls.at(-1)![1] as { localization: { timeFormatter: (t: number | string) => string } };
   expect(options.localization.timeFormatter(Date.UTC(2026, 8, 25, 7, 0) / 1000)).toContain("09:00");
+});
+
+const BOUNDED = { ...DAILY, interval: "day", first_date: "2000-01-03", last_date: "2026-09-25" };
+const urls = (fetchMock: ReturnType<typeof mockFetch>) => fetchMock.mock.calls.map(([url]) => String(url));
+
+test("périodes 10A et Max", async () => {
+  const fetchMock = mockFetch(() => ({ body: BOUNDED }));
+  renderWithProviders(<PriceChartPanel securityId={5} />);
+  await waitFor(() => expect(chart.addSeries).toHaveBeenCalled());
+  await userEvent.click(screen.getByRole("button", { name: "10A" }));
+  await userEvent.click(screen.getByRole("button", { name: "Max" }));
+  await waitFor(() => expect(urls(fetchMock).some((u) => u.includes("period=MAX"))).toBe(true));
+  expect(urls(fetchMock).some((u) => u.includes("period=10Y"))).toBe(true);
+});
+
+test("période personnalisée bornée à l'historique", async () => {
+  const fetchMock = mockFetch(() => ({ body: BOUNDED }));
+  renderWithProviders(<PriceChartPanel securityId={5} />);
+  await waitFor(() => expect(chart.addSeries).toHaveBeenCalled());
+  await userEvent.click(screen.getByRole("button", { name: "Personnalisé" }));
+  const start = screen.getByLabelText("Début");
+  const end = screen.getByLabelText("Fin");
+  expect(start).toHaveAttribute("min", "2000-01-03");
+  expect(end).toHaveAttribute("max", "2026-09-25");
+  fireEvent.change(start, { target: { value: "2020-01-01" } });
+  fireEvent.change(end, { target: { value: "2019-01-01" } });
+  expect(screen.getByText("La date de fin doit suivre la date de début.")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Appliquer" })).toBeDisabled();
+  fireEvent.change(end, { target: { value: "2021-06-30" } });
+  await userEvent.click(screen.getByRole("button", { name: "Appliquer" }));
+  await waitFor(() => expect(urls(fetchMock).some(
+    (u) => u.includes("period=custom") && u.includes("start=2020-01-01") && u.includes("end=2021-06-30"))).toBe(true));
+});
+
+test("indique le regroupement des barres", async () => {
+  mockFetch(() => ({ body: { ...BOUNDED, interval: "month" } }));
+  renderWithProviders(<PriceChartPanel securityId={5} />);
+  expect(await screen.findByText("Une barre par mois sur cette période.")).toBeInTheDocument();
+});
+
+test("ne garde pas le graphique d'un autre titre pendant le chargement", async () => {
+  mockFetch(() => ({ body: BOUNDED }));
+  const { rerender, container } = renderWithProviders(<PriceChartPanel securityId={5} />);
+  await waitFor(() => expect(chart.addSeries).toHaveBeenCalled());
+  vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));  // l'historique du titre 6 tarde à arriver
+  rerender(<PriceChartPanel securityId={6} />);
+  expect(container.querySelector('[data-slot="skeleton"]')).not.toBeNull();
 });

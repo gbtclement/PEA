@@ -1,11 +1,13 @@
 from datetime import date
 
-from sqlalchemy import Row, delete, func, select
+from sqlalchemy import Row, delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.models import DailyPrice, Security, SecurityFundamentals, SecurityQuote
 from app.providers.base import DailyBar, Fundamentals, Quote
+
+UPSERT_CHUNK_ROWS = 5000
 
 
 def refreshable_securities(session: Session) -> list[Security]:
@@ -69,9 +71,11 @@ def upsert_daily_bars(session: Session, security_id: int, bars: list[DailyBar]) 
          "close": b.close, "volume": b.volume}
         for b in bars
     ]
-    stmt = pg_insert(DailyPrice).values(rows)
-    updated = {col: stmt.excluded[col] for col in ("open", "high", "low", "close", "volume")}
-    session.execute(stmt.on_conflict_do_update(index_elements=["security_id", "date"], set_=updated))
+    # PostgreSQL limite une requête à 65 535 paramètres (7 par ligne) : un historique complet passe en plusieurs fois.
+    for start in range(0, len(rows), UPSERT_CHUNK_ROWS):
+        stmt = pg_insert(DailyPrice).values(rows[start:start + UPSERT_CHUNK_ROWS])
+        updated = {col: stmt.excluded[col] for col in ("open", "high", "low", "close", "volume")}
+        session.execute(stmt.on_conflict_do_update(index_elements=["security_id", "date"], set_=updated))
     return len(rows)
 
 
@@ -92,6 +96,32 @@ def daily_series(session: Session, since: date) -> dict[int, list[Row]]:
     for row in rows:
         result.setdefault(row.security_id, []).append(row)
     return result
+
+
+def incomplete_history_securities(session: Session) -> list[Security]:
+    return list(session.scalars(
+        select(Security).where(Security.active.is_(True), Security.history_complete.is_(False)).order_by(Security.id)
+    ))
+
+
+def mark_history_complete(session: Session, security_ids: list[int]) -> None:
+    if security_ids:
+        session.execute(update(Security).where(Security.id.in_(security_ids)).values(history_complete=True))
+
+
+def first_price_dates(session: Session, security_ids: list[int]) -> dict[int, date]:
+    rows = session.execute(
+        select(DailyPrice.security_id, func.min(DailyPrice.date))
+        .where(DailyPrice.security_id.in_(security_ids)).group_by(DailyPrice.security_id)
+    )
+    return {security_id: first for security_id, first in rows}
+
+
+def price_date_range(session: Session, security_id: int) -> tuple[date | None, date | None]:
+    first, last = session.execute(
+        select(func.min(DailyPrice.date), func.max(DailyPrice.date)).where(DailyPrice.security_id == security_id)
+    ).one()
+    return first, last
 
 
 def latest_price_dates(session: Session) -> dict[int, date]:

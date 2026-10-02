@@ -12,7 +12,7 @@ from app.repositories.market_data import all_daily_prices
 from app.repositories.securities import search_securities
 from app.services.indicators import macd, performance, rsi, sma
 
-HISTORY_DAYS = {"1M": 31, "6M": 183, "1Y": 365, "5Y": 365 * 5}
+HISTORY_DAYS = {"1M": 31, "6M": 183, "1Y": 365, "5Y": 365 * 5, "10Y": 365 * 10, "MAX": None}
 MAX_POINTS = 60
 
 
@@ -102,13 +102,14 @@ def _last(values: list) -> float | None:
 def _history(db: Session, user: User, args: dict) -> dict:
     period = args.get("period")
     if period not in HISTORY_DAYS:
-        raise ToolError("Période invalide : utilisez 1M, 6M, 1Y ou 5Y.")
+        raise ToolError("Période invalide : utilisez 1M, 6M, 1Y, 5Y, 10Y ou MAX.")
     security = _resolve(db, args.get("ticker"))
     prices = all_daily_prices(db, security.id)
     if not prices:
         raise ToolError(f"Pas d'historique pour {security.name}.")
     values = [p.close for p in prices]
-    since = prices[-1].date - timedelta(days=HISTORY_DAYS[period])
+    days = HISTORY_DAYS[period]
+    since = prices[-1].date - timedelta(days=days) if days is not None else prices[0].date
     window = [p for p in prices if p.date >= since]
     step = max(1, -(-len(window) // MAX_POINTS))
     sampled = window[::-1][::step][::-1]  # garde toujours la dernière clôture

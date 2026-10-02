@@ -100,10 +100,10 @@ Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_no
 |---|---|---|
 | GET | `/securities?q=&kind=&envelope=&overridden=&limit=&offset=` | Recherche paginée (nom, ticker, ISIN) ; `envelope=pea` ou `envelope=pea_pme` garde les titres éligibles à cette enveloppe |
 | GET | `/securities/{id}` | Fiche : cours, score détaillé, fondamentaux, enveloppes, favori |
-| GET | `/securities/{id}/history?period=1D\|1W\|1M\|6M\|1Y\|5Y` | Barres OHLCV, MM50/MM200, RSI, MACD. `1D` (barres de 5 min) et `1W` (30 min) sont en intraday, chargés depuis Yahoo et mis en cache |
+| GET | `/securities/{id}/history?period=1D\|1W\|1M\|6M\|1Y\|5Y\|10Y\|MAX\|custom` | Barres OHLCV, MM50/MM200, RSI, MACD, et bornes de l'historique stocké (`first_date`, `last_date`). `1D` (barres de 5 min) et `1W` (30 min) sont en intraday, chargés depuis Yahoo et mis en cache. `custom` exige `start` et `end` (fin ≥ début, sinon 422). Au-delà de 2 500 séances, les barres sont regroupées par semaine (jusqu'à 10 ans) ou par mois (champ `interval`) |
 | PATCH | `/securities/{id}/envelopes/{pea\|pea_pme}` | **Admin.** Correction manuelle d'une enveloppe : `{"override": "eligible" \| "a_verifier" \| "non_eligible" \| null}` ; renvoie le titre avec ses `envelopes` |
 | GET | `/securities/{id}/news` | Actualités Yahoo, mises en cache |
-| GET | `/securities/{id}/simulate?amount=&period=1W\|1M\|6M\|1Y` | « Si j'avais investi », frais inclus |
+| GET | `/securities/{id}/simulate?amount=&period=1W\|1M\|6M\|1Y` ou `&duration=&unit=days\|weeks\|months\|years` | « Si j'avais investi », frais inclus. La durée libre (1 à 36 500) l'emporte sur `period` ; si l'historique commence plus tard, la simulation part de la première cotation et `note` le dit |
 | GET | `/screener?kind=stock\|etf` | Toutes les lignes de l'Explorer ou des ETF. Le filtrage et le tri se font côté navigateur |
 
 ## Classements et marché

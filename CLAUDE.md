@@ -31,6 +31,7 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
   - `providers/` : `yahoo.py` (yfinance) et `euronext.py`, derrière les interfaces `providers/base.py`.
   - `jobs/` : tâches planifiées du worker :
     - univers à 7 h et historique quotidien à 7 h 30, en semaine ; passage du soir à 18 h 15 (clôtures officielles du jour, puis scores et prévisions) ;
+    - historique complet : un nouveau titre est chargé depuis sa première cotation ; `history_backfill` (20 h et fin du démarrage) rattrape les anciens titres, marqués `history_complete` une fois faits ;
     - cours par paliers T1/T2/T3 (1, 5 et 5 min), en séance seulement ;
     - score après chaque passage T2.
   - `services/scoring/` : le score sur 100, avec 50 points techniques et 50 fondamentaux par défaut. Les maxima sont dans `scoring/config.py`, et les ETF n'ont que la partie technique.

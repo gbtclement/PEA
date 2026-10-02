@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -77,6 +78,9 @@ class MacdPoint(BaseModel):
 class HistoryOut(BaseModel):
     period: str
     intraday: bool
+    interval: Literal["5m", "30m", "day", "week", "month"]  # durée d'une barre
+    first_date: date | None  # bornes de tout l'historique stocké (champs de la période personnalisée)
+    last_date: date | None
     bars: list[Bar]
     sma50: list[LinePoint]
     sma200: list[LinePoint]
@@ -103,6 +107,7 @@ class SimulationOut(BaseModel):
     gain: float
     gain_pct: float | None
     message: str | None
+    note: str | None = None  # « historique disponible depuis le … » quand la durée dépasse l'historique
 
 
 class FeeEstimate(BaseModel):

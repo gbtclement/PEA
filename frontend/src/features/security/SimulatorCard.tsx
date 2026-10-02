@@ -8,12 +8,20 @@ import { formatDate, formatPrice, formatRatioPct } from "@/lib/format";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { cn } from "@/lib/utils";
 
-const PERIODS = [{ value: "1W", label: "1 semaine" }, { value: "1M", label: "1 mois" }, { value: "6M", label: "6 mois" }, { value: "1Y", label: "1 an" }];
+const PERIODS = [
+  { value: "1W", label: "1 semaine" }, { value: "1M", label: "1 mois" }, { value: "6M", label: "6 mois" },
+  { value: "1Y", label: "1 an" }, { value: "other", label: "Autre durée" },
+];
+const UNITS = [{ value: "days", label: "jours" }, { value: "weeks", label: "semaines" }, { value: "months", label: "mois" }, { value: "years", label: "ans" }];
+const MAX_DURATION = 36500;  // même plafond que l'API
+type SimulationRequest = { amount: number; period: string } | { amount: number; duration: number; unit: string };
 
 export function SimulatorCard({ securityId }: { securityId: number }) {
   const [amount, setAmount] = useState("500");
   const [period, setPeriod] = useState("1M");
-  const [request, setRequest] = useState<{ amount: number; period: string } | null>(null);
+  const [duration, setDuration] = useState("2");
+  const [unit, setUnit] = useState("years");
+  const [request, setRequest] = useState<SimulationRequest | null>(null);
   const value = Number(amount.replace(",", "."));
   const debounced = useDebouncedValue(value, 300);
   const fee = useQuery({
@@ -32,12 +40,26 @@ export function SimulatorCard({ securityId }: { securityId: number }) {
     <Card>
       <CardHeader><CardTitle className="text-base">Et si j'avais investi…</CardTitle></CardHeader>
       <CardContent className="space-y-3 text-sm">
-        <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => { e.preventDefault(); if (value > 0) setRequest({ amount: value, period }); }}>
+        <form className="flex flex-wrap items-center gap-2" onSubmit={(e) => {
+          e.preventDefault();
+          if (!(value > 0)) return;
+          if (period !== "other") { setRequest({ amount: value, period }); return; }
+          const count = Number(duration);
+          if (Number.isInteger(count) && count >= 1 && count <= MAX_DURATION) setRequest({ amount: value, duration: count, unit });
+        }}>
           <Input aria-label="Montant" inputMode="decimal" className="w-28 bg-white" value={amount} onChange={(e) => setAmount(e.target.value)} />
           <span>€ il y a</span>
           <select aria-label="Période" value={period} onChange={(e) => setPeriod(e.target.value)} className="h-8 rounded-lg border border-input bg-white px-2">
             {PERIODS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
           </select>
+          {period === "other" && (
+            <>
+              <Input aria-label="Durée" inputMode="numeric" className="w-16 bg-white" value={duration} onChange={(e) => setDuration(e.target.value)} />
+              <select aria-label="Unité" value={unit} onChange={(e) => setUnit(e.target.value)} className="h-8 rounded-lg border border-input bg-white px-2">
+                {UNITS.map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
+              </select>
+            </>
+          )}
           <Button type="submit" size="sm">Simuler</Button>
         </form>
         {fee.data && (
@@ -46,6 +68,7 @@ export function SimulatorCard({ securityId }: { securityId: number }) {
             {fee.data.amount <= 500 && " À partir de 500 €, le taux passe à 0,18 %."}
           </p>
         )}
+        {result?.note && <p className="text-muted-foreground">{result.note}</p>}
         {result && (result.message ? (
           <p className="text-amber-700">{result.message}</p>
         ) : (

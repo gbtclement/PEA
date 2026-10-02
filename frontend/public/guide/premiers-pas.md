@@ -24,7 +24,7 @@ Vous pouvez aussi chercher une entreprise que vous connaissez dans **Explorer**.
 
 Cliquez sur l'action pour ouvrir sa **fiche** et regardez :
 
-- le **graphique** sur 1 an et 5 ans : l'action monte-t-elle régulièrement, ou fait-elle les montagnes russes ?
+- le **graphique** sur 1 an, 5 ans ou plus (jusqu'à la première cotation) : l'action monte-t-elle régulièrement, ou fait-elle les montagnes russes ?
 - le **détail du score** : ses points forts et ses points faibles ;
 - les **données fondamentales** : l'entreprise gagne-t-elle de l'argent ? Est-elle très endettée ?
 - les **actualités** récentes ;

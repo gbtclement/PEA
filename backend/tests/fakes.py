@@ -30,7 +30,7 @@ class FakeMarket:
         self.news = news or {}
         self.fail_on_demand = fail_on_demand
         self.quote_calls: list[list[str]] = []
-        self.history_calls: list[tuple[list[str], date]] = []
+        self.history_calls: list[tuple[list[str], date | None]] = []
         self.fundamental_calls: list[str] = []
         self.intraday_calls: list[tuple[str, str, str]] = []
 
@@ -38,7 +38,7 @@ class FakeMarket:
         self.quote_calls.append(list(tickers))
         return {t: q for t, q in self.quotes.items() if t in tickers}
 
-    def get_daily_history(self, tickers: list[str], start: date) -> dict[str, list[DailyBar]]:
+    def get_daily_history(self, tickers: list[str], start: date | None) -> dict[str, list[DailyBar]]:
         self.history_calls.append((list(tickers), start))
         return {t: bars for t, bars in self.history.items() if t in tickers}
 

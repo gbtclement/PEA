@@ -20,6 +20,11 @@ Chaque bougie résume une période. Vert : le cours a monté ; rouge : il a bais
 | 1J | 5 minutes de la dernière séance |
 | 1S | 30 minutes sur une semaine |
 | 1M, 6M, 1A, 5A | Une journée |
+| 10A | Une journée, ou une semaine quand il y a trop de séances à afficher |
+| Max | Tout l'historique depuis la première cotation : une journée, une semaine ou un mois selon sa longueur |
+| Personnalisé | Choisissez une date de début et une date de fin, puis cliquez sur **Appliquer** |
+
+Quand les bougies sont regroupées, une ligne sous le graphique le précise (« Une barre par semaine sur cette période »).
 
 Vous pouvez aussi afficher :
 - les **moyennes mobiles 50 et 200 jours**, qui lissent le cours pour faire ressortir la tendance ;
@@ -33,7 +38,7 @@ Tout est expliqué avec des exemples dans [Lire un graphique](bourse/analyse-tec
 |---|---|
 | **Score** | Les 8 composantes, avec les points obtenus sur le maximum et une phrase d'explication (voir [Comprendre le score](app/score.md)). Un badge « données incomplètes » apparaît s'il manque des informations. |
 | **Données fondamentales** | PER, bénéfice par action, croissance, dette, marge, dividende, capitalisation (voir [Juger une entreprise](bourse/analyse-fondamentale.md)). |
-| **Simulateur** | « Si j'avais investi X € il y a 1 semaine / 1 mois / 6 mois / 1 an » : gain en euros et en %, frais compris. |
+| **Simulateur** | « Si j'avais investi X € il y a 1 semaine / 1 mois / 6 mois / 1 an », ou **Autre durée** (par exemple 2 semaines, 5 ans, 10 ans) : gain en euros et en %, frais compris. Si le titre est coté depuis moins longtemps, la simulation part de sa première cotation et le dit. |
 | **Frais estimés** | Ce que coûterait un ordre avec votre grille de frais. |
 | **Prévisions court terme** | Les signaux repérés aujourd'hui et la prévision à 1 jour, 1 semaine et 1 mois (voir [Prévisions](app/previsions.md)). Réservé aux membres [Premium](app/premium.md). |
 | **Actualités** | Les derniers articles publiés sur l'entreprise. |

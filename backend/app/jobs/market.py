@@ -1,13 +1,17 @@
+import logging
 from collections import defaultdict
 from datetime import date, datetime, timedelta
+
+from sqlalchemy.orm import Session
 
 from app.jobs.context import JobContext
 from app.jobs.tiers import tier_tickers
 from app.models import Security, SecurityFundamentals
 from app.providers.base import DailyBar, Quote
 from app.repositories.market_data import (
-    delete_daily_prices, last_two_closes, latest_price_dates, refreshable_securities, stored_close, ticker_ids,
-    upsert_daily_bars, upsert_fundamentals, upsert_quotes,
+    delete_daily_prices, first_price_dates, incomplete_history_securities, last_two_closes, latest_price_dates,
+    mark_history_complete, refreshable_securities, stored_close, ticker_ids, upsert_daily_bars, upsert_fundamentals,
+    upsert_quotes,
 )
 from app.repositories.securities import update_classification
 from app.services.market_calendar import CLOSE, PARIS
@@ -16,6 +20,12 @@ from app.services.market_calendar import CLOSE, PARIS
 MIN_RESPONSE_RATIO = 0.2
 # Écart de clôture sur le jour de recouvrement au-delà duquel l'historique a été réajusté (division, dividende).
 ADJUSTMENT_TOLERANCE = 0.005
+# Titres par appel au fournisseur pendant le rattrapage ; chaque paquet est validé à part (reprise après une panne).
+BACKFILL_BATCH = 100
+# Sans cours depuis ce délai, un titre que Yahoo ne renvoie plus est considéré comme radié.
+DEAD_AFTER = timedelta(days=30)
+
+logger = logging.getLogger(__name__)
 
 
 def _ensure_response(requested: int, received: int, what: str) -> None:
@@ -63,38 +73,94 @@ def _write_closing_quotes(ctx: JobContext, security_ids: list[int]) -> None:
 
 
 def refresh_daily_history(ctx: JobContext) -> int:
-    today = ctx.now().astimezone(PARIS).date()
-    default_start = today - timedelta(days=365 * ctx.settings.history_years)
     ids: dict[str, int] = {}
-    by_start: dict[date, list[str]] = defaultdict(list)
+    # Clé None : titre sans aucun cours, chargé en entier (period="max").
+    by_start: dict[date | None, list[str]] = defaultdict(list)
     with ctx.session_factory() as session:
         last_dates = latest_price_dates(session)
         for security in refreshable_securities(session):
             ids[security.yahoo_ticker] = security.id
             # On repart du dernier jour connu (inclus) pour corriger une séance incomplète.
-            by_start[last_dates.get(security.id, default_start)].append(security.yahoo_ticker)
+            by_start[last_dates.get(security.id)].append(security.yahoo_ticker)
     total = 0
     received: set[str] = set()
     readjusted: list[str] = []
-    for start, tickers in sorted(by_start.items()):
+    for start, tickers in sorted(by_start.items(), key=lambda item: (item[0] is not None, item[0] or date.min)):
         history = ctx.market.get_daily_history(sorted(tickers), start)
         received.update(history)
         with ctx.session_factory() as session:
+            complete: list[int] = []
             for ticker, bars in history.items():
-                if start != default_start and _is_readjusted(bars, start, stored_close(session, ids[ticker], start)):
+                if start is not None and _is_readjusted(bars, start, stored_close(session, ids[ticker], start)):
                     readjusted.append(ticker)
                     continue
                 total += upsert_daily_bars(session, ids[ticker], bars)
+                if start is None:
+                    complete.append(ids[ticker])
+            mark_history_complete(session, complete)
             session.commit()
     if readjusted:
-        history = ctx.market.get_daily_history(sorted(readjusted), default_start)
+        history = ctx.market.get_daily_history(sorted(readjusted), None)
         with ctx.session_factory() as session:
             for ticker, bars in history.items():
                 delete_daily_prices(session, ids[ticker])
                 total += upsert_daily_bars(session, ids[ticker], bars)
+            mark_history_complete(session, [ids[t] for t in history])
             session.commit()
     _write_closing_quotes(ctx, [ids[t] for t in received])
     _ensure_response(len(ids), len(received), "historiques")
+    return total
+
+
+def _junction_readjusted(session: Session, security_id: int, bars: list[DailyBar], first: date) -> bool:
+    """Compare la série Yahoo aux cours stockés sur leur première date commune (à partir de la première stockée)."""
+    overlap = next((bar for bar in bars if bar.date >= first), None)
+    if overlap is None:
+        return False  # Yahoo ne couvre que l'avant : rien à comparer, on ajoute les cours antérieurs
+    stored = stored_close(session, security_id, overlap.date)
+    if stored is None:
+        return True  # pas de date commune vérifiable : la série Yahoo complète fait foi
+    return _is_readjusted(bars, overlap.date, stored)
+
+
+def backfill_history(ctx: JobContext) -> int:
+    """Rattrapage de l'historique complet : ajoute les cours antérieurs à la première date stockée."""
+    today = ctx.now().astimezone(PARIS).date()
+    with ctx.session_factory() as session:
+        targets = [(s.yahoo_ticker, s.id) for s in incomplete_history_securities(session)]
+        last_dates = latest_price_dates(session)
+    total = 0
+    for offset in range(0, len(targets), BACKFILL_BATCH):
+        batch = dict(targets[offset:offset + BACKFILL_BATCH])
+        history = ctx.market.get_daily_history(sorted(batch), None)
+        with ctx.session_factory() as session:
+            firsts = first_price_dates(session, list(batch.values()))
+            done: list[int] = []
+            for ticker, bars in history.items():
+                security_id = batch[ticker]
+                first = firsts.get(security_id)
+                try:
+                    with session.begin_nested():  # un titre refusé n'empêche pas les autres
+                        if first is not None and _junction_readjusted(session, security_id, bars, first):
+                            # Yahoo a réajusté les cours depuis (dividende, division) : on remplace toute la série.
+                            delete_daily_prices(session, security_id)
+                            written = upsert_daily_bars(session, security_id, bars)
+                        else:
+                            written = upsert_daily_bars(session, security_id,
+                                                        [b for b in bars if first is None or b.date < first])
+                except Exception:
+                    logger.warning("Rattrapage de l'historique impossible pour %s", ticker, exc_info=True)
+                    continue
+                total += written
+                done.append(security_id)
+            # Titre absent de la réponse et sans cours depuis longtemps : plus coté, rien à rattraper.
+            done += [security_id for ticker, security_id in batch.items() if ticker not in history
+                     and security_id in last_dates and today - last_dates[security_id] > DEAD_AFTER]
+            mark_history_complete(session, done)
+            session.commit()
+        retry = len(batch) - len(done)
+        if retry:
+            logger.info("Historique complet non rattrapé pour %d titres (réessai au prochain passage)", retry)
     return total
 
 
