@@ -25,7 +25,7 @@ Toutes les actions qui présentent au moins un signal aujourd'hui. Pour chacune 
 - pour 1 jour, 1 semaine et 1 mois : le **gain attendu** et la **probabilité de hausse** ;
 - la **fiabilité** (élevée, moyenne ou faible) : le résultat se distingue-t-il vraiment du hasard ?
 
-Vous pouvez trier les colonnes et filtrer par nom, éligibilité PEA, sens (hausse ou baisse) et fiabilité minimale.
+Vous pouvez trier les colonnes et filtrer par nom, enveloppes (case « Mes enveloppes uniquement », cochée par défaut si vous en avez choisi dans vos Réglages), sens (hausse ou baisse) et fiabilité minimale.
 
 ### Statistiques des signaux
 

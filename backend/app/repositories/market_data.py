@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Row, delete, func, or_, select
+from sqlalchemy import Row, delete, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -9,12 +9,8 @@ from app.providers.base import DailyBar, Fundamentals, Quote
 
 
 def refreshable_securities(session: Session) -> list[Security]:
-    """Titres actifs dont on suit les cours : indices + titres non exclus (règle revue au bloc B)."""
-    stmt = select(Security).where(
-        Security.active.is_(True),
-        or_(Security.kind == "index", Security.eligibility != "non_eligible"),
-    )
-    return list(session.scalars(stmt))
+    """Titres actifs dont on suit les cours : tous, quelle que soit leur enveloppe."""
+    return list(session.scalars(select(Security).where(Security.active.is_(True))))
 
 
 def ticker_ids(session: Session, tickers: list[str]) -> dict[str, int]:
@@ -129,5 +125,9 @@ def upsert_fundamentals(session: Session, security_id: int, f: Fundamentals) -> 
     record.dividend_yield = f.dividend_yield
     record.market_cap = f.market_cap
     record.currency = f.currency
+    # Effectif et CA bougent peu : une réponse Yahoo qui ne les donne pas ne doit pas effacer la valeur connue.
+    record.employees = f.employees if f.employees is not None else record.employees
+    if f.revenue is not None:
+        record.revenue, record.revenue_currency = f.revenue, f.revenue_currency or f.currency
     record.updated_at = func.now()
     session.add(record)

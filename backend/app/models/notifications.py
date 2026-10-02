@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Index, Integer, String, Uuid, func, text
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Index, Integer, String, Uuid, func, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -40,7 +40,7 @@ class PriceAlert(Base):
 
 
 class ScoreSnapshot(Base):
-    """Score de chaque titre et rang dans le top 10, photographiés chaque soir (N4, N6). Gardés 14 jours."""
+    """Score de chaque titre et rang dans le top 10 global, photographiés chaque soir (N4, N6). Gardés 14 jours."""
 
     __tablename__ = "score_snapshots"
 
@@ -48,6 +48,7 @@ class ScoreSnapshot(Base):
     security_id: Mapped[int] = mapped_column(ForeignKey("securities.id", ondelete="CASCADE"), primary_key=True)
     total: Mapped[float] = mapped_column(Float)
     top_rank: Mapped[int | None] = mapped_column(Integer)
+    top_pool: Mapped[bool | None] = mapped_column(Boolean)  # candidat au top 10 (eligible_for_top) ce soir-là ; NULL = photo antérieure aux enveloppes, inconnu
 
 
 class MoveNotice(Base):

@@ -14,22 +14,23 @@ PostgreSQL 16, conteneur `db`, données dans le volume Docker `pgdata`. Modèles
 | `security_events` | Journal de sécurité : type d'événement, IP, détails (JSON), date. Gardé 12 mois | **oui** (peut être vide) |
 | `data_exports` | Exports des données demandés depuis les Réglages : statut `pending`/`ready`/`failed` (un seul `pending` par compte), contenu JSON, dates de demande, de préparation et d'expiration (7 jours) | **oui** |
 | `rate_limit_hits` | Tentatives comptées par les limites anti-abus : compteur, empreinte de l'adresse ou de l'IP, date. Gardé 1 jour | non |
-| `securities` | Univers : ISIN, ticker Yahoo, nom, type `stock`/`etf`/`index`, place, pays, secteur, éligibilité automatique et correction, actif | non |
+| `securities` | Univers : ISIN, ticker Yahoo, nom, type `stock`/`etf`/`index`, place, pays, secteur, actif | non |
+| `security_envelopes` | Statut de chaque titre par enveloppe à règle (`pea`, `pea_pme`) : statut, source `auto`/`seed`/`manual`, correction manuelle (voir [Enveloppes](enveloppes.md)) | non |
 | `quotes` | Dernier cours connu de chaque titre : prix, variation du jour, volume, horodatage | non |
 | `daily_prices` | Historique journalier OHLCV sur 5 ans | non |
-| `fundamentals` | PER, BPA, croissances, dette/capitaux propres, marge, dividende, capitalisation | non |
+| `fundamentals` | PER, BPA, croissances, dette/capitaux propres, marge, dividende, capitalisation, effectif, chiffre d'affaires et sa devise (règle PEA-PME) | non |
 | `scores` | Dernier score : total, technique, fondamental, détail JSON, liquidité, montant moyen échangé, données incomplètes, entrée dans le top | non |
 | `favorites` | Titres favoris | **oui** |
 | `notification_prefs` | Préférences des notifications N1 à N6 et seuil de forte variation. Pas de ligne tant que le membre n'a rien changé | **oui** |
 | `price_alerts` | Alertes de prix : titre, sens, prix, active, date de déclenchement | **oui** |
 | `move_notices` | Titres déjà signalés par N1 ce jour-là (un mail par titre et par jour). Gardé 7 jours | **oui** |
-| `score_snapshots` | Score de chaque titre chaque soir, pour comparer à la veille (N6). Gardé 14 jours | non |
+| `score_snapshots` | Score de chaque titre chaque soir, rang dans le top 10 global et candidature au top 10 (`top_pool`), pour comparer à la veille (N4, N6) selon les enveloppes de chaque membre. Gardé 14 jours | non |
 | `subscriptions` | Abonnement Stripe de chaque compte (une ligne au plus) : identifiants client et abonnement Stripe, statut, formule `month`/`year`, fin de la période payée, résiliation demandée, échéance déjà rappelée par P5. Écrit seulement par `apply_subscription()` | **oui** |
 | `billing_consents` | Preuve des accords avant paiement : version des CGV, renonciation au droit de rétractation, formule, session Stripe, IP tronquée, date | **oui** |
 | `stripe_events` | Identifiants des événements webhook déjà traités (un événement n'est traité qu'une fois). Gardé 30 jours | non |
 | `stripe_cancellations` | Abonnements de comptes supprimés à résilier chez Stripe : essais, dernière erreur | non |
 | `orders` | Ordres : date, sens, quantité, prix unitaire, frais, note | **oui** |
-| `user_settings` | Ordres minimum, frais de non-respect, grille de courtage (JSON) | **oui** |
+| `user_settings` | Ordres minimum, frais de non-respect, grille de courtage (JSON), enveloppes choisies (JSON) | **oui** |
 | `app_settings` | Une seule ligne (`id = 1`) : modèle de l'assistant et limite mensuelle par utilisateur, réglés dans l'onglet Admin | non |
 | `ai_usage` | Coût de l'assistant cumulé par utilisateur et par mois (`AAAA-MM`, heure de Paris). Indépendant des conversations | **oui** |
 | `conversations` | Conversations de l'assistant (titre, titre-sujet optionnel) | **oui** |

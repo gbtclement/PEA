@@ -38,12 +38,14 @@ Pendant la réponse, vous voyez les outils qu'il utilise :
 | Outil | Ce qu'il donne |
 |---|---|
 | Recherche de titres | Trouver une action par son nom |
-| Fiche du titre | Cours, score détaillé, chiffres de l'entreprise, éligibilité |
+| Fiche du titre | Cours, score détaillé, chiffres de l'entreprise, enveloppes |
 | Historique des cours | Évolution et indicateurs sur une période |
-| Top 10 | Le classement du moment |
+| Top 10 | Le classement du moment, filtré sur vos enveloppes |
 | Votre portefeuille | Vos positions, vos gains, votre compteur d'ordres |
 | Simulation d'achat passé | « Si j'avais acheté pour X € à telle date » |
 | Recherche web | L'actualité récente |
+
+L'assistant connaît les enveloppes choisies dans vos [Réglages](app/reglages.md) : il en tient compte dans ses réponses, et ne suppose pas que vous investissez via un PEA si vous n'avez rien choisi.
 
 ## Bien l'utiliser
 

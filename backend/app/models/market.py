@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from sqlalchemy import BigInteger, Date, DateTime, Float, ForeignKey, String, func
+from sqlalchemy import BigInteger, Date, DateTime, Float, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
@@ -46,5 +46,8 @@ class SecurityFundamentals(Base):
     profit_margin: Mapped[float | None] = mapped_column(Float)
     dividend_yield: Mapped[float | None] = mapped_column(Float)
     market_cap: Mapped[float | None] = mapped_column(Float)
+    employees: Mapped[int | None] = mapped_column(Integer)
+    revenue: Mapped[float | None] = mapped_column(Float)  # chiffre d'affaires annuel, en `revenue_currency`
+    revenue_currency: Mapped[str | None] = mapped_column(String(3))
     currency: Mapped[str | None] = mapped_column(String(3))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

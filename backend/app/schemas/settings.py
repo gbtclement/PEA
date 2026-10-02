@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -26,3 +28,14 @@ class SettingsUpdate(BaseModel):
         if any(b is None for b in bounds) or bounds != sorted(set(bounds)):
             raise ValueError("Les bornes des tranches doivent être croissantes.")
         return self
+
+
+EnvelopeCode = Literal["pea", "pea_pme", "cto"]
+
+
+class EnvelopesIn(BaseModel):
+    envelopes: list[EnvelopeCode] = Field(max_length=10)
+
+
+class EnvelopesOut(BaseModel):
+    envelopes: list[str]

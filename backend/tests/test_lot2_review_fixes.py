@@ -1,7 +1,7 @@
 from datetime import UTC, date, datetime, timedelta
 
 from app.jobs.scoring import refresh_scores
-from app.models import DailyPrice, SecurityFundamentals, SecurityQuote, SecurityScore
+from app.models import DailyPrice, SecurityFundamentals, SecurityQuote, SecurityScore, UserSettings
 from app.repositories.market_data import daily_series
 from app.repositories.screener import screener_rows
 from tests.factories import make_score, make_security
@@ -18,16 +18,18 @@ def add_prices(db, security, days=300, start=100.0, step=1.0):
     db.flush()
 
 
-def test_non_eligible_security_leaves_top(client, db):
+def test_pea_user_does_not_see_a_non_pea_security_in_the_top(client, db, user):
     excluded = make_security(db, "TTE.PA", eligibility="non_eligible")
     kept = make_security(db, "MC.PA")
     make_score(db, excluded, total=99, eligible_for_top=True)
     make_score(db, kept, total=80, eligible_for_top=True)
+    db.merge(UserSettings(user_id=user.id, envelopes=["pea"]))
+    db.flush()
     assert [t["symbol"] for t in client.get("/api/rankings/top").json()] == ["MC"]
 
 
 def test_scores_job_clears_stale_top_flag(db, make_ctx):
-    excluded = make_security(db, "TTE.PA", eligibility="non_eligible")
+    excluded = make_security(db, "TTE.PA", active=False)
     make_score(db, excluded, total=99, eligible_for_top=True)
     refresh_scores(make_ctx(now=NOW))
     stale = db.get(SecurityScore, excluded.id)
@@ -86,4 +88,4 @@ def test_empty_fundamentals_row_is_not_no_dividend(db, make_ctx):
 
 def test_eligibility_update_uses_current_user(admin_client, db):
     security = make_security(db, "MC.PA")
-    assert admin_client.patch(f"/api/securities/{security.id}/eligibility", json={"override": "eligible"}).status_code == 200
+    assert admin_client.patch(f"/api/securities/{security.id}/envelopes/pea", json={"override": "eligible"}).status_code == 200

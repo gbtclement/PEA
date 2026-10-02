@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
-from app.models import Security, SecurityQuote, SecurityScore, User
+from app.models import Security, SecurityEnvelope, SecurityQuote, SecurityScore, User
 from app.services.auth.accounts import TERMS_VERSION
 
 
@@ -12,7 +12,8 @@ def make_security(
     ticker: str,
     *,
     kind: str = "stock",
-    eligibility: str = "eligible",
+    eligibility: str = "eligible",  # statut PEA
+    pea_pme: str | None = None,     # statut PEA-PME (aucune ligne si None)
     country: str | None = "FR",
     active: bool = True,
     isin: str | None = None,
@@ -27,10 +28,11 @@ def make_security(
         market=market,
         country=country,
         isin=isin,
-        eligibility=eligibility,
-        eligibility_source="auto",
         active=active,
     )
+    security.envelopes.append(SecurityEnvelope(envelope="pea", status=eligibility, source="auto"))
+    if pea_pme is not None:
+        security.envelopes.append(SecurityEnvelope(envelope="pea_pme", status=pea_pme, source="auto"))
     db.add(security)
     db.flush()
     return security

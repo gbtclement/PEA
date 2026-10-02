@@ -5,7 +5,8 @@ import { DataTable, type ColumnSpec } from "@/components/DataTable";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EligibilityBadge } from "@/features/explorer/EligibilityBadge";
+import { EnvelopeBadges } from "@/features/explorer/EnvelopeBadges";
+import { useEnvelopes } from "@/features/settings/useEnvelopes";
 import type { ForecastRow } from "@/lib/api/client";
 import { formatPrice } from "@/lib/format";
 import {
@@ -42,7 +43,7 @@ const COLUMNS: ColumnSpec<ForecastRow>[] = [
         <div className="truncate font-medium">{row.original.security.name}</div>
         <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
           <span className="truncate">{row.original.security.symbol} · {row.original.security.market}</span>
-          {row.original.security.eligibility !== "eligible" && <EligibilityBadge status={row.original.security.eligibility} />}
+          <EnvelopeBadges codes={row.original.security.envelopes} />
         </div>
       </div>
     ) },
@@ -70,7 +71,9 @@ export function PredictionsView() {
   const { data, isPending, isError } = useForecasts();
   const [sorting, setSorting] = useState<SortingState>([{ id: "1w", desc: true }]);
   const [search, setSearch] = useState("");
-  const [eligibleOnly, setEligibleOnly] = useState(true);
+  const { filtering } = useEnvelopes();
+  const [mineOnly, setMineOnly] = useState<boolean | null>(null); // null = défaut : coché si des enveloppes sont choisies
+  const onlyMine = filtering.length > 0 && (mineOnly ?? true);
   const [direction, setDirection] = useState<Direction>("tous");
   const [minReliability, setMinReliability] = useState<MinReliability>("faible");
   // Sens et fiabilité s'appliquent à l'horizon trié (1 semaine si le tri porte sur le nom).
@@ -80,13 +83,13 @@ export function PredictionsView() {
     const q = search.trim().toLowerCase();
     return (data?.rows ?? []).filter((row) => {
       const h = row.horizons[horizon];
-      if (eligibleOnly && row.security.eligibility !== "eligible") return false;
+      if (onlyMine && !row.security.envelopes.some((code) => filtering.includes(code))) return false;
       if (q && !`${row.security.name} ${row.security.symbol}`.toLowerCase().includes(q)) return false;
       if (direction !== "tous" && (!h || (direction === "hausse" ? h.expected_return <= 0 : h.expected_return >= 0))) return false;
       if (minReliability !== "faible" && (!h || RELIABILITY_ORDER[h.reliability as MinReliability] < RELIABILITY_ORDER[minReliability])) return false;
       return true;
     });
-  }, [data, search, eligibleOnly, direction, minReliability, horizon]);
+  }, [data, search, onlyMine, filtering, direction, minReliability, horizon]);
 
   if (isPending) return <Skeleton className="h-96 w-full" />;
   if (isError) return <p role="alert" className="text-sm text-down">Impossible de charger les prévisions.</p>;
@@ -98,10 +101,12 @@ export function PredictionsView() {
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <Input type="search" aria-label="Rechercher" placeholder="Nom ou ticker…" className="w-56 bg-white" value={search}
                onChange={(e) => setSearch(e.target.value)} />
-        <label className="flex items-center gap-1.5">
-          <input type="checkbox" checked={eligibleOnly} onChange={(e) => setEligibleOnly(e.target.checked)} />
-          Éligibles PEA uniquement
-        </label>
+        {filtering.length > 0 && (
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={onlyMine} onChange={(e) => setMineOnly(e.target.checked)} />
+            Mes enveloppes uniquement
+          </label>
+        )}
         <select aria-label="Sens" value={direction} onChange={(e) => setDirection(e.target.value as Direction)}
                 className="h-8 rounded-lg border border-input bg-white px-2">
           <option value="tous">Hausse et baisse ({horizonLabel})</option>

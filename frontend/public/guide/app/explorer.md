@@ -10,7 +10,7 @@ Tapez un nom (`LVMH`), un ticker (`MC`) ou un code ISIN (`FR0000121014`).
 
 ### Filtrer
 
-Secteur, pays, place de cotation, score minimum, prix minimum et maximum, éligibilité PEA, favoris, et « liquides uniquement » (les actions assez échangées).
+Secteur, pays, place de cotation, score minimum, prix minimum et maximum, enveloppe (PEA, PEA-PME), favoris, et « liquides uniquement » (les actions assez échangées).
 
 > **Exemple :** pour trouver des entreprises françaises solides et bien notées, choisissez le pays France, un score minimum de 65 et « liquides uniquement ». Triez ensuite par rendement du dividende.
 
@@ -35,16 +35,18 @@ Les filtres et le tri sont enregistrés dans l'adresse de la page. Vous pouvez a
 
 ## ETF
 
-Même écran, limité aux **ETF éligibles au PEA**. Un ETF est un panier d'actions qui suit un indice entier : en achetant un ETF CAC 40, vous possédez un petit morceau des 40 entreprises. Voir [Les ETF](bourse/etf.md).
+Même écran, limité aux **ETF** suivis par l'application, avec leur badge PEA quand ils sont éligibles. Un ETF est un panier d'actions qui suit un indice entier : en achetant un ETF CAC 40, vous possédez un petit morceau des 40 entreprises. Voir [Les ETF](bourse/etf.md).
 
 Les ETF n'ont pas de bilan ni de bénéfices : leur score est **uniquement technique**, c'est-à-dire basé sur l'évolution de leur cours, puis ramené sur 100.
 
-## Badges d'éligibilité PEA
+## Badges d'enveloppe
 
 | Badge | Signification |
 |---|---|
-| **Éligible** | Siège de l'entreprise dans l'Union européenne ou l'Espace économique européen |
-| **À vérifier** | Cas douteux, par exemple une foncière cotée (en principe exclue du PEA) ou un pays inconnu |
-| **Non éligible** | Siège hors de l'UE et de l'EEE, par exemple une société américaine ou suisse |
+| **PEA** | Siège de l'entreprise dans l'Union européenne ou l'Espace économique européen : le titre peut aller dans un PEA |
+| **PEA-PME** | En plus, une entreprise de taille moyenne : moins de 5 000 salariés, chiffre d'affaires d'au plus 1,5 Md€ et capitalisation sous 1 Md€. C'est une **estimation** |
+| Pas de badge | Non éligible, ou cas douteux à vérifier : par exemple une société américaine, ou une foncière cotée (en principe exclue du PEA) |
 
-!> Il n'existe pas de liste officielle complète des titres éligibles au PEA : l'application **déduit** l'éligibilité du pays du siège. Avant un achat important, vérifiez que votre banque accepte le titre dans votre PEA. Un badge faux se signale à l'administrateur du site, qui peut le corriger (voir [Réglages](app/reglages.md)).
+Le filtre **Enveloppe** de l'Explorer ne garde que les titres qui portent le badge choisi. Un compte-titres accepte tous les titres : il n'a pas de badge.
+
+!> Il n'existe pas de liste officielle complète des titres éligibles au PEA ou au PEA-PME : l'application les **déduit** du pays du siège et de la taille de l'entreprise. Avant un achat important, vérifiez que votre banque accepte le titre dans votre enveloppe. Un badge faux se signale à l'administrateur du site, qui peut le corriger (voir [Réglages](app/reglages.md)).

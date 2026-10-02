@@ -55,7 +55,7 @@ def list_forecasts(db: DbDep, _user: User = Depends(require_premium)) -> Forecas
     for security_id, items in by_security.items():
         s, q = securities[security_id], quotes.get(security_id)
         rows.append(ForecastRowOut(
-            security=ForecastSecurityOut(id=s.id, name=s.name, symbol=s.symbol, market=s.market, eligibility=s.eligibility,
+            security=ForecastSecurityOut(id=s.id, name=s.name, symbol=s.symbol, market=s.market, envelopes=s.eligible_envelopes,
                                          price=q.price if q else None, change_pct=q.change_pct if q else None),
             signals=_signals(_signals_of(items)),
             horizons=_no_horizons() | {f.horizon: _horizon(f) for f in items},

@@ -5,14 +5,15 @@ from app.repositories.orders import held_security_ids
 from app.repositories.scores import alert_security_ids, favorite_security_ids, top_security_ids
 
 TOP_IN_T1 = 10
+TOP_SCOPES: tuple[tuple[str, ...], ...] = ((), ("pea",), ("pea_pme",))  # top 10 de chaque façon de filtrer
 
 
 def tier_tickers(session: Session, tier: int, tier2_size: int) -> list[str]:
-    """T1 : indices, favoris, titres détenus, titres avec une alerte de prix et top 10. T2 : les `tier2_size` titres les plus échangés. T3 : les autres."""
+    """T1 : indices, favoris, titres détenus, titres avec une alerte de prix et top 10 (tout, PEA, PEA-PME). T2 : les `tier2_size` titres les plus échangés. T3 : les autres."""
     candidates = refreshable_securities(session)
     priority_ids = (
         favorite_security_ids(session) | held_security_ids(session) | alert_security_ids(session)
-        | set(top_security_ids(session, TOP_IN_T1))
+        | {sid for scope in TOP_SCOPES for sid in top_security_ids(session, TOP_IN_T1, scope)}
     )
     tier1 = [s for s in candidates if s.kind == "index" or s.id in priority_ids]
     if tier == 1:

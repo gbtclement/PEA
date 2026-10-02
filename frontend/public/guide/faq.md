@@ -18,7 +18,7 @@ Juste après l'installation, l'application a besoin de temps pour tout charger :
 
 ## Pourquoi une action n'est-elle pas dans le top 10 malgré un bon score ?
 
-Elle ne passe pas l'un des filtres : pas assez échangée, cotée depuis moins de 200 séances, éligibilité « à vérifier », ou trop de données manquantes. Voir [Page d'accueil](app/accueil.md).
+Elle ne passe pas l'un des filtres : pas assez échangée, cotée depuis moins de 200 séances, ou trop de données manquantes. Ou elle n'est pas compatible avec les enveloppes choisies dans vos [Réglages](app/reglages.md). Voir [Page d'accueil](app/accueil.md).
 
 ## Pourquoi le score d'un ETF est-il différent ?
 
@@ -36,9 +36,13 @@ Non, jamais. Elle ne se connecte pas à votre banque. Vous passez vos ordres che
 
 Ce sont les frais de courtage calculés avec la grille de vos Réglages. La **taxe sur les transactions financières**, due à l'achat de grandes entreprises françaises, n'est pas incluse. Corrigez le montant à la saisie en recopiant votre avis d'opéré. Voir [Passer un ordre](bourse/ordres-et-frais.md).
 
-## Une action « Éligible » peut-elle être refusée par ma banque ?
+## Une action avec un badge d'enveloppe peut-elle être refusée par ma banque ?
 
-C'est possible : l'éligibilité est déduite du pays du siège, pas d'une liste officielle. Vérifiez avant un achat important, et signalez un badge faux à l'administrateur du site (voir [Réglages](app/reglages.md)).
+C'est possible : les badges PEA et PEA-PME sont déduits du pays du siège et de la taille de l'entreprise, pas d'une liste officielle. Vérifiez avant un achat important, et signalez un badge d'enveloppe faux à l'administrateur du site (voir [Réglages](app/reglages.md)).
+
+## Quelle enveloppe choisir dans mes réglages ?
+
+Cochez les comptes sur lesquels vous investissez vraiment : PEA, PEA-PME, compte-titres. Le top 10, les classements et les prévisions ne montreront que les titres compatibles. Si vous avez un compte-titres, ou si vous ne cochez rien, vous voyez tous les titres. Pour comprendre les différences, voir [Le PEA](bourse/pea.md).
 
 ## Combien coûte l'assistant IA ?
 

@@ -3,7 +3,7 @@ from datetime import UTC, date, datetime
 import pytest
 from sqlalchemy import select
 
-from app.models import EmailLog, Favorite, Forecast, Order, ScoreSnapshot, SecurityScore
+from app.models import EmailLog, Favorite, Forecast, Order, ScoreSnapshot, SecurityScore, UserSettings
 from app.services.notifications.prefs import save_prefs
 from app.services.notifications.recaps import send_weekly_recaps
 from app.services.notifications.scores import notify_score_changes, take_score_snapshot
@@ -31,6 +31,7 @@ def test_snapshot_keeps_totals_and_top_ranks(db):
     take_score_snapshot(db, MON)  # rejouée : remplace, sans doublon
     rows = {r.security_id: r for r in db.scalars(select(ScoreSnapshot).where(ScoreSnapshot.day == MON))}
     assert (rows[a.id].total, rows[a.id].top_rank, rows[b.id].top_rank) == (80.0, 1, None)
+    assert rows[a.id].top_pool is True and rows[b.id].top_pool is False
 
 
 def test_favorites_entering_the_top_or_moving_10_points(db, user):
@@ -88,3 +89,52 @@ def test_weekly_recap_once_per_week(db, user):
     [mail] = _mails(db, "weekly_recap")
     assert "Entrée : Entrant" in mail.text and "Sortie : Sortant" in mail.text
     assert "1 sur 1 dans le bon sens" in mail.text and "1 020,00 €" in mail.text
+
+
+def test_weekly_recap_uses_the_user_top(db, user):
+    save_prefs(db, user.id, {"weekly_recap": True})
+    db.merge(UserSettings(user_id=user.id, envelopes=["pea"]))
+    foreign = make_security(db, "AAPL.PA", name="Apple", eligibility="non_eligible", country="US")
+    pea = make_security(db, "MC.PA", name="LVMH")
+    make_score(db, foreign, total=95.0)
+    make_score(db, pea, total=50.0, eligible_for_top=False)
+    take_score_snapshot(db, date(2026, 9, 25))  # avant la fenêtre de 6 jours du récap : c'est la photo « avant »
+    _set_total(db, pea, 60.0, top=True)
+    _set_total(db, foreign, 95.0, top=False)  # sort du top global, jamais entré dans le sien
+    take_score_snapshot(db, date(2026, 10, 2))
+    send_weekly_recaps(db, datetime(2026, 10, 3, 7, 0, tzinfo=UTC))
+    [mail] = _mails(db, "weekly_recap")
+    assert "Entrée : LVMH" in mail.text  # Apple, hors PEA, n'est pas dans son top
+    assert "Apple" not in mail.text and "Sortie" not in mail.text
+
+
+def _forget_pool(db, day):
+    """Photo prise avant les enveloppes : on ne sait pas quels titres étaient candidats au top 10."""
+    for row in db.scalars(select(ScoreSnapshot).where(ScoreSnapshot.day == day)):
+        row.top_pool = None
+    db.flush()
+
+
+def test_no_false_top_entry_after_a_snapshot_without_pool(db, user):
+    save_prefs(db, user.id, {"score_change": True})
+    entering = make_security(db, "IN.PA", name="Entrant")
+    make_score(db, entering, total=60.0, eligible_for_top=False)
+    db.add(Favorite(user_id=user.id, security_id=entering.id))
+    take_score_snapshot(db, MON)
+    _forget_pool(db, MON)
+    _set_total(db, entering, 62.0, top=True)
+    take_score_snapshot(db, TUE)
+    assert notify_score_changes(db, TUE) == 0  # entrée inconnue, variation trop faible
+
+
+def test_weekly_recap_without_pool_before_lists_no_entries(db, user):
+    save_prefs(db, user.id, {"weekly_recap": True})
+    pea = make_security(db, "MC.PA", name="LVMH")
+    make_score(db, pea, total=50.0, eligible_for_top=False)
+    take_score_snapshot(db, date(2026, 9, 25))
+    _forget_pool(db, date(2026, 9, 25))
+    _set_total(db, pea, 60.0, top=True)
+    take_score_snapshot(db, date(2026, 10, 2))
+    send_weekly_recaps(db, datetime(2026, 10, 3, 7, 0, tzinfo=UTC))
+    [mail] = _mails(db, "weekly_recap")
+    assert "LVMH" not in mail.text

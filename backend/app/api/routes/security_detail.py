@@ -53,7 +53,7 @@ def get_security(security_id: int, db: Session = Depends(get_db), user: User | N
         )
     return SecurityDetail(
         **SecurityDetail.fields_from(row),
-        industry=security.industry, eligibility_source=security.eligibility_source,
+        industry=security.industry,
         currency=currency_for_market(security.market),
         as_of=quote.as_of if quote else None,
         fundamentals=FundamentalsOut.model_validate(fundamentals) if fundamentals else None,

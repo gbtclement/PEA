@@ -14,7 +14,7 @@ router = APIRouter(tags=["meta"])
 
 @router.get("/status", response_model=StatusResponse)
 def get_status(db: Session = Depends(get_db)) -> StatusResponse:
-    rows, _ = search_securities(db, q=None, kind="index", eligibility=None, limit=20, offset=0)
+    rows, _ = search_securities(db, q=None, kind="index", envelope=None, limit=20, offset=0)
     return StatusResponse(
         market_open=is_market_open(datetime.now(UTC)),
         jobs=[JobStatus.model_validate(status) for status in list_statuses(db)],

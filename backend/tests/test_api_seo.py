@@ -40,10 +40,10 @@ def test_robots_online_allows_public_pages_only(online):
     assert "Sitemap: https://pea.example/sitemap.xml" in lines
 
 
-def test_sitemap_lists_public_pages_and_eligible_securities(online, db):
+def test_sitemap_lists_public_pages_and_all_active_securities(online, db):
     stock = make_security(db, "AB.PA", name="A&B <Group>")
     etf = make_security(db, "CW8.PA", kind="etf")
-    make_security(db, "XX.PA", eligibility="non_eligible")
+    other = make_security(db, "XX.PA", eligibility="non_eligible")
     make_security(db, "OLD.PA", active=False)
     make_security(db, "^FCHI", kind="index")
     response = online.get("/api/seo/sitemap.xml")
@@ -59,13 +59,14 @@ def test_sitemap_lists_public_pages_and_eligible_securities(online, db):
         "https://pea.example/cgv",
         f"https://pea.example/titres/{stock.id}",
         f"https://pea.example/titres/{etf.id}",
+        f"https://pea.example/titres/{other.id}",
     ]
 
 
 def test_llms_txt_describes_site(online, db):
     make_security(db, "AB.PA")
     make_security(db, "CW8.PA", kind="etf")
-    make_security(db, "XX.PA", eligibility="non_eligible")
+    other = make_security(db, "XX.PA", eligibility="non_eligible")
     response = online.get("/api/seo/llms.txt")
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/markdown")
@@ -74,7 +75,7 @@ def test_llms_txt_describes_site(online, db):
     for url in ("https://pea.example/", "https://pea.example/explorer", "https://pea.example/etf", "https://pea.example/sitemap.xml"):
         assert url in text
     assert "pas un conseil en investissement" in text
-    assert "1 action" in text and "1 ETF" in text
+    assert "2 actions" in text and "1 ETF" in text
     assert "/portefeuille" not in text
     assert "PEA Radar" not in text and "éligibles au PEA" not in text
 

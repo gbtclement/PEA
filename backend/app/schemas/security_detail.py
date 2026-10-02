@@ -16,6 +16,9 @@ class FundamentalsOut(BaseModel):
     profit_margin: float | None
     dividend_yield: float | None
     market_cap: float | None
+    employees: int | None
+    revenue: float | None
+    revenue_currency: str | None
     currency: str | None
     updated_at: datetime | None
 
@@ -44,7 +47,6 @@ class ScoreOut(BaseModel):
 class SecurityDetail(ScreenerRow):
     isin: str | None
     industry: str | None
-    eligibility_source: str
     currency: str
     as_of: datetime | None
     fundamentals: FundamentalsOut | None

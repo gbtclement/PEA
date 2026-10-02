@@ -8,7 +8,7 @@
   - [Comptes utilisateurs](comptes.md)
   - [Abonnement (Stripe)](abonnement.md)
   - [Données et worker](donnees.md)
-  - [Éligibilité PEA](eligibilite.md)
+  - [Enveloppes](enveloppes.md)
   - [Score mixte](score.md)
   - [Moteur de prévisions](previsions.md)
   - [Portefeuille et frais](portefeuille.md)

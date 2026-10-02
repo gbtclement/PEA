@@ -40,12 +40,14 @@ Pas de partie fondamentale : le score est **uniquement technique**, ramené sur 
 
 Tous les titres ont un score, visible dans l'Explorer. Pour entrer dans le top 10, il faut en plus :
 
-- type `stock` et éligibilité **confirmée** (`eligible`, automatique ou corrigée) ;
+- type `stock`, quelle que soit l'enveloppe ;
 - montant moyen échangé sur 20 séances ≥ `MIN_TURNOVER_EUR` (500 000 €) ;
 - au moins `MIN_HISTORY_DAYS` (200) séances d'historique ;
 - `available_ratio` ≥ 0,6.
 
 À score égal, le titre le plus liquide passe devant.
+
+Le top 10 est ensuite filtré **à la lecture** selon les enveloppes du compte connecté (voir [Enveloppes](enveloppes.md)) : un membre qui a choisi le PEA voit les 10 meilleurs titres éligibles au PEA. Un visiteur voit les 10 meilleurs de tous les titres.
 
 ## Indicateurs
 

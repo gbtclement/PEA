@@ -9,8 +9,8 @@ afterEach(() => vi.unstubAllGlobals());
 
 const DETAIL = {
   id: 1, yahoo_ticker: "MC.PA", symbol: "MC", name: "LVMH", kind: "stock", market: "Euronext Paris", country: "FR",
-  sector: "Consumer Cyclical", industry: "Luxury Goods", isin: "FR0000121014", eligibility: "eligible",
-  eligibility_source: "auto", currency: "EUR", available_ratio: 1, price: 612.4, change_pct: 2.07, as_of: "2026-09-25T15:35:00Z", perf_1w: 1, perf_1m: 2,
+  sector: "Consumer Cyclical", industry: "Luxury Goods", isin: "FR0000121014", envelopes: ["pea", "pea_pme"],
+  currency: "EUR", available_ratio: 1, price: 612.4, change_pct: 2.07, as_of: "2026-09-25T15:35:00Z", perf_1w: 1, perf_1m: 2,
   perf_1y: 3, score: 72, pe: 18, dividend_yield: 0.0328, liquid: true, is_favorite: false, sparkline: [],
   fundamentals: { pe: 18.07, eps: 33.9, earnings_growth: 0.008, revenue_growth: -0.029, debt_to_equity: 0.53,
                   profit_margin: 0.137, dividend_yield: 0.0328, market_cap: 195_600_000_000, currency: "EUR", updated_at: null },
@@ -42,7 +42,10 @@ function renderPage(detailStatus = 200, detail: object = DETAIL, forecast: objec
 test("en-tête, score détaillé, fondamentaux et actualités", async () => {
   renderPage();
   expect(await screen.findByRole("heading", { level: 1, name: "LVMH" })).toBeInTheDocument();
-  expect(screen.getByText("Éligible PEA")).toBeInTheDocument();
+  expect(screen.getByText("PEA")).toBeInTheDocument();
+  expect(screen.getByText("PEA-PME")).toBeInTheDocument();
+  expect(screen.getByText(/déduites automatiquement/)).toBeInTheDocument();
+  expect(screen.queryByText(/Éligible PEA/)).not.toBeInTheDocument();
   expect(screen.getByText("✅ Tendance haussière")).toBeInTheDocument();
   expect(screen.getByText(/195,6\sMd\s€/u)).toBeInTheDocument();
   expect(screen.getByText(/Luxury Goods/)).toBeInTheDocument();

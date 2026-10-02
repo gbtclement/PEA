@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import exists, func, or_, select, update
 from sqlalchemy.orm import Session
 
-from app.models import Security, SecurityQuote
-from app.services.eligibility.rules import ELIGIBLE, NOT_ELIGIBLE, classify_eligibility, effective_eligibility
+from app.models import Security, SecurityEnvelope, SecurityFundamentals, SecurityQuote
+from app.repositories.envelopes import refresh_envelopes
+from app.services.envelopes.rules import ELIGIBLE
 
 
 @dataclass(frozen=True)
@@ -16,28 +17,18 @@ class SecurityUpsert:
     market: str
     isin: str | None
     country: str | None
-    fixed_eligibility: str | None = None  # imposé par une liste de départ (ETF, indices)
-
-
-def _apply_eligibility(security: Security, fixed: str | None) -> None:
-    if fixed is not None:
-        auto, source = fixed, "seed"
-    else:
-        auto, source = classify_eligibility(security.country, security.industry), "auto"
-    security.eligibility, security.eligibility_source = effective_eligibility(
-        auto, security.eligibility_override, auto_source=source
-    )
 
 
 def upsert_securities(session: Session, items: list[SecurityUpsert]) -> int:
     unique = {item.yahoo_ticker: item for item in items}
     existing = list(session.scalars(select(Security)))
+    fundamentals = {f.security_id: f for f in session.scalars(select(SecurityFundamentals))}
     by_ticker = {s.yahoo_ticker: s for s in existing}
     by_isin = {s.isin: s for s in existing if s.isin}
     for item in unique.values():
         security = by_ticker.get(item.yahoo_ticker) or (by_isin.get(item.isin) if item.isin else None)
         if security is None:
-            security = Security(eligibility_override=None, industry=None)
+            security = Security(industry=None)
             session.add(security)
         security.yahoo_ticker = item.yahoo_ticker
         security.symbol = item.symbol
@@ -47,7 +38,7 @@ def upsert_securities(session: Session, items: list[SecurityUpsert]) -> int:
         security.isin = item.isin
         security.country = item.country
         security.active = True
-        _apply_eligibility(security, item.fixed_eligibility)
+        refresh_envelopes(security, fundamentals.get(security.id))
     session.flush()
     return len(unique)
 
@@ -61,24 +52,15 @@ def deactivate_missing(session: Session, seen_tickers: set[str]) -> int:
     return result.rowcount
 
 
-def update_classification(security: Security, sector: str | None, industry: str | None) -> None:
-    """Met à jour secteur/industrie (fondamentaux) et recalcule l'éligibilité des actions.
+def update_classification(security: Security, sector: str | None, industry: str | None,
+                          fundamentals: SecurityFundamentals | None) -> None:
+    """Met à jour secteur/industrie (fondamentaux) et recalcule les enveloppes.
 
     Une réponse Yahoo incomplète (sans secteur/industrie) ne doit pas effacer une classification connue.
     """
     security.sector = sector or security.sector
     security.industry = industry or security.industry
-    if security.kind == "stock" and security.eligibility_source != "seed":
-        _apply_eligibility(security, None)
-
-
-_FIXED_BY_KIND = {"etf": ELIGIBLE, "index": NOT_ELIGIBLE}
-
-
-def set_eligibility_override(security: Security, override: str | None) -> None:
-    """Correction manuelle (None = revenir au calcul automatique ou à la liste de départ)."""
-    security.eligibility_override = override
-    _apply_eligibility(security, _FIXED_BY_KIND.get(security.kind))
+    refresh_envelopes(security, fundamentals)
 
 
 def escape_like(value: str) -> str:
@@ -90,7 +72,7 @@ def search_securities(
     *,
     q: str | None,
     kind: str | None,
-    eligibility: str | None,
+    envelope: str | None,
     limit: int,
     overridden: bool = False,
     offset: int,
@@ -101,10 +83,11 @@ def search_securities(
         .where(Security.active.is_(True))
     )
     stmt = stmt.where(Security.kind == kind) if kind else stmt.where(Security.kind != "index")
-    if eligibility:
-        stmt = stmt.where(Security.eligibility == eligibility)
+    if envelope:
+        stmt = stmt.where(exists().where(SecurityEnvelope.security_id == Security.id, SecurityEnvelope.envelope == envelope,
+                                         SecurityEnvelope.status == ELIGIBLE))
     if overridden:
-        stmt = stmt.where(Security.eligibility_override.is_not(None))
+        stmt = stmt.where(exists().where(SecurityEnvelope.security_id == Security.id, SecurityEnvelope.override.is_not(None)))
     if q and q.strip():
         pattern = f"%{escape_like(q.strip())}%"
         stmt = stmt.where(or_(

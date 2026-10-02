@@ -3,14 +3,17 @@ import { Link } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { AskAiButton } from "@/features/assistant/AskAiButton";
+import { useEnvelopes } from "@/features/settings/useEnvelopes";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkline } from "@/components/Sparkline";
 import { apiGet, type TopItem } from "@/lib/api/client";
+import { ENVELOPE_LABELS } from "@/lib/envelopes";
 import { formatPct, formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export function TopList() {
+  const { filtering } = useEnvelopes();
   const { data, isPending, isError } = useQuery({
     queryKey: ["top"],
     queryFn: () => apiGet<TopItem[]>("/api/rankings/top", { limit: 10 }),
@@ -20,7 +23,10 @@ export function TopList() {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">🏆 Top 10 du moment</CardTitle>
-        <p className="text-sm text-muted-foreground">Actions éligibles PEA les mieux notées par le score mixte (technique + fondamentaux).</p>
+        <p className="text-sm text-muted-foreground">
+          Actions les mieux notées par le score mixte (technique + fondamentaux)
+          {filtering.length ? `, parmi les titres compatibles avec vos enveloppes (${filtering.map((c) => ENVELOPE_LABELS[c]).join(", ")}).` : "."}
+        </p>
       </CardHeader>
       <CardContent className="px-0">
         {isPending ? (

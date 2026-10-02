@@ -132,6 +132,9 @@ def fundamentals_from_info(info: dict[str, Any]) -> Fundamentals:
         sector=info.get("sector"),
         industry=info.get("industry"),
         currency=info.get("currency"),
+        employees=_int(info.get("fullTimeEmployees")),
+        revenue=_num(info.get("totalRevenue")),
+        revenue_currency=info.get("financialCurrency") or None,
     )
 
 

@@ -7,7 +7,8 @@ import { loginPath } from "@/features/auth/redirect";
 import { useMe } from "@/features/auth/useMe";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { EligibilityBadge } from "@/features/explorer/EligibilityBadge";
+import { EnvelopeBadges } from "@/features/explorer/EnvelopeBadges";
+import { ENVELOPE_LABELS } from "@/lib/envelopes";
 import { OrderDialog } from "@/features/portfolio/OrderDialog";
 import { ApiError, apiGet, type SecurityDetail } from "@/lib/api/client";
 import { formatDateTime, formatPct, formatPrice } from "@/lib/format";
@@ -22,7 +23,8 @@ import { SimulatorCard } from "./SimulatorCard";
 import { breadcrumb, corporation, DEFAULT_DESCRIPTION, investmentFund, SITE_NAME } from "@/seo/schema";
 import { usePageMeta, type PageMeta } from "@/seo/usePageMeta";
 
-const ELIGIBILITY_TEXT: Record<string, string> = { eligible: "Éligible au PEA.", non_eligible: "Non éligible au PEA.", a_verifier: "Éligibilité au PEA à vérifier." };
+const envelopeText = (codes: string[]) =>
+  codes.length ? `Enveloppes compatibles : ${codes.map((c) => ENVELOPE_LABELS[c]).join(", ")}.` : "";
 
 function securityMeta(data: SecurityDetail | undefined, error: Error | null): PageMeta {
   if (!data) {
@@ -33,7 +35,7 @@ function securityMeta(data: SecurityDetail | undefined, error: Error | null): Pa
   const score = data.score != null ? `score ${SITE_NAME} ${Math.round(data.score)}/100, ` : "";
   return {
     title: `${data.name} (${data.symbol}) — cours, score et analyse`,
-    description: `${data.name} (${data.symbol}, ${data.market}) : cours, ${score}graphique en chandeliers, ${etf ? "" : "données fondamentales, "}actualités et simulateur. ${ELIGIBILITY_TEXT[data.eligibility] ?? ELIGIBILITY_TEXT.a_verifier}`,
+    description: `${data.name} (${data.symbol}, ${data.market}) : cours, ${score}graphique en chandeliers, ${etf ? "" : "données fondamentales, "}actualités et simulateur. ${envelopeText(data.envelopes)}`,
     path: `/titres/${data.id}`,
     jsonLd: [
       ...(data.kind === "index" ? [] : [etf ? investmentFund(data) : corporation(data)]),
@@ -82,8 +84,13 @@ export function SecurityPage() {
             )}
           </div>
           <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-            {data.symbol} · {data.market}{data.isin && ` · ${data.isin}`} <EligibilityBadge status={data.eligibility} />
+            {data.symbol} · {data.market}{data.isin && ` · ${data.isin}`} <EnvelopeBadges codes={data.envelopes} />
           </p>
+          {data.kind !== "index" && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Enveloppes déduites automatiquement (pays du siège, taille de l'entreprise) : à confirmer auprès de votre banque ou courtier.
+            </p>
+          )}
         </div>
         <div className="text-right">
           <p className="text-3xl font-semibold">{formatPrice(data.price)} {data.currency === "EUR" ? "€" : data.currency}</p>
