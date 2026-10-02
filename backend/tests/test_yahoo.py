@@ -121,6 +121,18 @@ def test_get_daily_history_passes_start():
     assert len(history["A.PA"]) == 2
 
 
+def test_get_daily_history_without_start_loads_everything():
+    seen = {}
+
+    def fake_download(tickers, **kwargs):
+        seen.update(kwargs)
+        return multi({t: frame(ROWS) for t in tickers})
+
+    provider = YahooProvider(download=fake_download, sleep=lambda s: None)
+    provider.get_daily_history(["A.PA"], None)
+    assert seen["period"] == "max" and "start" not in seen
+
+
 def test_get_fundamentals_returns_none_on_error():
     def failing(ticker):
         raise ConnectionError("KO")

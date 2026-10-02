@@ -188,8 +188,9 @@ class YahooProvider:
         frames = self._download_frames(tickers, period="5d", interval="1d")
         return {ticker: quote_from_frame(frame, fetched_at) for ticker, frame in frames.items()}
 
-    def get_daily_history(self, tickers: list[str], start: date) -> dict[str, list[DailyBar]]:
-        frames = self._download_frames(tickers, start=start.isoformat(), interval="1d")
+    def get_daily_history(self, tickers: list[str], start: date | None) -> dict[str, list[DailyBar]]:
+        window = {"period": "max"} if start is None else {"start": start.isoformat()}  # None : tout l'historique Yahoo
+        frames = self._download_frames(tickers, interval="1d", **window)
         return {ticker: bars_from_frame(frame) for ticker, frame in frames.items()}
 
     def get_fundamentals(self, ticker: str) -> Fundamentals | None:

@@ -14,7 +14,6 @@ class Settings(BaseSettings):
     yahoo_chunk_size: int = 50
     yahoo_pause_seconds: float = 1.0
     fundamentals_pause_seconds: float = 0.5
-    history_years: int = 5
 
     tier2_size: int = 150
     quotes_t1_minutes: int = 1

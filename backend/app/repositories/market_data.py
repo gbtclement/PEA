@@ -1,6 +1,6 @@
 from datetime import date
 
-from sqlalchemy import Row, delete, func, select
+from sqlalchemy import Row, delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -92,6 +92,32 @@ def daily_series(session: Session, since: date) -> dict[int, list[Row]]:
     for row in rows:
         result.setdefault(row.security_id, []).append(row)
     return result
+
+
+def incomplete_history_securities(session: Session) -> list[Security]:
+    return list(session.scalars(
+        select(Security).where(Security.active.is_(True), Security.history_complete.is_(False)).order_by(Security.id)
+    ))
+
+
+def mark_history_complete(session: Session, security_ids: list[int]) -> None:
+    if security_ids:
+        session.execute(update(Security).where(Security.id.in_(security_ids)).values(history_complete=True))
+
+
+def first_price_dates(session: Session, security_ids: list[int]) -> dict[int, date]:
+    rows = session.execute(
+        select(DailyPrice.security_id, func.min(DailyPrice.date))
+        .where(DailyPrice.security_id.in_(security_ids)).group_by(DailyPrice.security_id)
+    )
+    return {security_id: first for security_id, first in rows}
+
+
+def price_date_range(session: Session, security_id: int) -> tuple[date | None, date | None]:
+    first, last = session.execute(
+        select(func.min(DailyPrice.date), func.max(DailyPrice.date)).where(DailyPrice.security_id == security_id)
+    ).one()
+    return first, last
 
 
 def latest_price_dates(session: Session) -> dict[int, date]:

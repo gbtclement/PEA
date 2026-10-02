@@ -18,6 +18,8 @@ from app.services.market_calendar import PARIS, last_session_close
 REFERENCE_ORDER_EUR = 500.0
 STATS_MAX_AGE = timedelta(days=7)
 RECENT_WINDOW = timedelta(days=420)  # ≈ 290 séances : assez pour la moyenne 200 jours et le plus haut sur 1 an
+# Les statistiques des signaux gardent 5 ans (+ marge) : elles ne lisent pas tout l'historique.
+STATS_WINDOW = timedelta(days=365 * 5 + 30)
 
 
 def _inputs(frames, markets: dict[int, str]) -> list[SeriesInput]:
@@ -35,7 +37,7 @@ def _closed_until(ctx: JobContext) -> date:
 
 def refresh_forecast_stats(ctx: JobContext) -> int:
     today = ctx.now().astimezone(PARIS).date()
-    since = today - timedelta(days=365 * ctx.settings.history_years + 30)
+    since = today - STATS_WINDOW
     with ctx.session_factory() as session:
         # Prévisions communes à tous les comptes : coût d'un aller-retour avec la grille standard.
         _, rate = broker_fee(REFERENCE_ORDER_EUR, grid_from_json(DEFAULT_GRID_JSON))

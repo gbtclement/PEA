@@ -128,9 +128,11 @@ def test_history_reloads_after_split(db, make_ctx):
     db.flush()
     market = SplitMarket()
     refresh_daily_history(make_ctx(market=market, now=NOW))
-    assert market.history_calls[-1] == (["C.PA"], date(2026, 9, 28) - timedelta(days=365 * 5))
+    assert market.history_calls[-1] == (["C.PA"], None)  # rechargé en entier
     closes = db.scalars(select(DailyPrice.close).where(DailyPrice.security_id == security.id).order_by(DailyPrice.date)).all()
     assert closes == [9.0, 10.0]
+    db.expire_all()
+    assert db.get(Security, security.id).history_complete is True
 
 
 def test_fundamentals_without_industry_keep_known_one(db, make_ctx):
@@ -150,11 +152,22 @@ def test_history_backfill_then_incremental(db, make_ctx):
     market = FakeMarket(history={"C.PA": bars})
     ctx = make_ctx(market=market, now=NOW)
     refresh_daily_history(ctx)
-    assert market.history_calls[0] == (["C.PA"], date(2026, 9, 28) - timedelta(days=365 * 5))
+    assert market.history_calls[0] == (["C.PA"], None)  # premier chargement : tout l'historique
+    db.expire_all()
+    assert db.get(Security, security.id).history_complete is True
     refresh_daily_history(ctx)
     assert market.history_calls[1] == (["C.PA"], date(2026, 9, 25))
     count = db.scalar(select(func.count()).select_from(DailyPrice).where(DailyPrice.security_id == security.id))
     assert count == 2
+
+
+def test_incremental_refresh_keeps_history_incomplete(db, make_ctx):
+    security = make_security(db, "C.PA")
+    add_prices(db, security, 10.0, 10, days=2)
+    market = FakeMarket(history={"C.PA": [DailyBar(date(2026, 9, 25), 10, 10, 10, 10.0, 10)]})
+    refresh_daily_history(make_ctx(market=market, now=NOW))
+    db.expire_all()
+    assert db.get(Security, security.id).history_complete is False  # le rattrapage s'en charge
 
 
 def test_history_follows_every_active_security(db, make_ctx):

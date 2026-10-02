@@ -1,13 +1,13 @@
 from collections import defaultdict
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 
 from app.jobs.context import JobContext
 from app.jobs.tiers import tier_tickers
 from app.models import Security, SecurityFundamentals
 from app.providers.base import DailyBar, Quote
 from app.repositories.market_data import (
-    delete_daily_prices, last_two_closes, latest_price_dates, refreshable_securities, stored_close, ticker_ids,
-    upsert_daily_bars, upsert_fundamentals, upsert_quotes,
+    delete_daily_prices, last_two_closes, latest_price_dates, mark_history_complete, refreshable_securities, stored_close,
+    ticker_ids, upsert_daily_bars, upsert_fundamentals, upsert_quotes,
 )
 from app.repositories.securities import update_classification
 from app.services.market_calendar import CLOSE, PARIS
@@ -63,35 +63,39 @@ def _write_closing_quotes(ctx: JobContext, security_ids: list[int]) -> None:
 
 
 def refresh_daily_history(ctx: JobContext) -> int:
-    today = ctx.now().astimezone(PARIS).date()
-    default_start = today - timedelta(days=365 * ctx.settings.history_years)
     ids: dict[str, int] = {}
-    by_start: dict[date, list[str]] = defaultdict(list)
+    # Clé None : titre sans aucun cours, chargé en entier (period="max").
+    by_start: dict[date | None, list[str]] = defaultdict(list)
     with ctx.session_factory() as session:
         last_dates = latest_price_dates(session)
         for security in refreshable_securities(session):
             ids[security.yahoo_ticker] = security.id
             # On repart du dernier jour connu (inclus) pour corriger une séance incomplète.
-            by_start[last_dates.get(security.id, default_start)].append(security.yahoo_ticker)
+            by_start[last_dates.get(security.id)].append(security.yahoo_ticker)
     total = 0
     received: set[str] = set()
     readjusted: list[str] = []
-    for start, tickers in sorted(by_start.items()):
+    for start, tickers in sorted(by_start.items(), key=lambda item: (item[0] is not None, item[0] or date.min)):
         history = ctx.market.get_daily_history(sorted(tickers), start)
         received.update(history)
         with ctx.session_factory() as session:
+            complete: list[int] = []
             for ticker, bars in history.items():
-                if start != default_start and _is_readjusted(bars, start, stored_close(session, ids[ticker], start)):
+                if start is not None and _is_readjusted(bars, start, stored_close(session, ids[ticker], start)):
                     readjusted.append(ticker)
                     continue
                 total += upsert_daily_bars(session, ids[ticker], bars)
+                if start is None:
+                    complete.append(ids[ticker])
+            mark_history_complete(session, complete)
             session.commit()
     if readjusted:
-        history = ctx.market.get_daily_history(sorted(readjusted), default_start)
+        history = ctx.market.get_daily_history(sorted(readjusted), None)
         with ctx.session_factory() as session:
             for ticker, bars in history.items():
                 delete_daily_prices(session, ids[ticker])
                 total += upsert_daily_bars(session, ids[ticker], bars)
+            mark_history_complete(session, [ids[t] for t in history])
             session.commit()
     _write_closing_quotes(ctx, [ids[t] for t in received])
     _ensure_response(len(ids), len(received), "historiques")

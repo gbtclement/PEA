@@ -19,6 +19,7 @@ class Security(TimestampMixin, Base):
     sector: Mapped[str | None] = mapped_column(String(128))
     industry: Mapped[str | None] = mapped_column(String(128))
     active: Mapped[bool] = mapped_column(default=True)
+    history_complete: Mapped[bool] = mapped_column(default=False)  # cours chargés depuis la première cotation
     envelopes: Mapped[list[SecurityEnvelope]] = relationship(
         lazy="selectin", cascade="all, delete-orphan", passive_deletes=True, order_by=SecurityEnvelope.envelope,
     )
