@@ -99,3 +99,12 @@ test("indique le regroupement des barres", async () => {
   renderWithProviders(<PriceChartPanel securityId={5} />);
   expect(await screen.findByText("Une barre par mois sur cette période.")).toBeInTheDocument();
 });
+
+test("ne garde pas le graphique d'un autre titre pendant le chargement", async () => {
+  mockFetch(() => ({ body: BOUNDED }));
+  const { rerender, container } = renderWithProviders(<PriceChartPanel securityId={5} />);
+  await waitFor(() => expect(chart.addSeries).toHaveBeenCalled());
+  vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));  // l'historique du titre 6 tarde à arriver
+  rerender(<PriceChartPanel securityId={6} />);
+  expect(container.querySelector('[data-slot="skeleton"]')).not.toBeNull();
+});

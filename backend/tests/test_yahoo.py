@@ -185,3 +185,9 @@ def test_fundamentals_read_size_for_pea_pme():
 def test_fundamentals_size_missing_or_garbage():
     f = fundamentals_from_info({"fullTimeEmployees": "n/a", "totalRevenue": None})
     assert (f.employees, f.revenue, f.revenue_currency) == (None, None, None)
+
+
+def test_bars_skip_infinite_or_non_positive_closes():
+    # Vieilles séances ajustées par Yahoo : clôture infinie ou nulle, inutilisable (JSON, simulateur).
+    rows = [("1985-01-02", None, None, None, float("inf"), 0), ("1985-01-03", 1, 1, 1, 0.0, 0), ROWS[0]]
+    assert [b.date for b in bars_from_frame(frame(rows))] == [date(2026, 9, 24)]

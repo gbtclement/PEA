@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
@@ -88,3 +88,49 @@ def test_backfill_resumes_after_a_failure(db, make_ctx, monkeypatch):
     market = FakeMarket(history=history)
     backfill_history(make_ctx(market=market))
     assert market.history_calls == [(["B.PA"], None)]
+
+
+def test_backfill_writes_series_longer_than_the_bind_parameter_limit(db, make_ctx):
+    security = make_security(db, "OLD.MI")
+    store(db, security, date(2021, 1, 4), 50.0)
+    long_series = [bar(date(1985, 1, 1) + timedelta(days=i), 1.0) for i in range(9500)]  # 7 paramètres par ligne
+    assert backfill_history(make_ctx(market=FakeMarket(history={"OLD.MI": long_series}))) == 9500
+    assert complete(db, security) is True
+
+
+def test_backfill_checks_junction_on_first_common_date(db, make_ctx):
+    security = make_security(db, "C.PA")
+    store(db, security, date(2021, 1, 4), 50.0)
+    store(db, security, date(2021, 1, 5), 52.0)
+    # Yahoo n'a plus la séance du 04/01 : la comparaison se fait sur la première date commune (05/01).
+    market = FakeMarket(history={"C.PA": [bar(date(2000, 1, 3), 5.0), bar(date(2021, 1, 5), 26.0)]})
+    backfill_history(make_ctx(market=market))
+    assert closes(db, security) == [(date(2000, 1, 3), 5.0), (date(2021, 1, 5), 26.0)]
+
+
+def test_backfill_gives_up_on_dead_tickers_without_failing(db, make_ctx):
+    dead = make_security(db, "GONE.PA")
+    store(db, dead, date(2020, 3, 2), 3.0)  # plus coté depuis longtemps : Yahoo ne le renvoie plus
+    alive = make_security(db, "LATE.PA")
+    store(db, alive, date(2026, 9, 25), 3.0)
+    now = datetime(2026, 9, 28, 20, 0, tzinfo=UTC)
+    assert backfill_history(make_ctx(market=FakeMarket(), now=now)) == 0
+    assert complete(db, dead) is True
+    assert complete(db, alive) is False  # coté : on réessaiera
+
+
+def test_backfill_skips_a_ticker_that_fails_to_save(db, make_ctx, monkeypatch):
+    bad = make_security(db, "BAD.PA")
+    good = make_security(db, "GOOD.PA")
+    original = market_module.upsert_daily_bars
+
+    def failing(session, security_id, bars):
+        if security_id == bad.id:
+            raise ValueError("ligne refusée")
+        return original(session, security_id, bars)
+
+    monkeypatch.setattr(market_module, "upsert_daily_bars", failing)
+    history = {"BAD.PA": [bar(date(2000, 1, 3), 1.0)], "GOOD.PA": [bar(date(2000, 1, 3), 2.0)]}
+    backfill_history(make_ctx(market=FakeMarket(history=history)))
+    assert complete(db, good) is True and complete(db, bad) is False
+    assert closes(db, good) == [(date(2000, 1, 3), 2.0)]

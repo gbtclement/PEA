@@ -98,7 +98,7 @@ export function SecurityPage() {
           <p className="text-xs text-muted-foreground">Mis à jour {formatDateTime(data.as_of)}</p>
         </div>
       </header>
-      <PriceChartPanel securityId={data.id} />
+      <PriceChartPanel key={data.id} securityId={data.id} />
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2 [&>*]:min-w-0">
         <ScoreCard detail={data} />
         <FundamentalsCard detail={data} />

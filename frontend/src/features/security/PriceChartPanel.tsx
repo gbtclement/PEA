@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,8 @@ export function PriceChartPanel({ securityId }: { securityId: number }) {
     queryKey: ["history", securityId, period, custom ? range : null],
     queryFn: () => apiGet<HistoryOut>(`/api/securities/${securityId}/history`, custom ? { period, ...range } : { period }),
     enabled: !custom || range !== null,
-    placeholderData: keepPreviousData,  // en « Personnalisé », la période précédente reste affichée en attendant les dates
+    // En « Personnalisé », la période précédente reste affichée en attendant les dates (jamais celle d'un autre titre).
+    placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === securityId ? previous : undefined),
     refetchInterval: period === "1D" ? 60_000 : false,
   });
   const reversed = draft.start !== "" && draft.end !== "" && draft.end < draft.start;

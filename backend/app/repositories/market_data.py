@@ -7,6 +7,8 @@ from sqlalchemy.orm import Session
 from app.models import DailyPrice, Security, SecurityFundamentals, SecurityQuote
 from app.providers.base import DailyBar, Fundamentals, Quote
 
+UPSERT_CHUNK_ROWS = 5000
+
 
 def refreshable_securities(session: Session) -> list[Security]:
     """Titres actifs dont on suit les cours : tous, quelle que soit leur enveloppe."""
@@ -69,9 +71,11 @@ def upsert_daily_bars(session: Session, security_id: int, bars: list[DailyBar]) 
          "close": b.close, "volume": b.volume}
         for b in bars
     ]
-    stmt = pg_insert(DailyPrice).values(rows)
-    updated = {col: stmt.excluded[col] for col in ("open", "high", "low", "close", "volume")}
-    session.execute(stmt.on_conflict_do_update(index_elements=["security_id", "date"], set_=updated))
+    # PostgreSQL limite une requête à 65 535 paramètres (7 par ligne) : un historique complet passe en plusieurs fois.
+    for start in range(0, len(rows), UPSERT_CHUNK_ROWS):
+        stmt = pg_insert(DailyPrice).values(rows[start:start + UPSERT_CHUNK_ROWS])
+        updated = {col: stmt.excluded[col] for col in ("open", "high", "low", "close", "volume")}
+        session.execute(stmt.on_conflict_do_update(index_elements=["security_id", "date"], set_=updated))
     return len(rows)
 
 

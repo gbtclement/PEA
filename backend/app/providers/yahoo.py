@@ -54,13 +54,16 @@ def split_by_ticker(df: pd.DataFrame | None, tickers: list[str]) -> dict[str, pd
 
 
 def bars_from_frame(frame: pd.DataFrame) -> list[DailyBar]:
-    return [
-        DailyBar(
+    bars = []
+    for index, row in frame.iterrows():
+        close = _num(row["Close"])
+        if close is None or close <= 0:
+            continue  # vieilles séances mal ajustées par Yahoo (clôture infinie ou nulle)
+        bars.append(DailyBar(
             date=index.date(), open=_num(row["Open"]), high=_num(row["High"]), low=_num(row["Low"]),
-            close=float(row["Close"]), volume=_int(row["Volume"]),
-        )
-        for index, row in frame.iterrows()
-    ]
+            close=close, volume=_int(row["Volume"]),
+        ))
+    return bars
 
 
 def intraday_from_frame(frame: pd.DataFrame) -> list[IntradayBar]:
