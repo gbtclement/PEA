@@ -34,11 +34,15 @@ def setup_market(db):
     return cac
 
 
+def _liquid_history(db, security) -> None:
+    add_series(db, security, 260)
+    add_fundamentals(db, security)
+
+
 def test_scores_liquid_stock_enters_top(db, make_ctx):
     setup_market(db)
     stock = make_security(db, "A.PA")
-    add_series(db, stock, 260)
-    add_fundamentals(db, stock)
+    _liquid_history(db, stock)
     refresh_scores(make_ctx(now=NOW))
     score = db.get(SecurityScore, stock.id)
     assert score.total is not None and score.total > 50
@@ -124,3 +128,11 @@ def test_quotes_job_tier2_triggers_scores(db, make_ctx):
     market = FakeMarket(quotes={"A.PA": Quote(10.0, 9.0, 11.1, 1, NOW)})
     quotes_job(make_ctx(market=market, now=NOW), 2)
     assert db.get(DataStatus, "scores") is not None
+
+
+def test_non_pea_stock_can_enter_the_top(db, make_ctx):
+    setup_market(db)
+    aapl = make_security(db, "AAPL.PA", eligibility="non_eligible", country="US")
+    _liquid_history(db, aapl)
+    refresh_scores(make_ctx(now=NOW))
+    assert db.get(SecurityScore, aapl.id).eligible_for_top is True

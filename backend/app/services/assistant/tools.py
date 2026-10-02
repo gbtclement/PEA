@@ -33,19 +33,19 @@ TOOL_LABELS = {
 _TICKER = {"type": "string", "description": "Ticker Yahoo (ex. MC.PA) ou symbole (ex. MC)."}
 TOOL_SPECS: list[dict] = [
     {"name": "search_securities",
-     "description": "Cherche des actions ou ETF par nom, ticker ou ISIN. Renvoie ticker, cours, variation du jour et éligibilité PEA.",
+     "description": "Cherche des actions ou ETF par nom, ticker ou ISIN. Renvoie ticker, cours, variation du jour et enveloppes compatibles (PEA, PEA-PME).",
      "input_schema": {"type": "object", "properties": {
          "query": {"type": "string", "description": "Texte recherché"},
          "limit": {"type": "integer", "minimum": 1, "maximum": 10}}, "required": ["query"]}},
     {"name": "get_security_overview",
-     "description": "Fiche complète d'un titre : cours et horodatage, score détaillé (composants et explications), fondamentaux, éligibilité PEA.",
+     "description": "Fiche complète d'un titre : cours et horodatage, score détaillé (composants et explications), fondamentaux, enveloppes compatibles.",
      "input_schema": {"type": "object", "properties": {"ticker": _TICKER}, "required": ["ticker"]}},
     {"name": "get_price_history",
      "description": "Clôtures journalières d'un titre sur une période (échantillonnées, 60 points maximum) avec RSI 14, moyennes mobiles 50/200, MACD et performance.",
      "input_schema": {"type": "object", "properties": {
          "ticker": _TICKER, "period": {"type": "string", "enum": list(HISTORY_DAYS)}}, "required": ["ticker", "period"]}},
     {"name": "get_top10",
-     "description": "Top 10 actuel de l'application (actions éligibles PEA les mieux notées) avec les 3 principales raisons de chaque score.",
+     "description": "Top 10 actuel de l'application (actions les mieux notées, filtrées sur les enveloppes de l'utilisateur) avec les 3 principales raisons de chaque score.",
      "input_schema": {"type": "object", "properties": {}}},
     {"name": "get_portfolio",
      "description": "Portefeuille de l'utilisateur : positions, PRU, plus/moins-values, répartition par secteur, compteur d'ordres de l'année.",

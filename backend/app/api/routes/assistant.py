@@ -110,7 +110,7 @@ def send_message(
     db.commit()
     start = {"type": "start", "user_message": message_out(user_msg).model_dump(mode="json")}
     run = ChatRun(llm_factory(api_key), model=model,
-                  system=system_prompt(paris_today(), row.min_orders_per_year, security),
+                  system=system_prompt(paris_today(), row.min_orders_per_year, row.envelopes or [], security),
                   history=history, execute_tool=None,
                   max_tokens=config.assistant_max_tokens, max_rounds=config.assistant_max_rounds)
     chat = start_chat(run, session_maker, conv.id, user.id, model)

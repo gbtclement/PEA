@@ -93,7 +93,7 @@ def refresh_scores(ctx: JobContext) -> int:
             turnover_eur = to_eur(turnover, currency_for_market(s.market)) or 0.0
             liquid = turnover_eur >= settings.min_turnover_eur
             eligible_for_top = (
-                s.kind == "stock" and s.envelope_status("pea") == "eligible" and liquid
+                s.kind == "stock" and liquid
                 and len(bars) >= settings.min_history_days
                 and result.total is not None and result.available_ratio >= settings.min_available_ratio
             )
@@ -115,7 +115,7 @@ def refresh_scores(ctx: JobContext) -> int:
                 "sparkline": [round(c, 4) for c in closes[-SPARKLINE_POINTS:]],
             })
             count += 1
-        # Titres sortis du périmètre (devenus non éligibles, inactifs) : ils ne peuvent plus figurer dans le top.
+        # Titres sortis du périmètre (inactifs, devenus indices) : ils ne peuvent plus figurer dans le top.
         session.execute(
             update(SecurityScore)
             .where(SecurityScore.security_id.notin_(processed), SecurityScore.eligible_for_top.is_(True))
