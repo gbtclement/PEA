@@ -716,7 +716,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/securities/{security_id}/eligibility": {
+    "/api/securities/{security_id}/envelopes/{code}": {
         parameters: {
             query?: never;
             header?: never;
@@ -729,8 +729,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Update Eligibility */
-        patch: operations["update_eligibility_api_securities__security_id__eligibility_patch"];
+        /** Update Envelope */
+        patch: operations["update_envelope_api_securities__security_id__envelopes__code__patch"];
         trace?: never;
     };
     "/api/securities/{security_id}": {
@@ -932,6 +932,24 @@ export interface paths {
         get: operations["read_settings_api_settings_get"];
         /** Update Settings */
         put: operations["update_settings_api_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/envelopes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Envelopes */
+        get: operations["read_envelopes_api_settings_envelopes_get"];
+        /** Update Envelopes */
+        put: operations["update_envelopes_api_settings_envelopes_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1507,11 +1525,6 @@ export interface components {
             /** Confirm Email */
             confirm_email: string;
         };
-        /** EligibilityUpdate */
-        EligibilityUpdate: {
-            /** Override */
-            override: ("eligible" | "non_eligible") | null;
-        };
         /** EmailChangeIn */
         EmailChangeIn: {
             /**
@@ -1531,6 +1544,32 @@ export interface components {
             email: string;
             /** Captcha */
             captcha?: string | null;
+        };
+        /** EnvelopeStatusOut */
+        EnvelopeStatusOut: {
+            /** Code */
+            code: string;
+            /** Status */
+            status: string;
+            /** Source */
+            source: string;
+            /** Override */
+            override: string | null;
+        };
+        /** EnvelopeUpdate */
+        EnvelopeUpdate: {
+            /** Override */
+            override: ("eligible" | "a_verifier" | "non_eligible") | null;
+        };
+        /** EnvelopesIn */
+        EnvelopesIn: {
+            /** Envelopes */
+            envelopes: ("pea" | "pea_pme" | "cto")[];
+        };
+        /** EnvelopesOut */
+        EnvelopesOut: {
+            /** Envelopes */
+            envelopes: string[];
         };
         /** ExportOut */
         ExportOut: {
@@ -1594,8 +1633,8 @@ export interface components {
             symbol: string;
             /** Market */
             market: string;
-            /** Eligibility */
-            eligibility: string;
+            /** Envelopes */
+            envelopes: string[];
             /** Price */
             price: number | null;
             /** Change Pct */
@@ -1619,6 +1658,12 @@ export interface components {
             dividend_yield: number | null;
             /** Market Cap */
             market_cap: number | null;
+            /** Employees */
+            employees: number | null;
+            /** Revenue */
+            revenue: number | null;
+            /** Revenue Currency */
+            revenue_currency: string | null;
             /** Currency */
             currency: string | null;
             /** Updated At */
@@ -2172,8 +2217,8 @@ export interface components {
             country: string | null;
             /** Sector */
             sector: string | null;
-            /** Eligibility */
-            eligibility: string;
+            /** Envelopes */
+            envelopes: string[];
             /** Price */
             price: number | null;
             /** Change Pct */
@@ -2228,8 +2273,8 @@ export interface components {
             country: string | null;
             /** Sector */
             sector: string | null;
-            /** Eligibility */
-            eligibility: string;
+            /** Envelopes */
+            envelopes: string[];
             /** Price */
             price: number | null;
             /** Change Pct */
@@ -2258,8 +2303,6 @@ export interface components {
             sparkline: number[];
             /** Industry */
             industry: string | null;
-            /** Eligibility Source */
-            eligibility_source: string;
             /** Currency */
             currency: string;
             /** As Of */
@@ -2296,12 +2339,8 @@ export interface components {
             country: string | null;
             /** Sector */
             sector: string | null;
-            /** Eligibility */
-            eligibility: string;
-            /** Eligibility Source */
-            eligibility_source: string;
-            /** Eligibility Override */
-            eligibility_override: string | null;
+            /** Envelopes */
+            envelopes: components["schemas"]["EnvelopeStatusOut"][];
             /** Price */
             price: number | null;
             /** Change Pct */
@@ -2493,8 +2532,8 @@ export interface components {
             country: string | null;
             /** Sector */
             sector: string | null;
-            /** Eligibility */
-            eligibility: string;
+            /** Envelopes */
+            envelopes: string[];
             /** Price */
             price: number | null;
             /** Change Pct */
@@ -3944,7 +3983,7 @@ export interface operations {
             query?: {
                 q?: string | null;
                 kind?: ("stock" | "etf" | "index") | null;
-                eligibility?: ("eligible" | "a_verifier" | "non_eligible") | null;
+                envelope?: ("pea" | "pea_pme") | null;
                 limit?: number;
                 offset?: number;
                 overridden?: boolean;
@@ -3975,18 +4014,19 @@ export interface operations {
             };
         };
     };
-    update_eligibility_api_securities__security_id__eligibility_patch: {
+    update_envelope_api_securities__security_id__envelopes__code__patch: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 security_id: number;
+                code: "pea" | "pea_pme";
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["EligibilityUpdate"];
+                "application/json": components["schemas"]["EnvelopeUpdate"];
             };
         };
         responses: {
@@ -4401,6 +4441,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_envelopes_api_settings_envelopes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvelopesOut"];
+                };
+            };
+        };
+    };
+    update_envelopes_api_settings_envelopes_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnvelopesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvelopesOut"];
                 };
             };
             /** @description Validation Error */

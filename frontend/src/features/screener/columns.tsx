@@ -2,7 +2,7 @@ import type { ColumnSpec as DataTableColumn } from "@/components/DataTable";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { Sparkline } from "@/components/Sparkline";
-import { EligibilityBadge } from "@/features/explorer/EligibilityBadge";
+import { EnvelopeBadges } from "@/features/explorer/EnvelopeBadges";
 import type { ScreenerRow } from "@/lib/api/client";
 import { formatNumber, formatPct, formatPrice, formatRatioPct } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -35,7 +35,7 @@ export function buildColumns(kind: "stock" | "etf"): ColumnSpec[] {
           <div className="truncate font-medium">{row.original.name}</div>
           <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
             <span className="truncate">{row.original.symbol} · {row.original.market}</span>
-            {row.original.eligibility !== "eligible" && <EligibilityBadge status={row.original.eligibility} />}
+            <EnvelopeBadges codes={row.original.envelopes} />
           </div>
         </div>
       ) },

@@ -31,7 +31,7 @@ export function Layout() {
           <div className="mx-auto max-w-[1400px] space-y-1 border-t border-border pt-4 text-xs text-muted-foreground">
             <p>
               {SITE_NAME} est un outil d'aide à la décision et d'apprentissage, pas un conseil en investissement. Cours Yahoo Finance
-              en différé ; compatibilité PEA déduite du pays du siège, à confirmer auprès de votre courtier.
+              en différé ; enveloppes compatibles (PEA, PEA-PME) déduites automatiquement, à confirmer auprès de votre courtier.
             </p>
             <p className="flex flex-wrap gap-x-2">
               <Link to="/mentions-legales" className="hover:text-foreground">Mentions légales</Link>·
