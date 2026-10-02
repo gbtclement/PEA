@@ -6,8 +6,9 @@ from app.jobs.tiers import tier_tickers
 from app.models import Security, SecurityFundamentals
 from app.providers.base import DailyBar, Quote
 from app.repositories.market_data import (
-    delete_daily_prices, last_two_closes, latest_price_dates, mark_history_complete, refreshable_securities, stored_close,
-    ticker_ids, upsert_daily_bars, upsert_fundamentals, upsert_quotes,
+    delete_daily_prices, first_price_dates, incomplete_history_securities, last_two_closes, latest_price_dates,
+    mark_history_complete, refreshable_securities, stored_close, ticker_ids, upsert_daily_bars, upsert_fundamentals,
+    upsert_quotes,
 )
 from app.repositories.securities import update_classification
 from app.services.market_calendar import CLOSE, PARIS
@@ -16,6 +17,8 @@ from app.services.market_calendar import CLOSE, PARIS
 MIN_RESPONSE_RATIO = 0.2
 # Écart de clôture sur le jour de recouvrement au-delà duquel l'historique a été réajusté (division, dividende).
 ADJUSTMENT_TOLERANCE = 0.005
+# Titres par appel au fournisseur pendant le rattrapage ; chaque paquet est validé à part (reprise après une panne).
+BACKFILL_BATCH = 100
 
 
 def _ensure_response(requested: int, received: int, what: str) -> None:
@@ -99,6 +102,33 @@ def refresh_daily_history(ctx: JobContext) -> int:
             session.commit()
     _write_closing_quotes(ctx, [ids[t] for t in received])
     _ensure_response(len(ids), len(received), "historiques")
+    return total
+
+
+def backfill_history(ctx: JobContext) -> int:
+    """Rattrapage de l'historique complet : ajoute les cours antérieurs à la première date stockée."""
+    with ctx.session_factory() as session:
+        targets = [(s.yahoo_ticker, s.id) for s in incomplete_history_securities(session)]
+    total = 0
+    received = 0
+    for offset in range(0, len(targets), BACKFILL_BATCH):
+        batch = dict(targets[offset:offset + BACKFILL_BATCH])
+        history = ctx.market.get_daily_history(sorted(batch), None)
+        received += len(history)
+        with ctx.session_factory() as session:
+            firsts = first_price_dates(session, list(batch.values()))
+            for ticker, bars in history.items():
+                security_id = batch[ticker]
+                first = firsts.get(security_id)
+                if first is not None and _is_readjusted(bars, first, stored_close(session, security_id, first)):
+                    # Yahoo a réajusté les cours depuis (dividende, division) : on remplace toute la série.
+                    delete_daily_prices(session, security_id)
+                    total += upsert_daily_bars(session, security_id, bars)
+                else:
+                    total += upsert_daily_bars(session, security_id, [b for b in bars if first is None or b.date < first])
+            mark_history_complete(session, [batch[t] for t in history])
+            session.commit()
+    _ensure_response(len(targets), received, "historiques complets")
     return total
 
 
