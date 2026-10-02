@@ -25,7 +25,7 @@ Navigateur ──POST /api/assistant/conversations/{id}/messages──► api
 |---|---|
 | `search_securities` | Recherche par nom, ticker ou ISIN |
 | `get_security_overview` | Cours, score détaillé, fondamentaux, enveloppes |
-| `get_price_history` | Clôtures et indicateurs sur une période |
+| `get_price_history` | Clôtures et indicateurs sur une période (1M, 6M, 1Y, 5Y, 10Y ou MAX) |
 | `get_top10` | Top 10 actuel |
 | `get_portfolio` | Positions, performance, compteur d'ordres |
 | `simulate_past_investment` | Gain d'un achat passé, frais inclus |

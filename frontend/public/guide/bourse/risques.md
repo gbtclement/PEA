@@ -63,7 +63,7 @@ Utilisez l'application pour **trier, comprendre et vous poser les bonnes questio
 ## Petite liste avant chaque achat
 
 - [ ] Je comprends ce que fait l'entreprise.
-- [ ] J'ai regardé le graphique sur 1 an et 5 ans.
+- [ ] J'ai regardé le graphique sur 1 an, 5 ans et plus.
 - [ ] J'ai lu les points forts **et** les points faibles du score.
 - [ ] J'ai regardé les actualités récentes.
 - [ ] Cette ligne ne pèsera pas plus de 10 à 15 % de mon portefeuille.

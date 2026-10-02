@@ -19,7 +19,7 @@ Dans `.env`, en local : `ADMIN_EMAIL=<votre adresse>`, `COOKIE_SECURE=false` et 
 
 Puis ouvrir http://localhost:8095. Le guide utilisateur (l'application et la bourse expliquées) est sur
 http://localhost:8095/guide/, accessible depuis la barre latérale ; la documentation admin (technique, non liée dans la navigation) est sur http://localhost:8095/documentation/. Au premier démarrage, le worker télécharge la liste des
-titres puis 5 ans d'historique : comptez une dizaine de minutes avant que tout soit rempli,
+titres puis tout leur historique de cours : comptez environ une demi-heure avant que tout soit rempli,
 et environ une heure pour les données fondamentales.
 
 ## Développement

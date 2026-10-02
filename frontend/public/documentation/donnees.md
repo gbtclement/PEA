@@ -43,17 +43,18 @@ Planifiées dans `jobs/scheduler.py` (APScheduler, fuseau Paris) :
 | `universe` | 7 h 00, lundi à vendredi | Met à jour la liste des titres et leurs enveloppes |
 | `daily` | 7 h 30, lundi à vendredi | Historique journalier → scores → prévisions → fondamentaux |
 | `evening` | 18 h 15, lundi à vendredi | Clôtures officielles du jour → scores → prévisions. Le soir et le week-end, l'app affiche ainsi les chiffres exacts de la dernière séance, fixing de clôture compris |
+| `history_backfill` | 20 h 00 tous les jours, et à la fin de `bootstrap` | Rattrapage de l'historique complet : pour chaque titre pas encore marqué `history_complete`, charge les cours antérieurs à sa première date stockée. Par paquets de 100 titres ; ne fait plus rien une fois tout rattrapé |
 | `quotes_t1` | Toutes les minutes, **en séance** | Cours des indices, favoris, titres détenus et top 10 (tous titres, PEA, PEA-PME) |
 | `quotes_t2` | Toutes les 5 min, en séance | Cours des 150 titres les plus échangés, **puis recalcul des scores** |
 | `quotes_t3` | Toutes les 5 min, en séance | Cours de tous les autres titres (environ 1 700 ; un passage dure environ 2 min 30) |
 
 Détails :
 
-- Les tâches **lourdes** (univers, historique, fondamentaux) passent l'une après l'autre grâce au verrou `HEAVY_JOBS_LOCK`. Elles ne se marchent pas dessus et ne saturent pas Yahoo.
+- Les tâches **lourdes** (univers, historique, rattrapage de l'historique, fondamentaux) passent l'une après l'autre grâce au verrou `HEAVY_JOBS_LOCK`. Elles ne se marchent pas dessus et ne saturent pas Yahoo.
 - Une tâche quotidienne manquée (PC en veille) est rattrapée si le PC se réveille dans les **3 heures**. Au-delà, c'est `bootstrap` qui rattrape au prochain démarrage.
 - Le worker suit les cours de **tous** les titres actifs, quelle que soit leur enveloppe.
 - Chaque exécution passe par `jobs/runner.py`, qui enregistre dans `data_status` la dernière réussite, la dernière erreur et le nombre d'éléments traités. C'est ce que lit `GET /api/status`.
-- L'historique est conservé sur **5 ans**. Après une division d'action détectée, l'historique du titre est rechargé à la nouvelle échelle.
+- L'historique est **complet** : un nouveau titre est chargé depuis sa première cotation, les titres déjà présents sont rattrapés par `history_backfill`. Après une division d'action détectée (ou des cours réajustés par Yahoo), toute la série du titre est rechargée à la nouvelle échelle. Les statistiques des prévisions ne lisent que les 5 dernières années.
 
 ## Les paliers de rafraîchissement
 

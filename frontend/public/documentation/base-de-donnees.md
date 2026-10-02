@@ -14,10 +14,10 @@ PostgreSQL 16, conteneur `db`, données dans le volume Docker `pgdata`. Modèles
 | `security_events` | Journal de sécurité : type d'événement, IP, détails (JSON), date. Gardé 12 mois | **oui** (peut être vide) |
 | `data_exports` | Exports des données demandés depuis les Réglages : statut `pending`/`ready`/`failed` (un seul `pending` par compte), contenu JSON, dates de demande, de préparation et d'expiration (7 jours) | **oui** |
 | `rate_limit_hits` | Tentatives comptées par les limites anti-abus : compteur, empreinte de l'adresse ou de l'IP, date. Gardé 1 jour | non |
-| `securities` | Univers : ISIN, ticker Yahoo, nom, type `stock`/`etf`/`index`, place, pays, secteur, actif | non |
+| `securities` | Univers : ISIN, ticker Yahoo, nom, type `stock`/`etf`/`index`, place, pays, secteur, actif, historique complet chargé (`history_complete`) | non |
 | `security_envelopes` | Statut de chaque titre par enveloppe à règle (`pea`, `pea_pme`) : statut, source `auto`/`seed`/`manual`, correction manuelle (voir [Enveloppes](enveloppes.md)) | non |
 | `quotes` | Dernier cours connu de chaque titre : prix, variation du jour, volume, horodatage | non |
-| `daily_prices` | Historique journalier OHLCV sur 5 ans | non |
+| `daily_prices` | Historique journalier OHLCV depuis la première cotation (environ 3 à 5 fois plus volumineux qu'avec les 5 ans d'avant) | non |
 | `fundamentals` | PER, BPA, croissances, dette/capitaux propres, marge, dividende, capitalisation, effectif, chiffre d'affaires et sa devise (règle PEA-PME) | non |
 | `scores` | Dernier score : total, technique, fondamental, détail JSON, liquidité, montant moyen échangé, données incomplètes, entrée dans le top | non |
 | `favorites` | Titres favoris | **oui** |

@@ -108,12 +108,14 @@ Le **worker** remplit la base tout seul, dans cet ordre :
 | Étape | Durée approximative |
 |---|---|
 | Liste des titres (Euronext, grands indices, ETF) | moins d'une minute |
-| 5 ans d'historique de cours pour tous les titres | une dizaine de minutes |
+| Historique de cours complet (depuis la première cotation) pour tous les titres | environ une demi-heure |
 | Premières prévisions et premiers scores (techniques seulement) | une à deux minutes |
 | Données fondamentales (PER, dividende, dette…) | environ une heure |
 | Scores complets, et donc **premier top 10** | juste après les fondamentaux |
 
 Pendant ce temps, l'application fonctionne mais certaines pages sont vides ou partielles. En particulier, le **top 10 reste vide** jusqu'à la fin du chargement des fondamentaux : une action n'y entre que si au moins 60 % de son score est calculable, et la partie technique seule n'en représente que 50 %. En bas de la barre latérale, l'état du marché indique l'heure de la dernière mise à jour.
+
+Sur une installation mise à jour (titres déjà chargés sur 5 ans), la tâche `history_backfill` rattrape les cours plus anciens en arrière-plan, à la fin du démarrage du worker puis chaque soir à 20 h : voir [Données](donnees.md).
 
 ?> Des messages `possibly delisted` dans les journaux du worker sont normaux : ce sont des titres radiés de la cote que Yahoo ne connaît plus.
 
