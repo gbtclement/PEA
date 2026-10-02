@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { apiGet, apiSend, type Me } from "@/lib/api/client";
 import { usePageMeta } from "@/seo/usePageMeta";
 
@@ -18,7 +18,8 @@ export function PremiumThanksPage() {
   const me = useQuery({
     queryKey: ["me"],
     queryFn: () => apiGet<Me>("/api/me"),
-    refetchInterval: (query) => (query.state.data?.has_premium ? false : 2000),
+    // Pas d'interrogation sans fin : arrêt si la vérification a échoué (le webhook ou la nuit prendront le relais).
+    refetchInterval: (query) => (query.state.data?.has_premium || sync.isError ? false : 2000),
   });
 
   useEffect(() => {
@@ -45,8 +46,19 @@ export function PremiumThanksPage() {
   return (
     <section className="mx-auto max-w-2xl space-y-3">
       <h1 className="text-2xl font-semibold tracking-tight">Merci !</h1>
-      <p role="status" className="text-sm">Paiement reçu, activation en cours…</p>
-      {slow && (
+      {sync.isError ? (
+        <div className="space-y-2 text-sm">
+          <p role="alert">
+            Nous n'avons pas pu vérifier votre paiement tout de suite. S'il est passé, Premium s'activera dans quelques
+            minutes et vous recevrez un mail de confirmation.
+          </p>
+          <Button variant="outline" disabled={sync.isPending}
+                  onClick={() => sessionId && sync.mutate(sessionId, { onSettled: () => me.refetch() })}>Réessayer</Button>
+        </div>
+      ) : (
+        <p role="status" className="text-sm">Paiement reçu, activation en cours…</p>
+      )}
+      {slow && !sync.isError && (
         <p className="text-sm text-muted-foreground">
           L'activation peut prendre quelques minutes ; vous recevrez un mail de confirmation. Vous pouvez quitter cette page.
         </p>

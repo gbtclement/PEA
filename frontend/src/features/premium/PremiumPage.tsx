@@ -112,7 +112,11 @@ function Action({ me, interval }: { me: ReturnType<typeof useMe>["me"]; interval
         <input type="checkbox" className="mt-0.5 size-4 accent-primary" checked={waiver} onChange={(e) => setWaiver(e.target.checked)} />
         <span>Je demande l'accès immédiat à Premium et je renonce à mon droit de rétractation de 14 jours.</span>
       </label>
-      <Button disabled={!cgv || !waiver || checkout.isPending} onClick={() => checkout.mutate()} className={cn("w-full sm:w-auto")}>S'abonner</Button>
+      {/* Après succès, la page Stripe met un instant à s'ouvrir : le bouton reste bloqué (pas de second paiement). */}
+      <Button disabled={!cgv || !waiver || checkout.isPending || checkout.isSuccess} onClick={() => checkout.mutate()}
+              className={cn("w-full sm:w-auto")}>
+        {checkout.isSuccess ? "Redirection vers le paiement…" : "S'abonner"}
+      </Button>
       {checkout.error && <p role="alert" className="text-destructive">{(checkout.error as ApiError).message}</p>}
     </div>
   );
