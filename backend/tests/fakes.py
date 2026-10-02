@@ -4,8 +4,9 @@ from app.providers.base import DailyBar, Fundamentals, IntradayBar, ListedSecuri
 
 
 class FakeListing:
-    def __init__(self, items: list[ListedSecurity] | None = None) -> None:
+    def __init__(self, items: list[ListedSecurity] | None = None, source: str = "euronext") -> None:
         self.items = items or []
+        self.source = source
         self.calls = 0
 
     def fetch_listed(self) -> list[ListedSecurity]:

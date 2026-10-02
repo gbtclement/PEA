@@ -1,4 +1,5 @@
 import csv
+from functools import lru_cache
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -39,6 +40,12 @@ def load_indices() -> list[SeedSecurity]:
         SeedSecurity(row["yahoo_ticker"], row["yahoo_ticker"], row["name"], "Indice", None, "index")
         for row in _read("indices.csv")
     ]
+
+
+@lru_cache
+def confirmed_pea_etfs() -> frozenset[str]:
+    """ETF dont l'éligibilité au PEA est confirmée à la main (seeds/etfs.csv)."""
+    return frozenset(row["yahoo_ticker"] for row in _read("etfs.csv"))
 
 
 def load_all_seeds() -> list[SeedSecurity]:

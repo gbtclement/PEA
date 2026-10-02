@@ -4,7 +4,11 @@ from app.core.config import get_settings
 from app.core.db import get_session_factory
 from app.jobs.context import JobContext
 from app.jobs.scheduler import build_scheduler
-from app.providers.euronext import EuronextListingProvider
+from app.providers.euronext import EuronextEtfListingProvider, EuronextListingProvider
+from app.providers.nordic import NordicListingProvider
+from app.providers.six import SixListingProvider
+from app.providers.us import UsListingProvider
+from app.providers.xetra import XetraListingProvider
 from app.providers.yahoo import YahooProvider
 from app.repositories.fx import store_loader
 from app.services import fx
@@ -21,7 +25,10 @@ def build_context() -> JobContext:
             pause_seconds=settings.yahoo_pause_seconds,
             fundamentals_pause_seconds=settings.fundamentals_pause_seconds,
         ),
-        listing=EuronextListingProvider(settings.euronext_list_url),
+        listings=[
+            EuronextListingProvider(settings.euronext_list_url), EuronextEtfListingProvider(), NordicListingProvider(),
+            SixListingProvider(), XetraListingProvider(), UsListingProvider(),
+        ],
         settings=settings,
         mailer=mailer_from_settings(settings),
         billing=gateway_from_settings(settings),

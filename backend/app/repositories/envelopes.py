@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from sqlalchemy import ColumnElement, exists
 
 from app.models import Security, SecurityEnvelope, SecurityFundamentals
+from app.seeds.loader import confirmed_pea_etfs
 from app.services.envelopes.rules import ELIGIBLE, SecurityFacts, compute_envelopes, filtering_envelopes
 from app.services.fx import to_eur
 
@@ -11,7 +12,8 @@ from app.services.fx import to_eur
 def facts_for(security: Security, fundamentals: SecurityFundamentals | None) -> SecurityFacts:
     f = fundamentals
     return SecurityFacts(
-        kind=security.kind, country=security.country, industry=security.industry,
+        kind=security.kind, country=security.country, industry=security.industry, name=security.name,
+        confirmed_etf=security.kind == "etf" and security.yahoo_ticker in confirmed_pea_etfs(),
         employees=f.employees if f else None,
         revenue_eur=to_eur(f.revenue, f.revenue_currency or f.currency) if f else None,
         market_cap_eur=to_eur(f.market_cap, f.currency) if f else None,

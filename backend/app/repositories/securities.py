@@ -17,6 +17,8 @@ class SecurityUpsert:
     market: str
     isin: str | None
     country: str | None
+    currency: str | None = None
+    source: str | None = None
 
 
 def upsert_securities(session: Session, items: list[SecurityUpsert]) -> int:
@@ -37,18 +39,20 @@ def upsert_securities(session: Session, items: list[SecurityUpsert]) -> int:
         security.market = item.market
         security.isin = item.isin
         security.country = item.country
+        security.currency = item.currency
+        security.source = item.source
         security.active = True
         refresh_envelopes(security, fundamentals.get(security.id))
     session.flush()
     return len(unique)
 
 
-def deactivate_missing(session: Session, seen_tickers: set[str]) -> int:
-    result = session.execute(
-        update(Security)
-        .where(Security.active.is_(True), Security.yahoo_ticker.notin_(seen_tickers))
-        .values(active=False)
-    )
+def deactivate_missing(session: Session, seen_tickers: set[str], sources: set[str] | None = None) -> int:
+    """Désactive les titres absents des listes ; avec `sources`, seulement ceux des sources qui ont répondu."""
+    stmt = update(Security).where(Security.active.is_(True), Security.yahoo_ticker.notin_(seen_tickers))
+    if sources is not None:
+        stmt = stmt.where(Security.source.in_(sources))
+    result = session.execute(stmt.values(active=False))
     return result.rowcount
 
 
