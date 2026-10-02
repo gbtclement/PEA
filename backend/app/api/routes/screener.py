@@ -15,7 +15,8 @@ router = APIRouter(tags=["screener"])
 @router.get("/screener", response_model=list[ScreenerRow])
 def get_screener(
     kind: Literal["stock", "etf"] | None = None,
+    region: Literal["europe", "us"] | None = None,
     db: Session = Depends(get_db),
     user: User | None = Depends(get_optional_user),
 ) -> list[ScreenerRow]:
-    return [ScreenerRow.build(row) for row in screener_rows(db, user.id if user else None, kind=kind)]
+    return [ScreenerRow.build(row) for row in screener_rows(db, user.id if user else None, kind=kind, region=region)]

@@ -5,7 +5,7 @@ import pytest
 from app.models import DailyPrice, SecurityQuote
 from app.services.assistant.prompt import system_prompt
 from app.services.assistant.tools import TOOL_LABELS, TOOL_SPECS, ToolError, run_tool
-from tests.factories import make_security, make_user
+from tests.factories import make_quote, make_security, make_user
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def test_specs_are_valid_and_labelled():
 
 
 def test_search_securities(db, user):
-    make_security(db, "MC.PA", name="LVMH")
+    make_quote(db, make_security(db, "MC.PA", name="LVMH"), 600.0)
     result = run_tool(db, user, "search_securities", {"query": "lvmh"})
     assert result[0]["ticker"] == "MC.PA" and result[0]["name"] == "LVMH"
     assert run_tool(db, user, "search_securities", {"query": "zzz"}) == []

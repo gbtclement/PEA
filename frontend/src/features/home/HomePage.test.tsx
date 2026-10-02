@@ -19,7 +19,7 @@ function api(top: unknown[], { me = { status: 401, body: { detail: "x" } } as { 
     if (url.startsWith("/api/rankings/movers")) return { body: { gainers: [row(3, "AIR", "Airbus", 4.2)], losers: [row(4, "KER", "Kering", -3.1)] } };
     if (url.startsWith("/api/market/heatmap")) return { body: [] };
     if (url.startsWith("/api/orders/counter")) return { body: { year: 2026, count: 3, min_orders: 12, remaining: 9, expected_by_now: 8.8, behind: true, penalty_fee: 96 } };
-    if (url.startsWith("/api/status")) return { body: { market_open: true, jobs: [], indices: [{ id: 9, yahoo_ticker: "^FCHI", name: "CAC 40", price: 7500, change_pct: 0.8, as_of: null }] } };
+    if (url.startsWith("/api/status")) return { body: { market_open: true, markets: [], jobs: [], indices: [{ id: 9, yahoo_ticker: "^FCHI", name: "CAC 40", price: 7500, change_pct: 0.8, as_of: null }] } };
     return { body: { period: "1D", intraday: true, bars: [], sma50: [], sma200: [], rsi: [], macd: [] } };
   });
 }

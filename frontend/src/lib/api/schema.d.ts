@@ -1827,6 +1827,15 @@ export interface components {
             /** Histogram */
             histogram: number;
         };
+        /** MarketState */
+        MarketState: {
+            /** Code */
+            code: string;
+            /** Label */
+            label: string;
+            /** Open */
+            open: boolean;
+        };
         /** MeOut */
         MeOut: {
             /**
@@ -2498,6 +2507,8 @@ export interface components {
         StatusResponse: {
             /** Market Open */
             market_open: boolean;
+            /** Markets */
+            markets: components["schemas"]["MarketState"][];
             /** Jobs */
             jobs: components["schemas"]["JobStatus"][];
             /** Indices */
@@ -4221,6 +4232,7 @@ export interface operations {
         parameters: {
             query?: {
                 kind?: ("stock" | "etf") | null;
+                region?: ("europe" | "us") | null;
             };
             header?: never;
             path?: never;

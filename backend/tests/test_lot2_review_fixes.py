@@ -4,7 +4,7 @@ from app.jobs.scoring import refresh_scores
 from app.models import DailyPrice, SecurityFundamentals, SecurityQuote, SecurityScore, UserSettings
 from app.repositories.market_data import daily_series
 from app.repositories.screener import screener_rows
-from tests.factories import make_score, make_security
+from tests.factories import make_quote, make_score, make_security
 
 NOW = datetime(2026, 9, 28, 8, 0, tzinfo=UTC)
 LAST = date(2026, 9, 25)
@@ -70,6 +70,7 @@ def test_detail_exposes_currency(client, db):
 
 def test_screener_exposes_isin_and_ratio(client, db):
     security = make_security(db, "MC.PA", isin="FR0000121014")
+    make_quote(db, security, 600.0)
     make_score(db, security, available_ratio=0.6)
     row = client.get("/api/screener").json()[0]
     assert row["isin"] == "FR0000121014"

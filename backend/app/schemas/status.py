@@ -22,7 +22,14 @@ class IndexQuote(BaseModel):
     as_of: datetime | None
 
 
+class MarketState(BaseModel):
+    code: str
+    label: str
+    open: bool
+
+
 class StatusResponse(BaseModel):
     market_open: bool
+    markets: list[MarketState]  # une ligne par place suivie (Europe, New York)
     jobs: list[JobStatus]
     indices: list[IndexQuote]

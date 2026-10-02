@@ -85,3 +85,17 @@ test("le filtre Enveloppe propose Toutes, PEA et PEA-PME, sans « à vérifier �
   const select = await screen.findByRole("combobox", { name: "Enveloppe" });
   expect([...select.querySelectorAll("option")].map((o) => o.textContent)).toEqual(["Enveloppe : toutes", "PEA", "PEA-PME"]);
 });
+
+test("région Europe par défaut, puis États-Unis", async () => {
+  const fetch = mockFetch(() => ({ body: ROWS }));
+  renderWithProviders(
+    <Routes><Route path="/explorer" element={<ScreenerPage kind="stock" title="Explorer" description="d" />} /></Routes>,
+    { route: "/explorer" },
+  );
+  await screen.findByText("LVMH");
+  expect(String(fetch.mock.calls[0][0])).toContain("region=europe");
+  expect(screen.getByRole("button", { name: "Europe" })).toHaveAttribute("aria-pressed", "true");
+  await userEvent.click(screen.getByRole("button", { name: "États-Unis" }));
+  await waitFor(() => expect(fetch.mock.calls.some(([url]) => String(url).includes("region=us"))).toBe(true));
+  expect(screen.getByRole("button", { name: "États-Unis" })).toHaveAttribute("aria-pressed", "true");
+});

@@ -21,7 +21,7 @@ test("un compte aux CGU périmées est envoyé vers /accepter-cgu, puis ramené"
   const fetchMock = mockFetch((url) => {
     if (url === "/api/me/accept-terms") { accepted = true; return { body: { ...ME, terms_outdated: false } }; }
     if (url === "/api/me") return { body: { ...ME, terms_outdated: !accepted } };
-    if (url === "/api/status") return { body: { market_open: false, jobs: [] } };  // barre latérale, avant la redirection
+    if (url === "/api/status") return { body: { market_open: false, markets: [], jobs: [] } };  // barre latérale, avant la redirection
     return { body: url.startsWith("/api/orders") ? [] : {} };
   });
   const router = renderAt("/portefeuille");
@@ -45,7 +45,7 @@ test("liens vers les CGU et la politique de confidentialité", async () => {
 
 test("CGU périmées : les pages légales restent lisibles", async () => {
   mockFetch((url) => ({ body: url === "/api/me" ? { ...ME, terms_outdated: true }
-    : url === "/api/status" ? { market_open: false, jobs: [] } : {} }));
+    : url === "/api/status" ? { market_open: false, markets: [], jobs: [] } : {} }));
   const router = renderAt("/cgu");
   expect(await screen.findByRole("heading", { level: 1, name: "Conditions générales d'utilisation" })).toBeInTheDocument();
   await screen.findByText("Moi Dupont");  // compte chargé : la redirection aurait eu lieu

@@ -6,11 +6,12 @@ from sqlalchemy.orm import Session
 
 from app.models import Favorite, Security, SecurityFundamentals, SecurityQuote, SecurityScore
 from app.repositories.envelopes import envelope_clause
+from app.services.market_calendar import US_MARKETS
 
 
 def screener_rows(
     session: Session, user_id: uuid.UUID | None, *, kind: str | None = None, only_top: bool = False, limit: int | None = None,
-    security_id: int | None = None, envelopes: Sequence[str] = (),
+    security_id: int | None = None, envelopes: Sequence[str] = (), region: str | None = None,
 ) -> list[Row]:
     if user_id is None:
         is_favorite = literal(False).label("is_favorite")  # visiteur sans compte
@@ -32,6 +33,12 @@ def screener_rows(
         stmt = stmt.where(Security.id == security_id)  # une fiche s'affiche toujours, quelle que soit l'enveloppe
     else:
         stmt = stmt.where(Security.kind == kind) if kind else stmt.where(Security.kind != "index")
+        if not only_top:  # le top exige déjà 200 séances d'historique
+            stmt = stmt.where(SecurityQuote.security_id.is_not(None))  # jamais coté sur Yahoo : absent des listes
+        if region == "us":
+            stmt = stmt.where(Security.market.in_(US_MARKETS))
+        elif region == "europe":
+            stmt = stmt.where(Security.market.not_in(US_MARKETS))
         # Les enveloppes sont lues à chaque requête : une correction manuelle sort le titre du top immédiatement.
         clause = envelope_clause(envelopes)
         if clause is not None:

@@ -80,6 +80,7 @@ def search_securities(
     limit: int,
     overridden: bool = False,
     offset: int,
+    priced_only: bool = False,
 ) -> tuple[list[tuple[Security, SecurityQuote | None]], int]:
     stmt = (
         select(Security, SecurityQuote)
@@ -92,6 +93,8 @@ def search_securities(
                                          SecurityEnvelope.status == ELIGIBLE))
     if overridden:
         stmt = stmt.where(exists().where(SecurityEnvelope.security_id == Security.id, SecurityEnvelope.override.is_not(None)))
+    if priced_only:
+        stmt = stmt.where(SecurityQuote.security_id.is_not(None))  # jamais coté sur Yahoo : introuvable
     if q and q.strip():
         pattern = f"%{escape_like(q.strip())}%"
         stmt = stmt.where(or_(
