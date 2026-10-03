@@ -828,8 +828,28 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Screener */
+        /**
+         * Get Screener
+         * @description Une page de l'Explorer ou des ETF : filtres, tri et pagination côté serveur (des milliers de titres par région).
+         */
         get: operations["get_screener_api_screener_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/screener/facets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Screener Facets */
+        get: operations["get_screener_facets_api_screener_facets_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2224,6 +2244,22 @@ export interface components {
             computed_at: string;
             /** Components */
             components: components["schemas"]["ComponentOut"][];
+        };
+        /** ScreenerFacets */
+        ScreenerFacets: {
+            /** Sectors */
+            sectors: string[];
+            /** Countries */
+            countries: string[];
+            /** Markets */
+            markets: string[];
+        };
+        /** ScreenerPage */
+        ScreenerPage: {
+            /** Items */
+            items: components["schemas"]["ScreenerRow"][];
+            /** Total */
+            total: number;
         };
         /** ScreenerRow */
         ScreenerRow: {
@@ -4244,6 +4280,20 @@ export interface operations {
             query?: {
                 kind?: ("stock" | "etf") | null;
                 region?: ("europe" | "us") | null;
+                q?: string;
+                sector?: string | null;
+                country?: string | null;
+                market?: string | null;
+                envelope?: ("pea" | "pea_pme") | null;
+                min_score?: number | null;
+                min_price?: number | null;
+                max_price?: number | null;
+                liquid?: boolean;
+                fav?: boolean;
+                sort?: "name" | "price" | "change_pct" | "perf_1w" | "perf_1m" | "perf_1y" | "score" | "pe" | "dividend_yield";
+                order?: "asc" | "desc";
+                limit?: number;
+                offset?: number;
             };
             header?: never;
             path?: never;
@@ -4257,7 +4307,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScreenerRow"][];
+                    "application/json": components["schemas"]["ScreenerPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_screener_facets_api_screener_facets_get: {
+        parameters: {
+            query?: {
+                kind?: ("stock" | "etf") | null;
+                region?: ("europe" | "us") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScreenerFacets"];
                 };
             };
             /** @description Validation Error */

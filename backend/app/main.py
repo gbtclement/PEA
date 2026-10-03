@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.api.cache import ETagMiddleware
 from app.core.brand import APP_NAME
 from app.core.db import get_session_factory
 from app.repositories.fx import store_loader
@@ -10,6 +11,7 @@ from app.api.routes import admin, assistant, auth, billing, favorites, google, f
 
 def create_app() -> FastAPI:
     app = FastAPI(title=f"{APP_NAME} API")
+    app.add_middleware(ETagMiddleware)  # réponses publiques : empreinte et 304
     for module in (health, auth, google, me, notifications, billing, unsubscribe, admin, securities, security_detail, status, screener, rankings, fees, favorites, settings, orders, portfolio, assistant, forecasts, seo):
         app.include_router(module.router, prefix="/api")
     return app

@@ -1,17 +1,26 @@
-import { ApiError } from "@/lib/api/client";
-import { createQueryClient } from "./queryClient";
+import { createQueryClient, seedFromPage } from "./queryClient";
 
-test("une réponse 403 terms_outdated fait relire le compte, pour rediriger vers /accepter-cgu", async () => {
+afterEach(() => { document.body.innerHTML = ""; });
+
+function embed(text: string) {
+  const script = document.createElement("script");
+  script.id = "cotalyx-data";
+  script.type = "application/json";
+  script.textContent = text;
+  document.body.appendChild(script);
+}
+
+test("les données embarquées dans la page remplissent le cache des requêtes", () => {
+  embed(JSON.stringify([[["me"], null], [["security", "7"], { id: 7, name: "LVMH" }]]));
   const client = createQueryClient();
-  client.setQueryData(["me"], { terms_outdated: false });
-  await client.fetchQuery({ queryKey: ["orders"], queryFn: () => Promise.reject(new ApiError(403, "CGU", "terms_outdated")) })
-    .catch(() => undefined);
-  expect(client.getQueryState(["me"])?.isInvalidated).toBe(true);
+  seedFromPage(client);
+  expect(client.getQueryData(["me"])).toBeNull();
+  expect(client.getQueryData(["security", "7"])).toEqual({ id: 7, name: "LVMH" });
 });
 
-test("une autre erreur ne touche pas au compte", async () => {
+test("des données illisibles sont ignorées sans casser l'application", () => {
+  embed("{pas du json");
   const client = createQueryClient();
-  client.setQueryData(["me"], { terms_outdated: false });
-  await client.fetchQuery({ queryKey: ["orders"], queryFn: () => Promise.reject(new ApiError(500, "boum")) }).catch(() => undefined);
-  expect(client.getQueryState(["me"])?.isInvalidated).toBe(false);
+  expect(() => seedFromPage(client)).not.toThrow();
+  expect(client.getQueryData(["me"])).toBeUndefined();
 });

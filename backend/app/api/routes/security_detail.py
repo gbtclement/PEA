@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import INTRADAY_CACHE, NEWS_CACHE, get_market_provider
+from app.api.cache import public_cache
 from app.core.current_user import get_optional_user
 from app.core.db import get_db
 from app.models import DailyPrice, User
@@ -41,7 +42,7 @@ def _row_or_404(db: Session, user_id: uuid.UUID | None, security_id: int):
     return rows[0]
 
 
-@router.get("/securities/{security_id}", response_model=SecurityDetail)
+@router.get("/securities/{security_id}", response_model=SecurityDetail, dependencies=[Depends(public_cache(30))])
 def get_security(security_id: int, db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)) -> SecurityDetail:
     row = _row_or_404(db, user.id if user else None, security_id)
     security, quote, score, fundamentals, _ = row
@@ -85,7 +86,7 @@ def _merge(rows: list[DailyPrice], time: str) -> Bar:
                close=rows[-1].close, volume=sum(volumes) if volumes else None)
 
 
-@router.get("/securities/{security_id}/history", response_model=HistoryOut)
+@router.get("/securities/{security_id}/history", response_model=HistoryOut, dependencies=[Depends(public_cache(60))])
 def get_history(
     security_id: int,
     period: Period = "6M",
@@ -135,7 +136,7 @@ def get_history(
     )
 
 
-@router.get("/securities/{security_id}/news", response_model=list[NewsOut])
+@router.get("/securities/{security_id}/news", response_model=list[NewsOut], dependencies=[Depends(public_cache(300))])
 def get_news(
     security_id: int,
     db: Session = Depends(get_db),

@@ -54,7 +54,7 @@ Le score est recalculé toutes les 5 minutes pendant la séance. Il sert à trie
 L'application est prête à être indexée le jour où elle sera mise en ligne :
 
 - chaque page a son titre, sa description, son adresse canonique, ses balises Open Graph/Twitter et ses données schema.org (`WebApplication`, `Corporation`, `InvestmentFund`, `BreadcrumbList`) ;
-- `/robots.txt`, `/sitemap.xml` et `/llms.txt` sont générés par l'API ;
+- `/robots.txt`, `/sitemap.xml` (index de `/sitemap-….xml`) et `/llms.txt` sont générés par l'API, ainsi que le HTML des pages publiques ;
 - le portefeuille, l'assistant, les réglages, les prévisions et les écrans de code ou de mot de passe sont toujours en `noindex` ; `/connexion` et `/inscription` sont indexables.
 
 Deux variables dans `.env` :

@@ -10,7 +10,9 @@ server {
   include /etc/nginx/security-headers.conf;
 
   gzip on;
-  gzip_types text/css application/javascript application/json image/svg+xml;
+  gzip_types text/css application/javascript application/json image/svg+xml application/xml text/markdown text/plain;
+  gzip_comp_level 6;
+  gzip_vary on;
 
   location /api/ {
     proxy_pass http://api:8000;
@@ -25,6 +27,8 @@ server {
   # Fichiers de référencement générés par l'API (robots.txt interdit tout tant que SEO_INDEXING=false)
   location = /robots.txt { proxy_pass http://api:8000/api/seo/robots.txt; }
   location = /sitemap.xml { proxy_pass http://api:8000/api/seo/sitemap.xml; }
+  # Fichiers listés par l'index (pages, actions-1, etf-1, guide…)
+  location ~ ^/sitemap-[a-z0-9-]+\.xml$ { proxy_pass http://api:8000/api/seo$uri; }
   location = /llms.txt { proxy_pass http://api:8000/api/seo/llms.txt; }
 
   # Guide utilisateur (/guide/) et documentation admin (/documentation/) : sites Docsify statiques
@@ -64,6 +68,41 @@ server {
   location /assets/ {
     expires 1y;
     add_header Cache-Control "public, immutable";
+    include /etc/nginx/security-headers.conf;
+  }
+
+  # Gabarit lu par l'API pour composer les pages publiques (titre, description, résumé, données embarquées).
+  location = /_spa/index.html {
+    alias /usr/share/nginx/html/index.html;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/security-headers.conf;
+  }
+
+  # Manifeste de Vite : l'API y lit le code de chaque page pour le précharger.
+  location = /_spa/manifest.json {
+    alias /usr/share/nginx/html/.vite/manifest.json;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/security-headers.conf;
+  }
+
+  # Pages publiques : HTML complet préparé par l'API (référencement, premier affichage sans attendre l'API).
+  # Si l'API ne répond pas, le index.html statique prend le relais (l'application fonctionne comme avant).
+  location ~ ^/(explorer|etf|premium|cgu|cgv|confidentialite|mentions-legales|titres/[0-9]+)?$ {
+    proxy_pass http://api:8000/api/seo/page?path=$uri;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_intercept_errors on;
+    error_page 500 502 503 504 = @spa;
+    include /etc/nginx/security-headers.conf;
+  }
+  location @spa {
+    add_header Cache-Control "no-cache" always;
+    include /etc/nginx/security-headers.conf;
+    try_files /index.html =404;
+  }
+
+  location = /index.html {
+    add_header Cache-Control "no-cache" always;
     include /etc/nginx/security-headers.conf;
   }
 

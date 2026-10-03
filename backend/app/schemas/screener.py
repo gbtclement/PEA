@@ -55,3 +55,14 @@ class ScreenerRow(BaseModel):
     @classmethod
     def build(cls, row: Row) -> "ScreenerRow":
         return cls(**cls.fields_from(row))
+
+
+class ScreenerPage(BaseModel):
+    items: list[ScreenerRow]
+    total: int  # titres qui correspondent aux filtres (toutes pages)
+
+
+class ScreenerFacets(BaseModel):
+    sectors: list[str]
+    countries: list[str]
+    markets: list[str]

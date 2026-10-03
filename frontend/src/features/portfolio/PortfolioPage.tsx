@@ -1,6 +1,6 @@
 import { usePageMeta } from "@/seo/usePageMeta";
 import { useMemo, useState } from "react";
-import { EChart } from "@/components/charts/EChart";
+import { LazyEChart as EChart } from "@/components/charts/LazyEChart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";

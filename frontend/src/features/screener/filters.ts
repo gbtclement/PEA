@@ -1,5 +1,3 @@
-import type { ScreenerRow } from "@/lib/api/client";
-
 export type ScreenerFilters = {
   q: string;
   sector: string | null;
@@ -38,19 +36,25 @@ export function filtersFromParams(params: URLSearchParams): ScreenerFilters {
   };
 }
 
-export const normalize = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+/** Paramètres envoyés à /api/screener : seulement les filtres renseignés, et le tri. */
+export function screenerParams(f: ScreenerFilters, sort: { id: string; desc: boolean }): Record<string, string> {
+  const params: Record<string, string> = { sort: sort.id, order: sort.desc ? "desc" : "asc" };
+  const q = f.q.trim();
+  if (q) params.q = q;
+  if (f.sector) params.sector = f.sector;
+  if (f.country) params.country = f.country;
+  if (f.market) params.market = f.market;
+  if (f.envelope) params.envelope = f.envelope;
+  if (f.minScore !== null) params.min_score = String(f.minScore);
+  if (f.minPrice !== null) params.min_price = String(f.minPrice);
+  if (f.maxPrice !== null) params.max_price = String(f.maxPrice);
+  if (f.liquidOnly) params.liquid = "true";
+  if (f.favoritesOnly) params.fav = "true";
+  return params;
+}
 
-export function filterRows(rows: ScreenerRow[], f: ScreenerFilters): ScreenerRow[] {
-  const q = normalize(f.q.trim());
-  return rows.filter((r) =>
-    (!q || normalize(r.name).includes(q) || normalize(r.symbol).includes(q) || normalize(r.isin ?? "").includes(q))
-    && (!f.sector || r.sector === f.sector)
-    && (!f.country || r.country === f.country)
-    && (!f.market || r.market === f.market)
-    && (!f.envelope || r.envelopes.includes(f.envelope))
-    && (f.minScore === null || (r.score !== null && r.score >= f.minScore))
-    && (f.minPrice === null || (r.price !== null && r.price >= f.minPrice))
-    && (f.maxPrice === null || (r.price !== null && r.price <= f.maxPrice))
-    && (!f.liquidOnly || r.liquid)
-    && (!f.favoritesOnly || r.is_favorite));
+/** Filtres sous forme de texte stable (clé du cache) ; vide sans filtre — la clé que le serveur utilise pour la
+ *  première page embarquée dans le HTML (/api/seo/page). */
+export function filtersKey(params: Record<string, string>): string {
+  return Object.keys(params).filter((k) => k !== "sort" && k !== "order").sort().map((k) => `${k}=${params[k]}`).join("&");
 }

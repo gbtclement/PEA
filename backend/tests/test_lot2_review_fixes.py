@@ -72,7 +72,7 @@ def test_screener_exposes_isin_and_ratio(client, db):
     security = make_security(db, "MC.PA", isin="FR0000121014")
     make_quote(db, security, 600.0)
     make_score(db, security, available_ratio=0.6)
-    row = client.get("/api/screener").json()[0]
+    row = client.get("/api/screener").json()["items"][0]
     assert row["isin"] == "FR0000121014"
     assert row["available_ratio"] == 0.6
 
