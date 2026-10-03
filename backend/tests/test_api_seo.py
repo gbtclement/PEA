@@ -1,9 +1,11 @@
 import xml.etree.ElementTree as ET
+from datetime import UTC, datetime
 
 import pytest
 
+from app.api.routes import seo
 from app.core.config import Settings, get_settings
-from tests.factories import make_security
+from tests.factories import make_quote, make_score, make_security
 
 SITEMAP_NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
 
@@ -40,27 +42,63 @@ def test_robots_online_allows_public_pages_only(online):
     assert "Sitemap: https://pea.example/sitemap.xml" in lines
 
 
-def test_sitemap_lists_public_pages_and_all_active_securities(online, db):
-    stock = make_security(db, "AB.PA", name="A&B <Group>")
-    etf = make_security(db, "CW8.PA", kind="etf")
-    other = make_security(db, "XX.PA", eligibility="non_eligible")
-    make_security(db, "OLD.PA", active=False)
-    make_security(db, "^FCHI", kind="index")
+def _locs(response) -> list[str]:
+    return [el.text for el in ET.fromstring(response.content).iter(f"{SITEMAP_NS}loc")]
+
+
+def test_sitemap_is_an_index_of_files(online, db):
+    make_quote(db, make_security(db, "AB.PA"), 10.0)
+    make_quote(db, make_security(db, "CW8.PA", kind="etf"), 500.0)
     response = online.get("/api/seo/sitemap.xml")
-    assert response.status_code == 200
-    assert response.headers["content-type"].startswith("application/xml")
-    root = ET.fromstring(response.content)
-    locs = [el.text for el in root.iter(f"{SITEMAP_NS}loc")]
-    assert locs == [
-        "https://pea.example/",
-        "https://pea.example/explorer",
-        "https://pea.example/etf",
-        "https://pea.example/premium",
-        "https://pea.example/cgv",
-        f"https://pea.example/titres/{stock.id}",
-        f"https://pea.example/titres/{etf.id}",
-        f"https://pea.example/titres/{other.id}",
+    assert response.status_code == 200 and response.headers["content-type"].startswith("application/xml")
+    assert ET.fromstring(response.content).tag == f"{SITEMAP_NS}sitemapindex"
+    assert _locs(response) == [
+        "https://pea.example/sitemap-pages.xml",
+        "https://pea.example/sitemap-actions-1.xml",
+        "https://pea.example/sitemap-etf-1.xml",
+        "https://pea.example/sitemap-guide.xml",
     ]
+
+
+def test_sitemap_pages_lists_fixed_public_pages(online):
+    assert _locs(online.get("/api/seo/sitemap-pages.xml")) == [
+        "https://pea.example/", "https://pea.example/explorer", "https://pea.example/etf",
+        "https://pea.example/premium", "https://pea.example/cgv",
+    ]
+    assert _locs(online.get("/api/seo/sitemap-guide.xml")) == ["https://pea.example/guide/"]
+
+
+def test_sitemap_files_hold_priced_securities_with_lastmod(online, db):
+    stock = make_security(db, "AB.PA", name="A&B <Group>")
+    make_quote(db, stock, 10.0, as_of=datetime(2026, 10, 1, 15, 0, tzinfo=UTC))
+    make_score(db, stock, computed_at=datetime(2026, 10, 2, 18, 30, tzinfo=UTC))
+    other = make_security(db, "XX.PA", eligibility="non_eligible")
+    make_quote(db, other, 5.0, as_of=datetime(2026, 9, 30, 15, 0, tzinfo=UTC))
+    make_security(db, "NOPRICE.PA")  # sans cours : caché des listes, absent du sitemap
+    make_quote(db, make_security(db, "OLD.PA", active=False), 1.0)
+    make_quote(db, make_security(db, "^FCHI", kind="index"), 7000.0)
+    etf = make_security(db, "CW8.PA", kind="etf")
+    make_quote(db, etf, 500.0, as_of=datetime(2026, 10, 2, 16, 0, tzinfo=UTC))
+    actions = ET.fromstring(online.get("/api/seo/sitemap-actions-1.xml").content)
+    urls = {u.find(f"{SITEMAP_NS}loc").text: u.find(f"{SITEMAP_NS}lastmod").text for u in actions.iter(f"{SITEMAP_NS}url")}
+    assert urls == {f"https://pea.example/titres/{stock.id}": "2026-10-02", f"https://pea.example/titres/{other.id}": "2026-09-30"}
+    assert _locs(online.get("/api/seo/sitemap-etf-1.xml")) == [f"https://pea.example/titres/{etf.id}"]
+
+
+def test_sitemap_files_are_split(online, db, monkeypatch):
+    monkeypatch.setattr(seo, "SITEMAP_MAX_URLS", 2)
+    ids = []
+    for ticker in ("A.PA", "B.PA", "C.PA"):
+        security = make_security(db, ticker)
+        make_quote(db, security, 1.0)
+        ids.append(security.id)
+    index = _locs(online.get("/api/seo/sitemap.xml"))
+    assert "https://pea.example/sitemap-actions-2.xml" in index and "https://pea.example/sitemap-actions-3.xml" not in index
+    assert "https://pea.example/sitemap-etf-1.xml" not in index  # aucun ETF : pas de fichier vide
+    assert len(_locs(online.get("/api/seo/sitemap-actions-1.xml"))) == 2
+    assert _locs(online.get("/api/seo/sitemap-actions-2.xml")) == [f"https://pea.example/titres/{ids[2]}"]
+    assert online.get("/api/seo/sitemap-actions-3.xml").status_code == 404
+    assert online.get("/api/seo/sitemap-inconnu.xml").status_code == 404
 
 
 def test_llms_txt_describes_site(online, db):
@@ -85,7 +123,7 @@ def test_premium_and_sales_terms_are_indexable(online):
     lines = online.get("/api/seo/robots.txt").text.splitlines()
     assert "Allow: /premium$" in lines and "Allow: /cgv" in lines
     assert "Disallow: /api/billing/" in lines
-    sitemap = online.get("/api/seo/sitemap.xml").text
+    sitemap = online.get("/api/seo/sitemap-pages.xml").text
     assert "/premium</loc>" in sitemap and "/cgv</loc>" in sitemap
 
 

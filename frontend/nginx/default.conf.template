@@ -27,6 +27,8 @@ server {
   # Fichiers de référencement générés par l'API (robots.txt interdit tout tant que SEO_INDEXING=false)
   location = /robots.txt { proxy_pass http://api:8000/api/seo/robots.txt; }
   location = /sitemap.xml { proxy_pass http://api:8000/api/seo/sitemap.xml; }
+  # Fichiers listés par l'index (pages, actions-1, etf-1, guide…)
+  location ~ ^/sitemap-[a-z0-9-]+\.xml$ { proxy_pass http://api:8000/api/seo$uri; }
   location = /llms.txt { proxy_pass http://api:8000/api/seo/llms.txt; }
 
   # Guide utilisateur (/guide/) et documentation admin (/documentation/) : sites Docsify statiques
