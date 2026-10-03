@@ -11,6 +11,7 @@ const seoFile = { target: api, rewrite: (p: string) => `/api/seo${p}` };
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
+  build: { manifest: true },
   server: {
     port: 5180,
     strictPort: true,
