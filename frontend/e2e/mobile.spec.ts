@@ -92,3 +92,16 @@ test("fiche sur téléphone : barre d'actions dans l'écran, pied de page lisibl
   const legalBox = (await legal.boundingBox())!;
   expect(legalBox.y + legalBox.height, "liens légaux cachés par la barre").toBeLessThanOrEqual(barTop);
 });
+
+test("top 10 sur téléphone : nom et raisons sur toute la largeur, pas en colonne étroite", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto("/");
+  const first = page.getByRole("listitem").filter({ has: page.locator("a[href^='/titres/']") }).first();
+  await expect(first).toBeVisible();
+  const reasons = first.locator("ul li");
+  test.skip(await reasons.count() === 0, "top 10 vide sur cette base");
+  const name = (await first.locator("a[href^='/titres/']").first().boundingBox())!;
+  expect(name.height, "nom du titre écrasé sur plusieurs lignes").toBeLessThanOrEqual(48);
+  const reasonList = (await first.locator("ul").first().boundingBox())!;
+  expect(reasonList.width, "raisons écrasées dans une colonne étroite").toBeGreaterThan(280);
+});

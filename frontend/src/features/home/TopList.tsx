@@ -43,28 +43,33 @@ export function TopList() {
         ) : (
           <ol className="divide-y divide-border">
             {data.map((item, index) => (
-              <li key={item.id} className="flex items-center gap-4 px-6 py-3">
+              // Téléphone : grille (rang, jauge, nom, cours ; puis raisons sur toute la largeur ; puis boutons).
+              // Ordinateur (md) : une seule rangée, comme avant.
+              <li key={item.id}
+                  className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-4 py-3 md:flex md:gap-4 md:px-6">
                 <span className="w-5 text-sm font-semibold text-muted-foreground">{index + 1}</span>
                 <ScoreGauge score={item.score} />
-                <div className="min-w-0 flex-1">
-                  <Link to={`/titres/${item.id}`} className="font-medium hover:text-primary">
+                <div className="contents md:block md:min-w-0 md:flex-1">
+                  <Link to={`/titres/${item.id}`} className="min-w-0 font-medium hover:text-primary">
                     {item.name} <span className="text-xs font-normal text-muted-foreground">{item.symbol}</span>
                   </Link>
-                  <ul className="mt-1 flex flex-wrap gap-1.5">
+                  <ul className="col-span-full row-start-2 flex flex-wrap gap-1.5 md:mt-1">
                     {item.reasons.map((reason) => (
                       <li key={reason} className="rounded-md bg-muted px-2 py-0.5 text-xs text-neutral-600">{reason}</li>
                     ))}
                   </ul>
                 </div>
-                <Sparkline values={item.sparkline} />
-                <div className="w-24 text-right">
+                <div className="hidden md:block"><Sparkline values={item.sparkline} /></div>
+                <div className="col-start-4 row-start-1 text-right md:w-24">
                   <p className="font-medium">{item.price == null ? "—" : `${formatPrice(item.price)} ${currencyUnit(item.currency)}`}</p>
                   <p className={cn("text-xs font-medium", (item.change_pct ?? 0) > 0 && "text-up", (item.change_pct ?? 0) < 0 && "text-down")}>
                     {formatPct(item.change_pct)}
                   </p>
                 </div>
-                <AskAiButton security={{ id: item.id, name: item.name }} />
-                <FavoriteButton securityId={item.id} isFavorite={item.is_favorite} />
+                <div className="col-span-full flex justify-end gap-1 md:contents">
+                  <AskAiButton security={{ id: item.id, name: item.name }} />
+                  <FavoriteButton securityId={item.id} isFavorite={item.is_favorite} />
+                </div>
               </li>
             ))}
           </ol>
