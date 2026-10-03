@@ -66,7 +66,7 @@ export function ScreenerPage({ kind, title, description }: Props) {
       </header>
       <div className="mb-3 flex gap-1" role="group" aria-label="Région">
         {REGIONS.map((r) => (
-          <Button key={r.value} size="sm" variant={r.value === region ? "default" : "outline"} aria-pressed={r.value === region}
+          <Button key={r.value} size="sm" variant={r.value === region ? "default" : "outline"} aria-pressed={r.value === region} className="max-md:min-h-11"
                   onClick={() => chooseRegion(r.value)}>
             {r.label}
           </Button>

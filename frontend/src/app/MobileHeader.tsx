@@ -16,7 +16,7 @@ export function MobileHeader({ footer, account, admin = false }: { footer?: Reac
               className="flex size-11 items-center justify-center rounded-lg hover:bg-muted">
         <Menu className="size-5" aria-hidden />
       </button>
-      <Link to="/" className="flex items-center gap-2 font-semibold tracking-tight">
+      <Link to="/" className="flex min-h-11 items-center gap-2 font-semibold tracking-tight">
         <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Radar className="size-4" aria-hidden />
         </span>

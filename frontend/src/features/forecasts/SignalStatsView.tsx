@@ -43,7 +43,7 @@ function SortButton({ label, sortKey, sort, onSort, className }: {
   const active = sort.key === sortKey;
   return (
     <button type="button" onClick={() => onSort(sortKey)}
-            className={cn("inline-flex items-center gap-1 whitespace-nowrap hover:text-foreground", active && "text-foreground", className)}>
+            className={cn("inline-flex items-center gap-1 whitespace-nowrap hover:text-foreground max-md:min-h-11", active && "text-foreground", className)}>
       {label}
       {active && (sort.desc ? <ArrowDown className="size-3" aria-hidden /> : <ArrowUp className="size-3" aria-hidden />)}
     </button>

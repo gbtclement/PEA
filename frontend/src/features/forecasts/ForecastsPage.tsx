@@ -45,9 +45,10 @@ export function ForecastsPage() {
         investissement. Une nouvelle inattendue (résultats, rachat…) peut tout changer.
         {data?.round_trip_cost != null && <> Frais d'un achat puis d'une revente de 500 € : {formatRatioPct(data.round_trip_cost)}.</>}
       </p>
-      <div role="group" aria-label="Vues des prévisions" className="flex gap-2">
+      <div role="group" aria-label="Vues des prévisions" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:overflow-visible md:pb-0">
         {VIEWS.map((v) => (
           <Button key={v.key} variant={v.key === view ? "default" : "outline"} size="sm" aria-current={v.key === view ? "page" : undefined}
+                  className="shrink-0 max-md:min-h-11"
                   onClick={() => setParams(v.key === fallback ? {} : { vue: v.key }, { replace: true })}>
             {v.label}
           </Button>

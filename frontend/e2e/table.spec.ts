@@ -9,7 +9,7 @@ for (const width of [1100, 1440]) {
     test(`${path} : titres de colonnes alignés sur les valeurs à ${width} px`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(path);
-      await expect(page.getByRole("row").nth(1)).toBeVisible();
+      await expect(page.getByRole("row").nth(1)).toBeVisible({ timeout: 20_000 });  // Explorer : ~3 Mo, plus lent quand le worker charge la base
       const gaps = await page.evaluate(() => {
         const headers = [...document.querySelectorAll("[role=columnheader]")];
         const cells = [...document.querySelectorAll("[role=row]")[1].querySelectorAll("[role=cell]")];
@@ -29,7 +29,7 @@ for (const width of [1280, 1440]) {
   test(`/explorer : au moins 6 px entre deux colonnes à ${width} px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/explorer");
-    await expect(page.getByRole("row").nth(1)).toBeVisible();
+    await expect(page.getByRole("row").nth(1)).toBeVisible({ timeout: 20_000 });  // Explorer : ~3 Mo, plus lent quand le worker charge la base
     const tooClose = await page.evaluate(() => {
       // Partie visible du contenu : ce qui dépasse d'une colonne est masqué, seul l'écart visible compte.
       const contentBox = (el: Element) => {
