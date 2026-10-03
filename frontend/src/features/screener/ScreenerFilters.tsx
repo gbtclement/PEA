@@ -1,14 +1,29 @@
 import { Input } from "@/components/ui/input";
+import { useIsMobile } from "@/lib/useIsMobile";
+import { FiltersSheet } from "./FiltersSheet";
 import type { ScreenerRow } from "@/lib/api/client";
 import { ENVELOPE_LABELS } from "@/lib/envelopes";
-import type { ScreenerFilters as Filters } from "./filters";
+import { SORT_KEYS, type ScreenerFilters as Filters, type SortKey } from "./filters";
 
 type Props = {
   rows: ScreenerRow[];
   filters: Filters;
   onChange: (key: string, value: string | null) => void;
   count: number;
+  /** Tri courant (téléphone : pas d'en-têtes de colonnes à cliquer). */
+  sort?: { key: string; desc: boolean };
+  onSortChange?: (key: SortKey, desc: boolean) => void;
 };
+
+const SORT_LABELS: Record<SortKey, string> = {
+  name: "Nom", price: "Cours", change_pct: "Variation du jour", perf_1w: "1 semaine", perf_1m: "1 mois", perf_1y: "1 an",
+  score: "Score", pe: "PER", dividend_yield: "Rendement",
+};
+
+function countActive(f: Filters): number {
+  return [f.sector, f.country, f.market, f.envelope, f.minScore, f.minPrice, f.maxPrice].filter((v) => v !== null).length
+    + (f.liquidOnly ? 1 : 0) + (f.favoritesOnly ? 1 : 0);
+}
 
 const unique = (values: (string | null)[]) => [...new Set(values.filter((v): v is string => !!v))].sort((a, b) => a.localeCompare(b, "fr"));
 
@@ -30,13 +45,53 @@ function Select({ label, value, options, onChange, labels = {}, allLabel = `${la
   );
 }
 
-export function ScreenerFilters({ rows, filters, onChange, count }: Props) {
+export function ScreenerFilters({ rows, filters, onChange, count, sort, onSortChange }: Props) {
+  const mobile = useIsMobile();
+  const search = (
+    <Input
+      type="search" aria-label="Rechercher" placeholder="Nom, ticker ou ISIN…" className="w-full bg-white md:w-60"
+      value={filters.q} onChange={(e) => onChange("q", e.target.value || null)}
+    />
+  );
+  const counter = <span className="ml-auto text-sm text-muted-foreground">{count} {count > 1 ? "titres" : "titre"}</span>;
+  if (mobile) {
+    return (
+      <div className="space-y-2">
+        {search}
+        <div className="flex items-center gap-2">
+          <FiltersSheet active={countActive(filters)}>
+            {sort && onSortChange && (
+              <>
+                <select aria-label="Trier par" value={sort.key} className="h-8 rounded-lg border border-input bg-white px-2 text-sm"
+                        onChange={(e) => onSortChange(e.target.value as SortKey, sort.desc)}>
+                  {SORT_KEYS.map((key) => <option key={key} value={key}>Trier par : {SORT_LABELS[key]}</option>)}
+                </select>
+                <select aria-label="Ordre" value={sort.desc ? "desc" : "asc"} className="h-8 rounded-lg border border-input bg-white px-2 text-sm"
+                        onChange={(e) => onSortChange(sort.key as SortKey, e.target.value === "desc")}>
+                  <option value="desc">Du plus grand au plus petit</option>
+                  <option value="asc">Du plus petit au plus grand</option>
+                </select>
+              </>
+            )}
+            <FilterFields rows={rows} filters={filters} onChange={onChange} />
+          </FiltersSheet>
+          {counter}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Input
-        type="search" aria-label="Rechercher" placeholder="Nom, ticker ou ISIN…" className="w-60 bg-white"
-        value={filters.q} onChange={(e) => onChange("q", e.target.value || null)}
-      />
+      {search}
+      <FilterFields rows={rows} filters={filters} onChange={onChange} />
+      {counter}
+    </div>
+  );
+}
+
+function FilterFields({ rows, filters, onChange }: Pick<Props, "rows" | "filters" | "onChange">) {
+  return (
+    <>
       <Select label="Secteur" value={filters.sector} options={unique(rows.map((r) => r.sector))} onChange={(v) => onChange("sector", v)} />
       <Select label="Pays" value={filters.country} options={unique(rows.map((r) => r.country))} onChange={(v) => onChange("country", v)} />
       <Select label="Place" value={filters.market} options={unique(rows.map((r) => r.market))} onChange={(v) => onChange("market", v)} />
@@ -56,7 +111,6 @@ export function ScreenerFilters({ rows, filters, onChange, count }: Props) {
         <input type="checkbox" checked={filters.favoritesOnly} onChange={(e) => onChange("fav", e.target.checked ? "1" : null)} />
         Favoris
       </label>
-      <span className="ml-auto text-sm text-muted-foreground">{count} {count > 1 ? "titres" : "titre"}</span>
-    </div>
+    </>
   );
 }

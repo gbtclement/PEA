@@ -24,7 +24,7 @@ export function FavoriteButton({ securityId, isFavorite }: { securityId: number;
         }
         toggle.mutate({ securityId, favorite: !isFavorite });
       }}
-      className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-amber-500"
+      className="flex items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-amber-500 max-md:size-11"
     >
       <Star className={cn("size-4", isFavorite && "fill-amber-400 text-amber-500")} />
     </button>
