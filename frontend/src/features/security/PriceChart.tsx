@@ -30,6 +30,8 @@ export function PriceChart({ history, showSma50, showSma200, showRsi, showMacd }
   useEffect(() => {
     const chart = createChart(ref.current!, {
       autoSize: true,
+      // Glissement vertical sur le graphique : la page défile (téléphone), le graphique ne bouge que dans le sens horizontal.
+      handleScroll: { vertTouchDrag: false },
       layout: { background: { color: "#ffffff" }, textColor: "#52525b", attributionLogo: true, panes: { separatorColor: "#e4e4e7" } },
       grid: { vertLines: { color: "#f4f4f5" }, horzLines: { color: "#f4f4f5" } },
       localization: { locale: "fr-FR", priceFormatter: (p: number) => priceFormat.format(p), timeFormatter: formatTime },

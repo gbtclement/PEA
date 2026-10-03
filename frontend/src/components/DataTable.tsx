@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type ColumnDef, type SortingState } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp } from "lucide-react";
@@ -50,8 +50,10 @@ export function DataTable<T>({ rows, columns, sorting, onSortingChange, onRowCli
     estimateSize: () => (cards ? CARD_HEIGHT : ROW_HEIGHT),
     overscan: 12,
     initialRect: { width: 1200, height: 800 },
-    scrollMargin: bodyRef.current?.offsetTop ?? 0,  // les lignes commencent sous l'en-tête collant
+    scrollMargin: cards ? 0 : bodyRef.current?.offsetTop ?? 0,  // les lignes commencent sous l'en-tête collant (pas d'en-tête en cartes)
   });
+  // Rotation (cartes ⇄ lignes) : oublier les hauteurs mesurées dans l'autre mode, sinon des trous entre les lignes.
+  useEffect(() => virtualizer.measure(), [cards]); // eslint-disable-line react-hooks/exhaustive-deps
   const template = columns.map((c) => c.width).join(" ");
   // Largeur minimale des colonnes + marges : en dessous, le tableau défile horizontalement au lieu d'être coupé.
   // En-tête et lignes partagent le même conteneur de défilement : la barre verticale réduit leur largeur à tous

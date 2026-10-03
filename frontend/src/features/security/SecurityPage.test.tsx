@@ -166,6 +166,8 @@ test("sur téléphone, les actions sont dans la barre du bas", async () => {
   try {
     renderPage();
     const bar = await screen.findByRole("toolbar", { name: "Actions sur ce titre" });
+    // Libellés courts et boutons qui se partagent la largeur : la barre tient dans 360 px.
+    expect(within(bar).getByRole("button", { name: "Alerte" })).toHaveClass("flex-1");
     expect(within(bar).getByRole("button", { name: /J'ai acheté/ })).toBeInTheDocument();
     expect(within(bar).getByRole("button", { name: /alerte/i })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /J'ai acheté/ })).toHaveLength(1);

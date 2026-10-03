@@ -12,7 +12,7 @@ export function MobileHeader({ footer, account, admin = false }: { footer?: Reac
   useEffect(() => setOpen(false), [location.pathname]);  // changement de page (bouton retour compris) : tiroir fermé
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-2 border-b border-border bg-white px-2 lg:hidden">
-      <button type="button" aria-label="Ouvrir le menu" onClick={() => setOpen(true)}
+      <button type="button" aria-label="Ouvrir le menu" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}
               className="flex size-11 items-center justify-center rounded-lg hover:bg-muted">
         <Menu className="size-5" aria-hidden />
       </button>
@@ -23,7 +23,7 @@ export function MobileHeader({ footer, account, admin = false }: { footer?: Reac
         {SITE_NAME}
       </Link>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="left" className="w-72 gap-0 overflow-y-auto p-0 pt-4">
+        <SheetContent side="left" className="gap-0 overflow-y-auto p-0 pt-14 data-[side=left]:w-72">
           <SheetTitle className="sr-only">Menu</SheetTitle>
           <SidebarNav admin={admin} account={account} onNavigate={() => setOpen(false)} />
           {footer && <div className="border-t border-border px-6 py-4">{footer}</div>}

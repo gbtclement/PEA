@@ -9,6 +9,7 @@ import { EnvelopeBadges } from "@/features/explorer/EnvelopeBadges";
 import { useEnvelopes } from "@/features/settings/useEnvelopes";
 import type { ForecastRow } from "@/lib/api/client";
 import { formatPrice } from "@/lib/format";
+import { useIsMobile } from "@/lib/useIsMobile";
 import {
   FirstRunNotice, HORIZONS, RELIABILITY_ORDER, ReliabilityDot, ReliabilityLegend, SignalChip, roundPct, signedPct, tone,
   useForecasts, type HorizonKey,
@@ -98,6 +99,7 @@ type Direction = "tous" | "hausse" | "baisse";
 type MinReliability = "faible" | "moyenne" | "elevee";
 
 export function PredictionsView() {
+  const mobile = useIsMobile();  // téléphone : pas d'en-têtes de colonnes, un choix de tri à la place
   const navigate = useNavigate();
   const { data, isPending, isError } = useForecasts();
   const [sorting, setSorting] = useState<SortingState>([{ id: "1w", desc: true }]);
@@ -137,6 +139,14 @@ export function PredictionsView() {
             <input type="checkbox" checked={onlyMine} onChange={(e) => setMineOnly(e.target.checked)} />
             Mes enveloppes uniquement
           </label>
+        )}
+        {mobile && (
+          <select aria-label="Trier par" value={sorting[0]?.id ?? "1w"}
+                  onChange={(e) => setSorting([{ id: e.target.value, desc: e.target.value !== "name" }])}
+                  className="h-8 w-full rounded-lg border border-input bg-white px-2 max-md:min-h-11 sm:w-auto">
+            {HORIZONS.map((h) => <option key={h.key} value={h.key}>Trier par gain attendu à {h.label}</option>)}
+            <option value="name">Trier par nom</option>
+          </select>
         )}
         <select aria-label="Sens" value={direction} onChange={(e) => setDirection(e.target.value as Direction)}
                 className="h-8 w-full rounded-lg border border-input bg-white px-2 max-md:min-h-11 sm:w-auto">

@@ -14,6 +14,7 @@ test("carte : nom tronqué, place, cours avec devise, variation, score et badge"
   expect(screen.getByText(/24\s240,00 DKK/)).toBeInTheDocument();
   expect(screen.getByText(/-1,23/)).toHaveClass("text-down");
   expect(screen.getByText("71")).toBeInTheDocument();
+  expect(screen.getByText("Score")).toBeInTheDocument();  // lisible sans survol (pas seulement dans une infobulle)
   expect(screen.getByText("PEA")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: /Mærsk/ })).toHaveAttribute("href", "/titres/7");
 });

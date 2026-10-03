@@ -20,7 +20,8 @@ export function Layout() {
   }
   return (
     <AssistantPanelProvider>
-      <div className="min-h-screen bg-background text-foreground">
+      {/* Barre d'actions fixée en bas (fiche, téléphone) : place réservée sous le pied de page, qui reste lisible. */}
+      <div className="min-h-screen bg-background text-foreground max-md:has-[[data-bottom-bar]]:pb-[calc(3.75rem+env(safe-area-inset-bottom))]">
         <MobileHeader footer={<MarketStatus />} account={<AccountMenu />} admin={me?.role === "admin"} />
         <Sidebar footer={<MarketStatus />} account={<AccountMenu />} admin={me?.role === "admin"} />
         <main className="px-4 py-4 md:px-8 md:py-6 lg:ml-60">

@@ -12,7 +12,7 @@ export function Composer({ onSend, onStop, streaming }: Props) {
     onSend(value);
   }
   return (
-    <form className="sticky bottom-0 flex items-end gap-2 bg-background pb-[env(safe-area-inset-bottom)]" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+    <form className="flex items-end gap-2 max-md:sticky max-md:bottom-0 max-md:bg-background max-md:pb-[env(safe-area-inset-bottom)]" onSubmit={(e) => { e.preventDefault(); submit(); }}>
       <textarea
         aria-label="Votre question"
         rows={2}

@@ -12,7 +12,7 @@ export function FiltersSheet({ children, active }: { children: ReactNode; active
         <SlidersHorizontal className="size-4" aria-hidden /> Filtres{active ? ` (${active})` : ""}
       </Button>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="bottom" className="h-dvh overflow-y-auto p-4">
+        <SheetContent side="bottom" className="overflow-y-auto p-4 data-[side=bottom]:h-dvh">
           <SheetTitle>Filtres</SheetTitle>
           <div className="flex flex-col gap-3 [&_input:not([type=checkbox])]:min-h-11 [&_input:not([type=checkbox])]:w-full [&_select]:min-h-11 [&_select]:w-full">
             {children}

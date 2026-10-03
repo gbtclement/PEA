@@ -58,6 +58,8 @@ test("les heures intraday sont affichées à l'heure de Paris", async () => {
   mockFetch(() => ({ body: DAILY }));
   renderWithProviders(<PriceChartPanel securityId={5} />);
   await waitFor(() => expect(createChart).toHaveBeenCalled());
+  // Un glissement vertical sur le graphique fait défiler la page (téléphone) au lieu de déplacer le graphique.
+  expect(vi.mocked(createChart).mock.calls[0][1]).toMatchObject({ handleScroll: { vertTouchDrag: false } });
   const options = vi.mocked(createChart).mock.calls.at(-1)![1] as { localization: { timeFormatter: (t: number | string) => string } };
   expect(options.localization.timeFormatter(Date.UTC(2026, 8, 25, 7, 0) / 1000)).toContain("09:00");
 });

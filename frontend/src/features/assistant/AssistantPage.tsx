@@ -75,23 +75,23 @@ export function AssistantPage() {
           Claude répond en s'appuyant sur les données de l'application (cours, scores, votre portefeuille) et sur l'actualité.
         </p>
       </header>
-      {mobile ? (
+      {mobile && (
         <>
           <Button variant="outline" className="min-h-11" onClick={() => setListOpen(true)}>Conversations</Button>
           <Sheet open={listOpen} onOpenChange={setListOpen}>
-            <SheetContent side="left" className="w-80 overflow-y-auto p-3 pt-12">
+            <SheetContent side="left" className="overflow-y-auto p-3 pt-14 data-[side=left]:w-80">
               <SheetTitle className="sr-only">Conversations</SheetTitle>
               {list}
             </SheetContent>
           </Sheet>
-          <div className="min-w-0">{chat}</div>
         </>
-      ) : (
-        <div className="grid grid-cols-[280px_1fr] gap-6">
-          <Card className="h-[calc(100vh-11rem)] gap-0 overflow-y-auto p-3">{list}</Card>
-          <Card className="p-5">{chat}</Card>
-        </div>
       )}
+      {/* Même place dans l'arbre sur téléphone et ordinateur : tourner l'écran ne coupe pas une réponse en cours
+          ni la question en train d'être tapée. */}
+      <div className={cn(!mobile && "grid grid-cols-[280px_1fr] gap-6")}>
+        {!mobile && <Card className="h-[calc(100vh-11rem)] gap-0 overflow-y-auto p-3">{list}</Card>}
+        <Card className={cn("min-w-0", mobile ? "gap-0 border-0 bg-transparent p-0 shadow-none ring-0" : "p-5")}>{chat}</Card>
+      </div>
     </section>
   );
 }

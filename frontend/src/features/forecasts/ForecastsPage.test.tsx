@@ -195,3 +195,16 @@ test("sur téléphone, une carte par prédiction avec les trois horizons", async
     setViewportWidth(1200);
   }
 });
+
+test("sur téléphone, un choix de tri remplace les en-têtes de colonnes", async () => {
+  setViewportWidth(390);
+  try {
+    renderPage();
+    const sort = await screen.findByRole("combobox", { name: "Trier par" });
+    await userEvent.selectOptions(sort, "1m");
+    expect(sort).toHaveValue("1m");
+    expect(screen.getByRole("combobox", { name: "Sens" })).toHaveTextContent("Hausse et baisse (1 mois)");
+  } finally {
+    setViewportWidth(1200);
+  }
+});

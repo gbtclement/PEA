@@ -75,3 +75,20 @@ test("clavier ouvert : un champ du bas d'une fenêtre plein écran reste atteign
   await note.focus();
   await expect(note).toBeInViewport();
 });
+
+test("fiche sur téléphone : barre d'actions dans l'écran, pied de page lisible au-dessus", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await page.goto("/explorer");
+  await page.locator("main a[href^='/titres/']").first().click();
+  const bar = page.getByRole("toolbar", { name: "Actions sur ce titre" });
+  await expect(bar).toBeVisible();
+  for (const button of await bar.getByRole("button").all()) {
+    const box = await button.boundingBox();
+    expect(box!.x + box!.width, "bouton de la barre coupé à droite").toBeLessThanOrEqual(360);
+  }
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const legal = page.getByRole("contentinfo").getByRole("link", { name: "CGU" });
+  const barTop = (await bar.boundingBox())!.y;
+  const legalBox = (await legal.boundingBox())!;
+  expect(legalBox.y + legalBox.height, "liens légaux cachés par la barre").toBeLessThanOrEqual(barTop);
+});

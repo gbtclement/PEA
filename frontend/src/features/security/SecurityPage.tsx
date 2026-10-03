@@ -72,15 +72,17 @@ export function SecurityPage() {
   }
   const change = data.change_pct ?? 0;
   // Une seule copie des boutons : en haut sur ordinateur, dans la barre du bas sur téléphone.
+  // Téléphone : libellés courts et boutons qui se partagent la largeur (la barre tient dans 360 px).
   const actions = (
     <>
-      <Button variant="outline" size="sm" onClick={() => (me === null ? navigate(loginPath(location)) : setOrdering(true))}>+ J'ai acheté</Button>
-      <AskAiButton security={{ id: data.id, name: data.name }} label />
-      <PriceAlertButton security={{ id: data.id, name: data.name, price: data.price, currency: data.currency }} />
+      <Button variant="outline" size="sm" className={mobile ? "flex-1" : undefined}
+              onClick={() => (me === null ? navigate(loginPath(location)) : setOrdering(true))}>+ J'ai acheté</Button>
+      <AskAiButton security={{ id: data.id, name: data.name }} label shortLabel={mobile} className={mobile ? "flex-1" : undefined} />
+      <PriceAlertButton security={{ id: data.id, name: data.name, price: data.price, currency: data.currency }} compact={mobile} />
     </>
   );
   return (
-    <section className="space-y-6 pb-20 md:pb-0">
+    <section className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">

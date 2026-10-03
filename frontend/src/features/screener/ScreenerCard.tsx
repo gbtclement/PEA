@@ -23,8 +23,9 @@ export function ScreenerCard({ row }: { row: ScreenerRow }) {
       </Link>
       <div className="flex flex-col items-end gap-1">
         {row.score != null && (
-          <span className="rounded-md bg-muted px-2 py-0.5 text-sm font-semibold tabular-nums" title="Score mixte sur 100">
-            {Math.round(row.score)}
+          <span className="flex flex-col items-center rounded-md bg-muted px-2 py-0.5 leading-tight">
+            <span className="text-[10px] text-muted-foreground">Score</span>
+            <span className="text-sm font-semibold tabular-nums">{Math.round(row.score)}</span>
           </span>
         )}
         <FavoriteButton securityId={row.id} isFavorite={row.is_favorite} />
