@@ -1,12 +1,12 @@
 import { Input } from "@/components/ui/input";
 import { useIsMobile } from "@/lib/useIsMobile";
 import { FiltersSheet } from "./FiltersSheet";
-import type { ScreenerRow } from "@/lib/api/client";
+import type { ScreenerFacets } from "@/lib/api/client";
 import { ENVELOPE_LABELS } from "@/lib/envelopes";
 import { SORT_KEYS, type ScreenerFilters as Filters, type SortKey } from "./filters";
 
 type Props = {
-  rows: ScreenerRow[];
+  facets?: ScreenerFacets;  // valeurs proposées (secteurs, pays, places), données par le serveur
   filters: Filters;
   onChange: (key: string, value: string | null) => void;
   count: number;
@@ -24,8 +24,6 @@ function countActive(f: Filters): number {
   return [f.sector, f.country, f.market, f.envelope, f.minScore, f.minPrice, f.maxPrice].filter((v) => v !== null).length
     + (f.liquidOnly ? 1 : 0) + (f.favoritesOnly ? 1 : 0);
 }
-
-const unique = (values: (string | null)[]) => [...new Set(values.filter((v): v is string => !!v))].sort((a, b) => a.localeCompare(b, "fr"));
 
 
 function Select({ label, value, options, onChange, labels = {}, allLabel = `${label} : tous` }: {
@@ -45,7 +43,7 @@ function Select({ label, value, options, onChange, labels = {}, allLabel = `${la
   );
 }
 
-export function ScreenerFilters({ rows, filters, onChange, count, sort, onSortChange }: Props) {
+export function ScreenerFilters({ facets, filters, onChange, count, sort, onSortChange }: Props) {
   const mobile = useIsMobile();
   const search = (
     <Input
@@ -73,7 +71,7 @@ export function ScreenerFilters({ rows, filters, onChange, count, sort, onSortCh
                 </select>
               </>
             )}
-            <FilterFields rows={rows} filters={filters} onChange={onChange} />
+            <FilterFields facets={facets} filters={filters} onChange={onChange} />
           </FiltersSheet>
           {counter}
         </div>
@@ -83,18 +81,18 @@ export function ScreenerFilters({ rows, filters, onChange, count, sort, onSortCh
   return (
     <div className="flex flex-wrap items-center gap-2">
       {search}
-      <FilterFields rows={rows} filters={filters} onChange={onChange} />
+      <FilterFields facets={facets} filters={filters} onChange={onChange} />
       {counter}
     </div>
   );
 }
 
-function FilterFields({ rows, filters, onChange }: Pick<Props, "rows" | "filters" | "onChange">) {
+function FilterFields({ facets, filters, onChange }: Pick<Props, "facets" | "filters" | "onChange">) {
   return (
     <>
-      <Select label="Secteur" value={filters.sector} options={unique(rows.map((r) => r.sector))} onChange={(v) => onChange("sector", v)} />
-      <Select label="Pays" value={filters.country} options={unique(rows.map((r) => r.country))} onChange={(v) => onChange("country", v)} />
-      <Select label="Place" value={filters.market} options={unique(rows.map((r) => r.market))} onChange={(v) => onChange("market", v)} />
+      <Select label="Secteur" value={filters.sector} options={facets?.sectors ?? []} onChange={(v) => onChange("sector", v)} />
+      <Select label="Pays" value={filters.country} options={facets?.countries ?? []} onChange={(v) => onChange("country", v)} />
+      <Select label="Place" value={filters.market} options={facets?.markets ?? []} onChange={(v) => onChange("market", v)} />
       <Select label="Enveloppe" allLabel="Enveloppe : toutes" value={filters.envelope} options={["pea", "pea_pme"]}
               labels={ENVELOPE_LABELS} onChange={(v) => onChange("envelope", v)} />
       <Input type="number" aria-label="Score minimum" placeholder="Score min" className="w-28 bg-white" min={0} max={100}

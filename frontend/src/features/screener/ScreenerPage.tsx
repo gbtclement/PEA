@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildColumns } from "./columns";
-import { filterRows, filtersFromParams, SORT_KEYS } from "./filters";
+import { filtersFromParams, screenerParams, SORT_KEYS } from "./filters";
 import { ScreenerFilters } from "./ScreenerFilters";
 import { ScreenerCard } from "./ScreenerCard";
 import { DataTable } from "@/components/DataTable";
-import { type Region, useScreener } from "./useScreener";
+import { type Region, useScreener, useScreenerFacets } from "./useScreener";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
 const REGIONS: { value: Region; label: string }[] = [{ value: "europe", label: "Europe" }, { value: "us", label: "États-Unis" }];
 
@@ -23,15 +24,20 @@ export function ScreenerPage({ kind, title, description }: Props) {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const region: Region = params.get("region") === "us" ? "us" : "europe";
-  const { data, isPending, isError } = useScreener(kind, region);
   const filters = filtersFromParams(params);
   const columns = useMemo(() => buildColumns(kind), [kind]);
-  const rows = useMemo(() => filterRows(data ?? [], filtersFromParams(params)), [data, params]);
-
   const sortKey = params.get("sort");
   const sorting: SortingState = SORT_KEYS.includes(sortKey as never)
     ? [{ id: sortKey as string, desc: params.get("dir") !== "asc" }]
     : [{ id: "name", desc: false }];
+  // Recherche : une requête quand la saisie s'arrête, pas à chaque lettre.
+  const debounced = { ...filters, q: useDebouncedValue(filters.q, 300) };
+  const query = useScreener(kind, region, screenerParams(debounced, sorting[0]));
+  const facets = useScreenerFacets(kind, region);
+  const { data, isPending, isError } = query;
+  const rows = useMemo(() => data?.pages.flatMap((page) => page.items) ?? [], [data]);
+  const total = data?.pages[0]?.total ?? 0;
+  const loadMore = () => { if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage(); };
 
   const update = (key: string, value: string | null) => {
     const next = new URLSearchParams(params);
@@ -72,7 +78,7 @@ export function ScreenerPage({ kind, title, description }: Props) {
           </Button>
         ))}
       </div>
-      <ScreenerFilters rows={data ?? []} filters={filters} onChange={update} count={rows.length}
+      <ScreenerFilters facets={facets.data} filters={filters} onChange={update} count={total}
                        sort={{ key: sorting[0].id, desc: sorting[0].desc }}
                        onSortChange={(key, desc) => onSortingChange([{ id: key, desc }])} />
       <Card className="mt-4 overflow-hidden py-0">
@@ -82,10 +88,11 @@ export function ScreenerPage({ kind, title, description }: Props) {
           <p role="alert" className="p-6 text-sm text-down">Impossible de charger les titres. Vérifiez que l'application est bien démarrée.</p>
         ) : rows.length === 0 ? (
           <p className="p-6 text-sm text-muted-foreground">
-            {data.length === 0 ? "Les titres sont en cours de chargement (premier démarrage)." : "Aucun titre ne correspond à ces filtres."}
+            {Object.keys(screenerParams(filters, sorting[0])).length <= 2 ? "Les titres sont en cours de chargement (premier démarrage)." : "Aucun titre ne correspond à ces filtres."}
           </p>
         ) : (
-          <DataTable rows={rows} columns={columns} sorting={sorting} onSortingChange={onSortingChange}
+          <DataTable rows={rows} columns={columns} sorting={sorting} onSortingChange={onSortingChange} manualSorting
+                     onEndReached={loadMore}
                      onRowClick={(row) => navigate(`/titres/${row.id}`)} renderCard={(row) => <ScreenerCard row={row} />} />
         )}
       </Card>

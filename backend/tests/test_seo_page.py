@@ -91,6 +91,10 @@ def test_home_and_lists(pages, db):
     explorer = _get(pages, "/explorer").text
     assert "<title>Explorer | Cotalyx</title>" in explorer
     assert f'href="/titres/{lvmh.id}"' in explorer
+    # Première page de la liste, sous la clé du navigateur (filtres par défaut) : affichée sans requête.
+    first_page = dict((json.dumps(k), v) for k, v in _data(explorer))[json.dumps(["screener", "stock", "europe", "name", "asc", ""])]
+    assert first_page["pageParams"] == [0] and first_page["pages"][0]["total"] == 1
+    assert first_page["pages"][0]["items"][0]["name"] == "LVMH"
 
 
 def test_static_public_pages(pages):

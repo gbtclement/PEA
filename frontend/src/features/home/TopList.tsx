@@ -50,7 +50,7 @@ export function TopList() {
                 <span className="w-5 text-sm font-semibold text-muted-foreground">{index + 1}</span>
                 <ScoreGauge score={item.score} />
                 <div className="contents md:block md:min-w-0 md:flex-1">
-                  <Link to={`/titres/${item.id}`} className="min-w-0 font-medium hover:text-primary">
+                  <Link to={`/titres/${item.id}`} className="min-w-0 font-medium hover:text-primary max-md:inline-flex max-md:min-h-11 max-md:flex-wrap max-md:items-center max-md:gap-x-1">
                     {item.name} <span className="text-xs font-normal text-muted-foreground">{item.symbol}</span>
                   </Link>
                   <ul className="col-span-full row-start-2 flex flex-wrap gap-1.5 md:mt-1">

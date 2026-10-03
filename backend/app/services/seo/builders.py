@@ -8,15 +8,17 @@ from app.api.routes.rankings import get_top
 from app.api.routes.security_detail import get_security
 from app.core.brand import APP_NAME
 from app.models import User
-from app.repositories.screener import screener_rows
+from app.repositories.screener import ScreenerQuery, screener_page
 from app.schemas.auth import MeOut
+from app.schemas.screener import ScreenerPage as ScreenerPageOut
+from app.schemas.screener import ScreenerRow
 from app.schemas.security_detail import SecurityDetail
 from app.services.envelopes.rules import ENVELOPES
 from app.services.seo.page import (
     DEFAULT_DESCRIPTION, LISTS, STATIC_PAGES, PageContent, breadcrumb, money, pct, web_application,
 )
 
-LIST_PREVIEW = 50  # titres listés dans le résumé de l'Explorer et des ETF
+PAGE_SIZE = 50  # comme PAGE_SIZE de features/screener/useScreener.ts
 
 
 def js_round(value: float) -> int:
@@ -102,12 +104,17 @@ def home_page(db: Session, user: User | None, base_url: str) -> PageContent:
 def list_page(db: Session, user: User | None, path: str, base_url: str) -> PageContent:
     title, description = LISTS[path]
     kind = "etf" if path == "/etf" else "stock"
-    rows = screener_rows(db, user.id if user else None, kind=kind, region="europe")[:LIST_PREVIEW]
+    # Première page telle que le navigateur la demande (Europe, tri par nom, sans filtre) : même clé de cache.
+    rows, total = screener_page(db, user.id if user else None, ScreenerQuery(kind=kind, region="europe"),
+                                limit=PAGE_SIZE, offset=0)
     items = "".join(f'<li><a href="/titres/{row[0].id}">{escape(row[0].name)}</a> ({escape(row[0].symbol)})</li>'
                     for row in rows)
     summary = f"<section><h1>{escape(title)}</h1><p>{escape(description)}</p><ul>{items}</ul></section>"
+    first_page = {"pages": [ScreenerPageOut(items=[ScreenerRow.build(row) for row in rows], total=total)
+                            .model_dump(mode="json")], "pageParams": [0]}
     return PageContent(title=title, description=description, path=path, summary_html=summary,
-                       json_ld=[breadcrumb(base_url, [("Accueil", "/"), (title, path)])], data=[_me(user)])
+                       json_ld=[breadcrumb(base_url, [("Accueil", "/"), (title, path)])],
+                       data=[_me(user), (["screener", kind, "europe", "name", "asc", ""], first_page)])
 
 
 def static_page(user: User | None, path: str) -> PageContent:
