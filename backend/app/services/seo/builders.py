@@ -83,7 +83,7 @@ def security_page(db: Session, user: User | None, security_id: int, base_url: st
         parts.append(f"<p>Enveloppes compatibles : {escape(', '.join(ENVELOPES[c] for c in detail.envelopes))}</p>")
     parts.append("</article>")
     return PageContent(title=title, description=description, path=path, summary_html="".join(parts), json_ld=json_ld,
-                       data=[_me(user), (["security", str(detail.id)], detail.model_dump(mode="json"))])
+                       data=[_me(user), (["security", detail.id], detail.model_dump(mode="json"))])
 
 
 def home_page(db: Session, user: User | None, base_url: str) -> PageContent:

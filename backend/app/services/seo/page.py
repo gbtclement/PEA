@@ -110,6 +110,9 @@ def render_page(template: str, page: PageContent, base_url: str, manifest: dict 
     """Remplit le gabarit : en-tête (titre et description par défaut retirés), résumé dans #root, données embarquées."""
     html = _drop_tag(template, "<title>", "</title>")
     html = _drop_tag(html, '<meta name="description"', ">")
+    # Image de partage et carte Twitter du gabarit : remplacées par leurs versions complètes (adresse absolue)
+    html = _drop_tag(html, '<meta property="og:image"', ">")
+    html = _drop_tag(html, '<meta name="twitter:card"', ">")
     head = head_tags(page, base_url) + preload_tags(manifest, page.path)
     html = html.replace("</head>", f"  {head}\n  </head>", 1)
     data = f'<script id="cotalyx-data" type="application/json">{json_for_script(page.data)}</script>'

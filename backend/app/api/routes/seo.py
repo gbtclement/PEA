@@ -5,7 +5,6 @@ publiques sont autorisées ; les pages personnelles (portefeuille, assistant, r�
 """
 import json
 import logging
-import time
 from typing import Annotated
 from xml.sax.saxutils import escape
 
@@ -48,7 +47,7 @@ def _public_securities():
     return (Security.active.is_(True), Security.kind.in_(("stock", "etf")))
 
 
-@router.get("/robots.txt")
+@router.api_route("/robots.txt", methods=["GET", "HEAD"])
 def robots(request: Request, settings: SettingsDep) -> Response:
     lines = ["User-agent: *"]
     if not settings.seo_indexing:
@@ -76,7 +75,7 @@ def _priced(kind: str):
             .where(Security.active.is_(True), Security.kind == kind))
 
 
-@router.get("/sitemap.xml")
+@router.api_route("/sitemap.xml", methods=["GET", "HEAD"])
 def sitemap(request: Request, settings: SettingsDep, db: DbDep) -> Response:
     """Index des plans du site : chaque fichier contient au plus SITEMAP_MAX_URLS adresses."""
     names = ["pages"]
@@ -88,7 +87,7 @@ def sitemap(request: Request, settings: SettingsDep, db: DbDep) -> Response:
     return _xml(request, "sitemapindex", entries)
 
 
-@router.get("/sitemap-{name}.xml")
+@router.api_route("/sitemap-{name}.xml", methods=["GET", "HEAD"])
 def sitemap_file(name: str, request: Request, settings: SettingsDep, db: DbDep) -> Response:
     if name in ("pages", "guide"):
         paths = PUBLIC_PATHS if name == "pages" else GUIDE_PATHS
@@ -105,7 +104,7 @@ def sitemap_file(name: str, request: Request, settings: SettingsDep, db: DbDep) 
     return _xml(request, "urlset", entries)
 
 
-@router.get("/llms.txt")
+@router.api_route("/llms.txt", methods=["GET", "HEAD"])
 def llms(request: Request, settings: SettingsDep, db: DbDep) -> Response:
     counts = dict(db.execute(select(Security.kind, func.count()).where(*_public_securities()).group_by(Security.kind)).all())
     stocks, etfs = counts.get("stock", 0), counts.get("etf", 0)
@@ -137,19 +136,25 @@ Suivi actuel : {stocks} action{"s" if stocks > 1 else ""} et {etfs} ETF (Euronex
 
 # --- Pages publiques en HTML enrichi (nginx y envoie /, /explorer, /etf, /titres/<id>, /premium et pages légales) ---
 
-_TEMPLATE_CACHE: dict[str, tuple[float, str]] = {}
-TEMPLATE_TTL_SECONDS = 60
+_TEMPLATE_CACHE: dict[str, tuple[str, str]] = {}  # adresse → (empreinte ETag, contenu)
+
+
+def _fetch_from_web(url: str) -> str:
+    """Fichier du conteneur web, redemandé à chaque page avec son empreinte : nginx répond 304 (rien à renvoyer)
+    tant qu'il n'a pas changé, et le nouveau fichier est pris dès le déploiement suivant."""
+    cached = _TEMPLATE_CACHE.get(url)
+    response = httpx.get(url, headers={"If-None-Match": cached[0]} if cached else None, timeout=2)
+    if cached and response.status_code == 304:
+        return cached[1]
+    response.raise_for_status()
+    _TEMPLATE_CACHE[url] = (response.headers.get("etag", ""), response.text)
+    return response.text
 
 
 def get_spa_template(settings: Settings = Depends(get_settings)) -> str:
-    """index.html construit par Vite, lu dans le conteneur web (gardé une minute)."""
-    cached = _TEMPLATE_CACHE.get(settings.spa_template_url)
-    if cached and time.monotonic() - cached[0] < TEMPLATE_TTL_SECONDS:
-        return cached[1]
-    response = httpx.get(settings.spa_template_url, timeout=2)
-    response.raise_for_status()
-    _TEMPLATE_CACHE[settings.spa_template_url] = (time.monotonic(), response.text)
-    return response.text
+    """index.html construit par Vite, lu dans le conteneur web."""
+    return _fetch_from_web(settings.spa_template_url)
+
 
 
 def _load_template(request: Request, settings: Settings) -> str:
@@ -159,14 +164,8 @@ def _load_template(request: Request, settings: Settings) -> str:
 
 
 def get_spa_manifest(settings: Settings = Depends(get_settings)) -> dict:
-    """Manifeste de Vite (fichier de chaque page et ses dépendances), lu dans le conteneur web (gardé une minute)."""
-    cached = _TEMPLATE_CACHE.get(settings.spa_manifest_url)
-    if cached and time.monotonic() - cached[0] < TEMPLATE_TTL_SECONDS:
-        return json.loads(cached[1])
-    response = httpx.get(settings.spa_manifest_url, timeout=2)
-    response.raise_for_status()
-    _TEMPLATE_CACHE[settings.spa_manifest_url] = (time.monotonic(), response.text)
-    return response.json()
+    """Manifeste de Vite (fichier de chaque page et ses dépendances), lu dans le conteneur web."""
+    return json.loads(_fetch_from_web(settings.spa_manifest_url))
 
 
 def _load_manifest(request: Request, settings: Settings) -> dict | None:
@@ -179,7 +178,7 @@ def _load_manifest(request: Request, settings: Settings) -> dict | None:
         return None
 
 
-@router.get("/page", response_class=HTMLResponse, include_in_schema=False)
+@router.api_route("/page", methods=["GET", "HEAD"], response_class=HTMLResponse, include_in_schema=False)
 def page(request: Request, settings: SettingsDep, db: DbDep, path: str = Query(..., max_length=200),
          user: User | None = Depends(get_optional_user)) -> HTMLResponse:
     from app.services.seo.builders import build_page  # import tardif : les routes JSON importent ce module

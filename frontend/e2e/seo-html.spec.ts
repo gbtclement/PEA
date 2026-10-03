@@ -42,8 +42,11 @@ test.describe("visiteur", () => {
   test("le titre servi est celui que l'application affiche", async ({ page, request }) => {
     const stock = await firstStock(request);
     const served = (await (await request.get(`/titres/${stock.id}`)).text()).match(/<title>([^<]+)<\/title>/)?.[1];
+    const refetches: string[] = [];
+    page.on("request", (r) => { if (new URL(r.url()).pathname === `/api/securities/${stock.id}`) refetches.push(r.url()); });
     await page.goto(`/titres/${stock.id}`);
     await expect(page.getByText("Score mixte")).toBeVisible();
+    expect(refetches, "les données embarquées servent la fiche sans requête").toEqual([]);
     // document.title fusionne les espaces consécutifs (règle du navigateur)
     expect(await page.title()).toBe(served?.replaceAll("&amp;", "&").replace(/\s+/g, " ").trim());
   });

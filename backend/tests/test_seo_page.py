@@ -16,6 +16,8 @@ TEMPLATE = """<!doctype html>
     <meta charset="UTF-8" />
     <title>Cotalyx</title>
     <meta name="description" content="défaut" />
+    <meta property="og:image" content="/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>
@@ -70,7 +72,7 @@ def test_security_page_has_head_summary_and_data(pages, db):
     assert '"@type": "Corporation"' in html and '"@type": "BreadcrumbList"' in html
     root = html.split('<div id="root">')[1].split("</div>\n")[0]
     assert "LVMH" in root and "600,00 €" in root and "Tendance haussière" in root
-    assert ["security", str(lvmh.id)] in _keys(html)
+    assert ["security", lvmh.id] in _keys(html)  # même clé que SecurityPage : un nombre
     assert ["me"] in _keys(html)
 
 
@@ -177,3 +179,43 @@ def test_page_works_without_manifest(pages, db):
     pages.app.dependency_overrides[get_spa_manifest] = broken
     response = _get(pages, "/")
     assert response.status_code == 200 and "modulepreload" not in response.text
+
+
+def test_public_pages_answer_head_requests(pages):
+    # Les outils de surveillance sondent souvent en HEAD : la page doit répondre 200, pas 405.
+    assert pages.head("/api/seo/page", params={"path": "/"}).status_code == 200
+    assert pages.head("/api/seo/robots.txt").status_code == 200
+
+
+def test_page_keeps_a_single_absolute_social_image(pages):
+    html = _get(pages, "/").text
+    assert html.count('property="og:image"') == 1 and 'content="/og-image.png"' not in html
+    assert html.count('name="twitter:card"') == 1
+
+
+def test_template_is_refetched_when_it_changes(monkeypatch):
+    from app.api.routes import seo
+
+    calls = []
+
+    class Answer:
+        def __init__(self, status, text=""):
+            self.status_code, self.text, self.headers = status, text, {"etag": f'"{text}"'}
+
+        def raise_for_status(self):
+            pass
+
+    answers = iter([Answer(200, "v1"), Answer(200, "v2")])
+
+    def fake_get(url, headers=None, timeout=None):
+        calls.append(headers or {})
+        return next(answers)
+
+    seo._TEMPLATE_CACHE.clear()
+    monkeypatch.setattr(seo.httpx, "get", fake_get)
+    settings = Settings(spa_template_url="http://web/x")
+    assert seo.get_spa_template(settings) == "v1"
+    # Après un déploiement, le nouveau index.html est pris tout de suite (requête conditionnelle à chaque page).
+    assert seo.get_spa_template(settings) == "v2"
+    assert calls[1].get("If-None-Match") == '"v1"'
+    seo._TEMPLATE_CACHE.clear()
