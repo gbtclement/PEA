@@ -9,6 +9,12 @@ function patchFavorite(queryClient: QueryClient, securityId: number, favorite: b
     for (const [queryKey, data] of queryClient.getQueriesData({ queryKey: [key] })) {
       snapshot.push([queryKey, data]);
       queryClient.setQueryData(queryKey, (old: unknown) => {
+        const infinite = old as { pages?: { items: ScreenerRow[] }[] } | undefined;
+        if (infinite?.pages) {  // Explorer : pages chargées au fil du défilement
+          return { ...infinite, pages: infinite.pages.map((page) => ({
+            ...page, items: page.items.map((row) => (row.id === securityId ? { ...row, is_favorite: favorite } : row)),
+          })) };
+        }
         if (Array.isArray(old)) {
           return (old as ScreenerRow[]).map((row) => (row.id === securityId ? { ...row, is_favorite: favorite } : row));
         }

@@ -1,5 +1,5 @@
+import { lazy, Suspense } from "react";
 import { Link, Navigate, Outlet, useLocation } from "react-router";
-import { Toaster } from "sonner";
 import { AssistantPanelProvider } from "@/features/assistant/AssistantPanel";
 import { useMe } from "@/features/auth/useMe";
 import { AccountMenu } from "./AccountMenu";
@@ -8,6 +8,9 @@ import { MarketStatus } from "./MarketStatus";
 import { Sidebar } from "./Sidebar";
 import { SignUpBanner } from "./SignUpBanner";
 import { SITE_NAME } from "@/seo/schema";
+
+// Notifications « toast » : chargées juste après le premier affichage, pas avant.
+const Toaster = lazy(async () => ({ default: (await import("sonner")).Toaster }));
 
 // Lisibles avant d'accepter : on ne consent pas à un texte qu'on ne peut pas ouvrir.
 const LEGAL_PAGES = ["/cgu", "/cgv", "/confidentialite", "/mentions-legales"];
@@ -44,7 +47,7 @@ export function Layout() {
             </p>
           </div>
         </footer>
-        <Toaster position="bottom-right" richColors />
+        <Suspense fallback={null}><Toaster position="bottom-right" richColors /></Suspense>
       </div>
     </AssistantPanelProvider>
   );

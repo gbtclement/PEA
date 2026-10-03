@@ -16,6 +16,10 @@ type Props<T> = {
   getRowId?: (row: T) => string;
   /** Hauteur de la zone qui défile (classes Tailwind). */
   heightClass?: string;
+  /** Tri fait par le serveur : le tableau garde l'ordre reçu. */
+  manualSorting?: boolean;
+  /** Appelé quand on approche de la fin des lignes chargées (pagination au défilement). */
+  onEndReached?: () => void;
   /** Téléphone : une carte par ligne au lieu des colonnes (même tri, même virtualisation). */
   renderCard?: (row: T) => ReactNode;
   /** Hauteur de la liste de cartes sur téléphone. */
@@ -28,7 +32,7 @@ const COLUMN_GAP = 6;  // px, doit correspondre à gap-x-1.5
 
 /** Tableau triable et virtualisé : l'en-tête colle en haut et partage le défilement des lignes (colonnes alignées). */
 export function DataTable<T>({ rows, columns, sorting, onSortingChange, onRowClick, getRowId,
-                              heightClass = "h-[calc(100vh-270px)] min-h-[400px]", renderCard,
+                              heightClass = "h-[calc(100vh-270px)] min-h-[400px]", renderCard, manualSorting = false, onEndReached,
                               cardHeightClass = "h-[calc(100dvh-220px)] min-h-[360px]" }: Props<T>) {
   const cards = useIsMobile() && renderCard !== undefined;
   const table = useReactTable({
@@ -38,6 +42,7 @@ export function DataTable<T>({ rows, columns, sorting, onSortingChange, onRowCli
     onSortingChange: (updater) => onSortingChange(typeof updater === "function" ? updater(sorting) : updater),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    manualSorting,
     enableSortingRemoval: false,  // un clic inverse le sens ; sans ça, le 3e clic enlevait le tri (ordre d'origine, l'air mélangé)
     getRowId,
   });
@@ -54,6 +59,11 @@ export function DataTable<T>({ rows, columns, sorting, onSortingChange, onRowCli
   });
   // Rotation (cartes ⇄ lignes) : oublier les hauteurs mesurées dans l'autre mode, sinon des trous entre les lignes.
   useEffect(() => virtualizer.measure(), [cards]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Pagination au défilement : prévenir quand les dernières lignes chargées approchent.
+  const lastIndex = virtualizer.getVirtualItems().at(-1)?.index ?? -1;
+  useEffect(() => {
+    if (onEndReached && tableRows.length > 0 && lastIndex >= tableRows.length - 10) onEndReached();
+  }, [lastIndex, tableRows.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const template = columns.map((c) => c.width).join(" ");
   // Largeur minimale des colonnes + marges : en dessous, le tableau défile horizontalement au lieu d'être coupé.
   // En-tête et lignes partagent le même conteneur de défilement : la barre verticale réduit leur largeur à tous

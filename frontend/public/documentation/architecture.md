@@ -9,7 +9,8 @@ Navigateur ────────► │ web  (nginx)                         
                      │  /guide/         → guide utilisateur       │
                      │  /documentation/ → documentation admin     │
                      │  /api/*          → proxy vers api          │
-                     │  /robots.txt, /sitemap.xml, /llms.txt → api│
+                     │  pages publiques → HTML préparé par api    │
+                     │  /robots.txt, /sitemap*, /llms.txt → api   │
                      └──────────────────────┬─────────────────────┘
                                             ▼
             Claude API ◄──────────── api (FastAPI, :8000) ─────────► db (PostgreSQL 16)

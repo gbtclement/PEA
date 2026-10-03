@@ -14,6 +14,42 @@ L'application tourne en local, mais elle est prête à être indexée le jour o�
 - **Fichiers générés par l'API** (`backend/app/api/routes/seo.py`) : `/robots.txt`, `/sitemap.xml`, `/llms.txt`.
 - **Page 404** en `noindex` pour les adresses inconnues.
 
+## HTML préparé par l'API
+
+Les pages publiques (`/`, `/explorer`, `/etf`, `/titres/<id>`, `/premium`, pages légales) ne sont plus une coquille vide :
+
+1. nginx envoie la demande à `GET /api/seo/page?path=…` ;
+2. l'API lit le `index.html` construit par Vite dans le conteneur web (`/_spa/index.html`, gardé une minute) et le remplit (`backend/app/services/seo/`) :
+   - **en-tête** : titre, description, canonique, Open Graph, JSON-LD, mêmes textes que `usePageMeta` ;
+   - **résumé lisible** dans `#root` (nom, cours, score et ses raisons, top 10, liste) : un robot ou un visiteur le voit avant le JavaScript ;
+   - **données embarquées** (`<script id="cotalyx-data">`) sous les mêmes clés que TanStack Query : la page s'affiche sans redemander l'API (`seedFromPage`, `lib/queryClient.ts`) ;
+   - **préchargement** (`modulepreload`) du code de la page, lu dans le manifeste de Vite (`/_spa/manifest.json`) ;
+3. le navigateur peint ce résumé, puis React démarre et le remplace (`lib/boot.ts`).
+
+Les données embarquées sont calculées **pour le demandeur** (favoris, enveloppes) : la page répond toujours `private, no-cache`. Un titre inconnu répond `404` en `noindex`.
+
+!> Si l'API ne répond pas, nginx sert le `index.html` statique : l'application fonctionne comme avant, sans le résumé.
+
+## Plan du site
+
+`/sitemap.xml` est un **index** qui renvoie vers :
+
+| Fichier | Contenu |
+|---|---|
+| `/sitemap-pages.xml` | Pages fixes publiques |
+| `/sitemap-actions-1.xml`, `-2`… | Fiches d'actions, 10 000 au plus par fichier |
+| `/sitemap-etf-1.xml`… | Fiches d'ETF |
+| `/sitemap-guide.xml` | Accueil du guide |
+
+Seuls les titres actifs **qui ont un cours** y figurent (les autres sont cachés des listes). `lastmod` est la date du dernier cours ou du dernier score. Le guide navigue par `#/…` : les moteurs n'en voient que l'accueil.
+
+## Performances
+
+- **JavaScript** : routes chargées à la demande, graphiques ECharts chargés quand ils deviennent visibles. Budget de 150 Ko compressés pour l'accueil : `npm run check:bundle`.
+- **Explorer paginé côté serveur** : 50 lignes par page, la suite se charge en défilant.
+- **Cache** : réponses publiques de l'API mises en cache avec empreinte (voir [API](api.md#cache-http)) ; fichiers `/assets/` gardés un an ; `index.html` et pages HTML toujours revalidés.
+- **Mesure** : `npm run lighthouse` (application lancée sur `:8095`) note l'accueil, l'Explorer et une fiche en mode téléphone. Objectif : 95 dans chaque catégorie ; le SEO n'atteint 100 qu'avec `SEO_INDEXING=true`.
+
 ## Pages jamais indexées
 
 Portefeuille, Assistant IA, Réglages et **Prévisions** sont toujours en `noindex` et absentes du sitemap. Les prévisions le sont par prudence réglementaire (AMF).
@@ -25,11 +61,10 @@ Portefeuille, Assistant IA, Réglages et **Prévisions** sont toujours en `noind
 | `SEO_INDEXING` | `false` : robots.txt interdit tout | `true` : seules les pages publiques (accueil, Explorer, ETF, fiches) sont autorisées |
 | `PUBLIC_BASE_URL` | `http://localhost:8095` | L'adresse publique, utilisée dans le sitemap, robots.txt et llms.txt |
 
-!> Même avec `SEO_INDEXING=true`, l'API publique doit rester lisible par les robots : les pages sont remplies par le navigateur à partir de l'API.
+!> Même avec `SEO_INDEXING=true`, l'API publique doit rester lisible par les robots : React complète les pages à partir de l'API.
 
 ## À prévoir avant une mise en ligne
 
-- **Pré-génération** (prerendering) des pages publiques : les moteurs indexent plus sûrement du HTML déjà rempli qu'une application React.
 - **Comptes** : les pages personnelles demandent déjà une connexion ([Comptes utilisateurs](comptes.md)). Il restera à passer `COOKIE_SECURE=true`, à brancher le SMTP de Brevo et à remplacer les textes provisoires des CGU, de la politique de confidentialité et des mentions légales.
 - **Protéger `/documentation/`** (authentification nginx, ou accès réservé aux administrateurs) : elle décrit le fonctionnement interne et n'a aujourd'hui aucune protection.
 - **HTTPS** et un nom de domaine devant nginx.

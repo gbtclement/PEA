@@ -16,7 +16,8 @@ function body(url: string): unknown {
   if (url === "/api/assistant/conversations" || url === "/api/me/sessions" || url === "/api/me/price-alerts") return [];
   if (url === "/api/forecasts") return { as_of: null, round_trip_cost: null, rows: [] };
   if (url === "/api/settings") return { min_orders_per_year: 12, penalty_fee: 96, fee_grid: [{ up_to: null, rate: 0.0012 }] };
-  if (url.startsWith("/api/rankings/top") || url.startsWith("/api/market/heatmap") || url.startsWith("/api/screener")) return [];
+  if (url.startsWith("/api/screener/facets")) return { sectors: [], countries: [], markets: [] };
+  if (url.startsWith("/api/rankings/top") || url.startsWith("/api/market/heatmap")) return [];
   return { items: [], total: 0 };
 }
 

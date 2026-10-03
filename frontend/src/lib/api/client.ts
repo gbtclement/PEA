@@ -48,6 +48,8 @@ export async function apiGet<T>(path: string, params: Record<string, string | nu
 }
 
 export type ScreenerRow = components["schemas"]["ScreenerRow"];
+export type ScreenerPageOut = components["schemas"]["ScreenerPage"];
+export type ScreenerFacets = components["schemas"]["ScreenerFacets"];
 export type TopItem = components["schemas"]["TopItem"];
 export type Movers = components["schemas"]["Movers"];
 export type HeatmapItem = components["schemas"]["HeatmapItem"];

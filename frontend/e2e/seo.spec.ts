@@ -43,11 +43,15 @@ test("robots.txt, sitemap.xml et llms.txt servis à la racine", async ({ request
 
   const sitemap = await request.get("/sitemap.xml");
   expect(sitemap.headers()["content-type"]).toContain("xml");
-  const xml = await sitemap.text();
-  expect(xml).toContain("<urlset");
-  expect(xml).toContain("/explorer</loc>");
-  expect(xml).toMatch(/\/titres\/\d+<\/loc>/);
-  expect(xml).not.toContain("/portefeuille");
+  const index = await sitemap.text();
+  expect(index).toContain("<sitemapindex");
+  // L'index renvoie vers des fichiers servis eux aussi à la racine
+  const pages = await (await request.get("/sitemap-pages.xml")).text();
+  expect(pages).toContain("/explorer</loc>");
+  expect(pages).not.toContain("/portefeuille");
+  const actions = await request.get("/sitemap-actions-1.xml");
+  expect(actions.headers()["content-type"]).toContain("xml");
+  expect(await actions.text()).toMatch(/\/titres\/\d+<\/loc><lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
 
   const llms = await request.get("/llms.txt");
   expect(await llms.text()).toMatch(/^# Cotalyx/);

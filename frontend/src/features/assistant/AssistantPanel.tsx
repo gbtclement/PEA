@@ -1,9 +1,7 @@
 import { createContext, lazy, Suspense, useContext, useState, type ReactNode } from "react";
-import { Link } from "react-router";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-// Le chat (et react-markdown) n'est chargé qu'à la première ouverture du panneau.
-const ChatView = lazy(async () => ({ default: (await import("./ChatView")).ChatView }));
+// Panneau (et bibliothèque des fenêtres) chargé au premier clic sur ✨ : rien de plus au premier affichage des pages.
+const AssistantSheet = lazy(async () => ({ default: (await import("./AssistantSheet")).AssistantSheet }));
 
 type PanelSecurity = { id: number; name: string };
 const PanelContext = createContext<{ open: (security: PanelSecurity) => void }>({ open: () => {} });
@@ -22,29 +20,12 @@ export function AssistantPanelProvider({ children }: { children: ReactNode }) {
   return (
     <PanelContext.Provider value={{ open }}>
       {children}
-      <Sheet open={isOpen} onOpenChange={setOpen}>
-        <SheetContent side="right" className="flex w-[520px] flex-col gap-3 sm:max-w-[520px] max-sm:data-[side=right]:w-full">
-          <SheetHeader>
-            <SheetTitle>Assistant IA — {security?.name}</SheetTitle>
-            <SheetDescription>
-              Claude a accès aux données de ce titre et à votre portefeuille.{" "}
-              {conversationId !== null && (
-                <Link to={`/assistant?c=${conversationId}`} onClick={() => setOpen(false)} className="text-primary">
-                  Ouvrir dans la page Assistant
-                </Link>
-              )}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">
-            {security && (
-              <Suspense fallback={null}>
-                <ChatView key={security.id} compact conversationId={conversationId} securityId={security.id}
-                          securityName={security.name} onConversationCreated={setConversationId} />
-              </Suspense>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
+      {security && (
+        <Suspense fallback={null}>
+          <AssistantSheet open={isOpen} onOpenChange={setOpen} security={security} conversationId={conversationId}
+                          onConversationCreated={setConversationId} />
+        </Suspense>
+      )}
     </PanelContext.Provider>
   );
 }

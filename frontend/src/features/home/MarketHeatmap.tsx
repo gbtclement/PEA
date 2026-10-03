@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { useAccountKey } from "@/features/auth/useMe";
-import { EChart } from "@/components/charts/EChart";
+import { LazyEChart as EChart } from "@/components/charts/LazyEChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiGet, type HeatmapItem } from "@/lib/api/client";
 import { buildHeatmapOption } from "./heatmapOption";
