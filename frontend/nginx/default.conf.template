@@ -67,6 +67,34 @@ server {
     include /etc/nginx/security-headers.conf;
   }
 
+  # Gabarit lu par l'API pour composer les pages publiques (titre, description, résumé, données embarquées).
+  location = /_spa/index.html {
+    alias /usr/share/nginx/html/index.html;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/security-headers.conf;
+  }
+
+  # Pages publiques : HTML complet préparé par l'API (référencement, premier affichage sans attendre l'API).
+  # Si l'API ne répond pas, le index.html statique prend le relais (l'application fonctionne comme avant).
+  location ~ ^/(explorer|etf|premium|cgu|cgv|confidentialite|mentions-legales|titres/[0-9]+)?$ {
+    proxy_pass http://api:8000/api/seo/page?path=$uri;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_intercept_errors on;
+    error_page 500 502 503 504 = @spa;
+    include /etc/nginx/security-headers.conf;
+  }
+  location @spa {
+    add_header Cache-Control "no-cache" always;
+    include /etc/nginx/security-headers.conf;
+    try_files /index.html =404;
+  }
+
+  location = /index.html {
+    add_header Cache-Control "no-cache" always;
+    include /etc/nginx/security-headers.conf;
+  }
+
   location / {
     try_files $uri /index.html;
   }

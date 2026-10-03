@@ -14,3 +14,15 @@ export function createQueryClient(): QueryClient {
   });
   return client;
 }
+
+/** Données de la page servies dans le HTML (`#cotalyx-data`, voir /api/seo/page) : affichées sans attendre l'API. */
+export function seedFromPage(client: QueryClient, doc: Document = document): void {
+  const script = doc.getElementById("cotalyx-data");
+  if (!script?.textContent) return;
+  try {
+    const entries = JSON.parse(script.textContent) as [readonly unknown[], unknown][];
+    for (const [key, data] of entries) client.setQueryData(key, data);
+  } catch {
+    // HTML mal formé : l'application charge ses données comme d'habitude
+  }
+}

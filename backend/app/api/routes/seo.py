@@ -3,19 +3,25 @@
 Tant que `SEO_INDEXING` est faux (local ou privé), robots.txt interdit tout. En ligne, seules les pages
 publiques sont autorisées ; les pages personnelles (portefeuille, assistant, réglages) ne le sont jamais.
 """
+import logging
+import time
 from typing import Annotated
 from xml.sax.saxutils import escape
 
-from fastapi import APIRouter, Depends, Response
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi.responses import HTMLResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.brand import APP_NAME
 from app.core.config import Settings, get_settings
+from app.core.current_user import get_optional_user
 from app.core.db import get_db
-from app.models import Security
+from app.models import Security, User
 
 router = APIRouter(prefix="/seo", tags=["seo"])
+logger = logging.getLogger(__name__)
 
 PUBLIC_PATHS = ["/", "/explorer", "/etf", "/premium", "/cgv"]
 PRIVATE_PATHS = ["/portefeuille", "/assistant", "/reglages"]
@@ -86,3 +92,46 @@ Suivi actuel : {stocks} action{"s" if stocks > 1 else ""} et {etfs} ETF (Euronex
 - [sitemap.xml]({_url(settings, "/sitemap.xml")})
 """
     return Response(body, media_type="text/markdown; charset=utf-8")
+
+
+# --- Pages publiques en HTML enrichi (nginx y envoie /, /explorer, /etf, /titres/<id>, /premium et pages légales) ---
+
+_TEMPLATE_CACHE: dict[str, tuple[float, str]] = {}
+TEMPLATE_TTL_SECONDS = 60
+
+
+def get_spa_template(settings: Settings = Depends(get_settings)) -> str:
+    """index.html construit par Vite, lu dans le conteneur web (gardé une minute)."""
+    cached = _TEMPLATE_CACHE.get(settings.spa_template_url)
+    if cached and time.monotonic() - cached[0] < TEMPLATE_TTL_SECONDS:
+        return cached[1]
+    response = httpx.get(settings.spa_template_url, timeout=2)
+    response.raise_for_status()
+    _TEMPLATE_CACHE[settings.spa_template_url] = (time.monotonic(), response.text)
+    return response.text
+
+
+def _load_template(request: Request, settings: Settings) -> str:
+    # Appelé ici plutôt qu'en dépendance : une panne doit donner 503 (nginx sert alors le index.html statique).
+    loader = request.app.dependency_overrides.get(get_spa_template)
+    return loader() if loader else get_spa_template(settings)
+
+
+@router.get("/page", response_class=HTMLResponse, include_in_schema=False)
+def page(request: Request, settings: SettingsDep, db: DbDep, path: str = Query(..., max_length=200),
+         user: User | None = Depends(get_optional_user)) -> HTMLResponse:
+    from app.services.seo.builders import build_page  # import tardif : les routes JSON importent ce module
+    from app.services.seo.page import render_page
+
+    base_url = settings.public_base_url.rstrip("/")
+    content = build_page(db, user, path, base_url)
+    if content is None:
+        raise HTTPException(status_code=404, detail="Page inconnue")
+    try:
+        template = _load_template(request, settings)
+    except Exception:
+        logger.warning("Gabarit index.html indisponible", exc_info=True)
+        raise HTTPException(status_code=503, detail="Gabarit indisponible")
+    # Contenu propre au compte (favoris, enveloppes) : jamais mis en cache par un intermédiaire.
+    return HTMLResponse(render_page(template, content, base_url), status_code=content.status,
+                        headers={"Cache-Control": "private, no-cache"})

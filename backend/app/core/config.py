@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     assistant_max_rounds: int = 8
 
     public_base_url: str = "http://localhost:8095"
+    # Gabarit index.html construit par Vite, servi par le conteneur web : rempli par /api/seo/page (pages publiques).
+    spa_template_url: str = "http://web/_spa/index.html"
     seo_indexing: bool = False
 
     # Comptes : ADMIN_EMAIL désigne le compte administrateur (reprend les données de « Moi »)
