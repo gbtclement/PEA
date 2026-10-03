@@ -17,24 +17,35 @@ export const NAV_ITEMS = [
 const ADMIN_ITEM = { to: "/admin", label: "Admin", icon: ShieldCheck, end: false };
 
 export function Sidebar({ footer, account, admin = false }: { footer?: ReactNode; account?: ReactNode; admin?: boolean }) {
-  const items = admin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
   return (
-    <aside className="fixed inset-y-0 left-0 flex w-60 flex-col border-r border-border bg-white">
+    <aside className="fixed inset-y-0 left-0 hidden w-60 flex-col border-r border-border bg-white lg:flex">
       <div className="flex items-center gap-2.5 px-6 py-5">
         <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Radar className="size-4" aria-hidden />
         </div>
         <span className="text-lg font-semibold tracking-tight">{SITE_NAME}</span>
       </div>
+      <SidebarNav admin={admin} account={account} />
+      {footer && <div className="border-t border-border px-6 py-4">{footer}</div>}
+    </aside>
+  );
+}
+
+/** Liens de navigation, bloc du compte et lien du guide : partagés par la barre latérale et le menu mobile. */
+export function SidebarNav({ admin = false, account, onNavigate }: { admin?: boolean; account?: ReactNode; onNavigate?: () => void }) {
+  const items = admin ? [...NAV_ITEMS, ADMIN_ITEM] : NAV_ITEMS;
+  return (
+    <>
       <nav aria-label="Navigation principale" className="flex-1 space-y-1 px-3">
         {items.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
             to={to}
             end={end}
+            onClick={onNavigate}
             className={({ isActive }) =>
               cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors lg:min-h-0",
                 isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )
             }
@@ -50,13 +61,12 @@ export function Sidebar({ footer, account, admin = false }: { footer?: ReactNode
       <div className="px-3 pb-3">
         <a
           href="/guide/"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground lg:min-h-0"
         >
           <BookOpen className="size-4" aria-hidden />
           Guide
         </a>
       </div>
-      {footer && <div className="border-t border-border px-6 py-4">{footer}</div>}
-    </aside>
+    </>
   );
 }
