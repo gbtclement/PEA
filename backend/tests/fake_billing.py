@@ -2,7 +2,7 @@ from dataclasses import replace
 from datetime import UTC, datetime
 
 from app.services.billing.gateway import (
-    BillingUnavailable, CheckoutInfo, InvalidSignature, Plan, StripeEventIn, StripeSubscription,
+    BillingRejected, BillingUnavailable, CheckoutInfo, InvalidSignature, Plan, StripeEventIn, StripeSubscription,
 )
 
 
@@ -17,6 +17,9 @@ class FakeBilling:
         self.sessions: dict[str, CheckoutInfo] = {}
         self.checkouts: list[dict] = []
         self.canceled: list[str] = []
+        self.expired: list[str] = []
+        self.rejected: set[str] = set()  # abonnements que Stripe refuse définitivement (erreur 4xx)
+        self.email_fails = False
         self.emails: dict[str, str] = {}
         self.portals: list[str] = []
         self.down = False
@@ -57,6 +60,8 @@ class FakeBilling:
 
     def subscription(self, subscription_id):
         self._check()
+        if subscription_id in self.rejected:
+            raise BillingRejected(f"No such subscription: {subscription_id}")
         return self.subs[subscription_id]
 
     def portal(self, customer_id, return_url):
@@ -70,8 +75,14 @@ class FakeBilling:
         if subscription_id in self.subs:
             self.update(subscription_id, status="canceled")
 
+    def expire_checkout(self, session_id):
+        self._check()
+        self.expired.append(session_id)
+
     def update_customer_email(self, customer_id, email):
         self._check()
+        if self.email_fails:
+            raise BillingRejected("adresse refusée (faux)")
         self.emails[customer_id] = email
 
     def parse_event(self, payload: bytes, signature):

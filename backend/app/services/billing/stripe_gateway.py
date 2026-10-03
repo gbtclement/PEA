@@ -5,8 +5,8 @@ from typing import Literal
 import stripe
 
 from app.services.billing.gateway import (
-    BillingUnavailable, CheckoutInfo, InvalidSignature, Plan, StripeEventIn, StripeSubscription, event_from_dict,
-    subscription_from_dict,
+    BillingRejected, BillingUnavailable, CheckoutInfo, InvalidSignature, Plan, StripeEventIn, StripeSubscription,
+    event_from_dict, subscription_from_dict,
 )
 
 TOLERANCE_SECONDS = 300
@@ -26,6 +26,8 @@ class StripeGateway:
     def _call(self, fn, *args, **kwargs) -> dict:
         try:
             return fn(*args, **kwargs).to_dict()
+        except (stripe.InvalidRequestError, stripe.AuthenticationError, stripe.PermissionError) as error:
+            raise BillingRejected(str(error)) from error  # erreur 4xx : la même requête échouera toujours
         except stripe.StripeError as error:
             raise BillingUnavailable(str(error)) from error
 
@@ -84,6 +86,14 @@ class StripeGateway:
         except stripe.StripeError as error:
             raise BillingUnavailable(str(error)) from error
 
+    def expire_checkout(self, session_id: str) -> None:
+        try:
+            self._client.v1.checkout.sessions.expire(session_id)
+        except stripe.InvalidRequestError:
+            return  # déjà payée, expirée ou inconnue : rien à faire
+        except stripe.StripeError as error:
+            raise BillingUnavailable(str(error)) from error
+
     def update_customer_email(self, customer_id: str, email: str) -> None:
         self._call(self._client.v1.customers.update, customer_id, params={"email": email})
 
@@ -93,9 +103,11 @@ class StripeGateway:
         try:
             stripe.WebhookSignature.verify_header(payload.decode("utf-8"), signature, self._webhook_secret,
                                                   tolerance=TOLERANCE_SECONDS)
+            return event_from_dict(json.loads(payload))
         except stripe.SignatureVerificationError as error:
             raise InvalidSignature(str(error)) from error
-        return event_from_dict(json.loads(payload))
+        except (UnicodeDecodeError, ValueError, KeyError) as error:  # corps illisible : pas un vrai événement Stripe
+            raise InvalidSignature(f"corps du webhook illisible : {error}") from error
 
 
 def gateway_from_settings(settings) -> "StripeGateway | None":

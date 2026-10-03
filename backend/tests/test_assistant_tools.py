@@ -101,3 +101,9 @@ def test_unknown_tool_is_tool_error(db, user):
 def test_prompt_mentions_the_chosen_envelopes():
     assert "PEA, PEA-PME" in system_prompt(date(2026, 10, 2), 12, ["pea", "pea_pme"], None)
     assert "ne suppose pas qu'il investit via un PEA" in system_prompt(date(2026, 10, 2), 12, ["cto"], None)
+
+
+def test_prompt_keeps_the_pea_when_the_securities_account_is_also_ticked():
+    text = system_prompt(date(2026, 10, 3), 12, ["pea", "cto"], None)
+    assert "PEA, Compte-titres" in text
+    assert "n'est pas filtré" in text and "ne suppose pas qu'il investit via un PEA" not in text

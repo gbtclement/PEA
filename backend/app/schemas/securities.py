@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from app.models import Security, SecurityQuote
 from app.services.envelopes.rules import RULE_ENVELOPES, TO_CHECK
+from app.services.fx import security_currency
 
 
 class EnvelopeStatusOut(BaseModel):
@@ -27,6 +28,7 @@ class SecurityItem(BaseModel):
     price: float | None
     change_pct: float | None
     as_of: datetime | None
+    currency: str  # devise du cours (EUR, USD, CHF…)
 
     @classmethod
     def build(cls, security: Security, quote: SecurityQuote | None) -> "SecurityItem":
@@ -42,6 +44,7 @@ class SecurityItem(BaseModel):
             price=quote.price if quote else None,
             change_pct=quote.change_pct if quote else None,
             as_of=quote.as_of if quote else None,
+            currency=security_currency(security),
         )
 
 

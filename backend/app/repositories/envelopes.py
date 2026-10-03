@@ -15,8 +15,9 @@ def facts_for(security: Security, fundamentals: SecurityFundamentals | None) -> 
         kind=security.kind, country=security.country, industry=security.industry, name=security.name,
         confirmed_etf=security.kind == "etf" and security.yahoo_ticker in confirmed_pea_etfs(),
         employees=f.employees if f else None,
-        revenue_eur=to_eur(f.revenue, f.revenue_currency or f.currency) if f else None,
-        market_cap_eur=to_eur(f.market_cap, f.currency) if f else None,
+        # Devise inconnue : montant inconnu (PEA-PME « à vérifier ») plutôt que compté en euros.
+        revenue_eur=to_eur(f.revenue, f.revenue_currency or f.currency, strict=True) if f else None,
+        market_cap_eur=to_eur(f.market_cap, f.currency, strict=True) if f else None,
     )
 
 

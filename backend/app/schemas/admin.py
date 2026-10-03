@@ -90,3 +90,4 @@ class ConfigStatusOut(BaseModel):
     stripe: bool
     stripe_mode: str | None = None  # test | live, déduit du préfixe de la clé (jamais la clé)
     stripe_last_webhook_at: datetime | None = None
+    stripe_pending_cancellations: int = 0  # résiliations et pages de paiement à fermer, en attente de Stripe

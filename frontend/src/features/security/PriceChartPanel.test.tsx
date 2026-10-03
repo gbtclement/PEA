@@ -108,3 +108,57 @@ test("ne garde pas le graphique d'un autre titre pendant le chargement", async (
   rerender(<PriceChartPanel securityId={6} />);
   expect(container.querySelector('[data-slot="skeleton"]')).not.toBeNull();
 });
+
+function slowFetch(slow: (url: string) => boolean) {
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => { release = resolve; });
+  vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+    if (slow(String(input))) await gate;
+    return new Response(JSON.stringify(BOUNDED), { status: 200, headers: { "Content-Type": "application/json" } });
+  }));
+  return () => release();
+}
+
+test("indique le chargement d'une longue période", async () => {
+  const release = slowFetch((url) => url.includes("period=MAX"));
+  renderWithProviders(<PriceChartPanel securityId={5} />);
+  await waitFor(() => expect(chart.addSeries).toHaveBeenCalled());
+  await userEvent.click(screen.getByRole("button", { name: "Max" }));
+  expect(await screen.findByText(/Chargement de la période/)).toBeInTheDocument();
+  release();
+});
+
+test("Personnalisé cliqué avant le premier chargement : dates remplies à l'arrivée des données", async () => {
+  const release = slowFetch(() => true);
+  renderWithProviders(<PriceChartPanel securityId={5} />);
+  await userEvent.click(screen.getByRole("button", { name: "Personnalisé" }));
+  release();
+  await waitFor(() => expect(screen.getByLabelText("Début")).toHaveValue("2000-01-03"));
+  expect(screen.getByLabelText("Fin")).toHaveValue("2026-09-25");
+});
+
+test("revenir sur Personnalisé garde la période appliquée", async () => {
+  mockFetch(() => ({ body: BOUNDED }));
+  renderWithProviders(<PriceChartPanel securityId={5} />);
+  await waitFor(() => expect(chart.addSeries).toHaveBeenCalled());
+  await userEvent.click(screen.getByRole("button", { name: "Personnalisé" }));
+  fireEvent.change(screen.getByLabelText("Début"), { target: { value: "2020-01-01" } });
+  fireEvent.change(screen.getByLabelText("Fin"), { target: { value: "2021-06-30" } });
+  await userEvent.click(screen.getByRole("button", { name: "Appliquer" }));
+  await userEvent.click(screen.getByRole("button", { name: "1A" }));
+  await userEvent.click(screen.getByRole("button", { name: "Personnalisé" }));
+  expect(screen.getByLabelText("Début")).toHaveValue("2020-01-01");
+  expect(screen.getByLabelText("Fin")).toHaveValue("2021-06-30");
+});
+
+test("période personnalisée sans cours : message adapté, pas « bourse fermée »", async () => {
+  mockFetch((url) => ({ body: url.includes("period=custom") ? { ...BOUNDED, bars: [], sma50: [], rsi: [], macd: [] } : BOUNDED }));
+  renderWithProviders(<PriceChartPanel securityId={5} />);
+  await waitFor(() => expect(chart.addSeries).toHaveBeenCalled());
+  await userEvent.click(screen.getByRole("button", { name: "Personnalisé" }));
+  fireEvent.change(screen.getByLabelText("Début"), { target: { value: "2000-01-03" } });
+  fireEvent.change(screen.getByLabelText("Fin"), { target: { value: "2000-02-01" } });
+  await userEvent.click(screen.getByRole("button", { name: "Appliquer" }));
+  expect(await screen.findByText(/Aucun cours sur cette période/)).toBeInTheDocument();
+  expect(screen.queryByText(/bourse fermée/)).not.toBeInTheDocument();
+});

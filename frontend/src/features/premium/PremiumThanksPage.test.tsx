@@ -25,3 +25,18 @@ test("message rassurant si l'activation tarde", async () => {
   vi.advanceTimersByTime(31_000);
   await waitFor(() => expect(screen.getByText(/peut prendre quelques minutes/)).toBeInTheDocument());
 });
+
+test("si la vérification échoue, la page arrête d'interroger et explique", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const fetchMock = mockFetch((url) => (url === "/api/billing/sync"
+    ? { status: 503, body: { detail: { code: "billing_unavailable", message: "Paiement indisponible" } } }
+    : { body: ME }));
+  renderWithProviders(<PremiumThanksPage />, { route: "/premium/merci?session_id=cs_1" });
+  expect(await screen.findByText(/n'avons pas pu vérifier votre paiement/)).toBeInTheDocument();
+  const meCalls = () => fetchMock.mock.calls.filter(([url]) => url === "/api/me").length;
+  const before = meCalls();
+  vi.advanceTimersByTime(20_000);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(meCalls()).toBe(before);  // plus d'appel toutes les 2 s
+  expect(screen.getByRole("button", { name: "Réessayer" })).toBeInTheDocument();
+});

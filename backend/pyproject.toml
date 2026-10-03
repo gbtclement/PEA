@@ -20,7 +20,7 @@ dependencies = [
   "jinja2>=3.1",
   "email-validator>=2.2",
   "joserfc>=1.0",
-  "stripe>=15",
+  "stripe>=15,<16",
 ]
 
 [project.optional-dependencies]

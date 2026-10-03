@@ -30,7 +30,8 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    subscription: Mapped["Subscription | None"] = relationship(lazy="select", passive_deletes=True)  # noqa: F821
+    # Chargé avec le compte (jointure) : has_premium est lu à chaque requête.
+    subscription: Mapped["Subscription | None"] = relationship(lazy="joined", passive_deletes=True)  # noqa: F821
 
     @property
     def has_password(self) -> bool:

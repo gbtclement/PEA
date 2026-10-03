@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Callable
 from contextlib import AbstractContextManager, nullcontext
+from dataclasses import replace
 from datetime import date, datetime, timedelta
 
 from sqlalchemy import select
@@ -17,6 +18,7 @@ from app.repositories.market_data import (
     upsert_fundamentals, upsert_quotes,
 )
 from app.repositories.securities import update_classification
+from app.services.market_calendar import CLOSE as PARIS_CLOSE
 from app.services.market_calendar import PARIS, calendar_for_market
 
 # En dessous de cette part de titres reçus, on considère que Yahoo est indisponible.
@@ -24,7 +26,7 @@ MIN_RESPONSE_RATIO = 0.2
 # Écart de clôture sur le jour de recouvrement au-delà duquel l'historique a été réajusté (division, dividende).
 ADJUSTMENT_TOLERANCE = 0.005
 # Titres par appel au fournisseur pendant le rattrapage ; chaque paquet est validé à part (reprise après une panne).
-BACKFILL_BATCH = 100
+BACKFILL_BATCH = 50  # ~450 Mo de pic mémoire pour le worker (900 Mo à 100)
 # Sans cours depuis ce délai (ou, sans aucun cours, ajouté depuis ce délai), un titre que Yahoo ne renvoie pas est abandonné.
 DEAD_AFTER = timedelta(days=30)
 FUNDAMENTALS_DAYS = 5  # chaque action est relue une fois par semaine (jours ouvrés)
@@ -37,6 +39,17 @@ def _ensure_response(requested: int, received: int, what: str) -> None:
         raise RuntimeError(f"Yahoo n'a renvoyé que {received}/{requested} {what} : source probablement indisponible")
 
 
+def _at_place_close(quote: Quote, market: str) -> Quote:
+    """Cours d'une séance passée (Yahoo le date à 17 h 35, heure de Paris) : heure de clôture de sa place.
+
+    À 15 h 31, avant la première barre de New York, le cours de la veille daterait sinon de 17 h 35 au lieu de 22 h.
+    """
+    local = quote.as_of.astimezone(PARIS)
+    if local.time() != PARIS_CLOSE:
+        return quote  # cours de la séance en cours : son heure est la bonne
+    return replace(quote, as_of=calendar_for_market(market).session_close(local.date()))
+
+
 def refresh_quotes(ctx: JobContext, tier: int) -> int:
     with ctx.session_factory() as session:
         tickers = tier_tickers(session, tier, ctx.settings.tier2_size, ctx.now())
@@ -45,6 +58,9 @@ def refresh_quotes(ctx: JobContext, tier: int) -> int:
     quotes = ctx.market.get_quotes(tickers)
     with ctx.session_factory() as session:
         ids = ticker_ids(session, list(quotes))
+        markets = dict(session.execute(select(Security.yahoo_ticker, Security.market)
+                                       .where(Security.yahoo_ticker.in_(list(quotes)))).all())
+        quotes = {t: _at_place_close(q, markets.get(t, "")) for t, q in quotes.items()}
         count = upsert_quotes(session, {ids[t]: q for t, q in quotes.items() if t in ids})
         session.commit()
     _ensure_response(len(tickers), len(quotes), "cours")

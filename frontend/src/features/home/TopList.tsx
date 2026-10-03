@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { AskAiButton } from "@/features/assistant/AskAiButton";
+import { useAccountKey } from "@/features/auth/useMe";
 import { useEnvelopes } from "@/features/settings/useEnvelopes";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,8 +15,10 @@ import { cn } from "@/lib/utils";
 
 export function TopList() {
   const { filtering } = useEnvelopes();
+  const account = useAccountKey();
   const { data, isPending, isError } = useQuery({
-    queryKey: ["top"],
+    queryKey: ["top", account],
+    enabled: account !== undefined,
     queryFn: () => apiGet<TopItem[]>("/api/rankings/top", { limit: 10 }),
     refetchInterval: 60_000,
   });

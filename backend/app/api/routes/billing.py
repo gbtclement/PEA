@@ -1,4 +1,5 @@
 """Abonnement Premium (spec 3 et 4.1) : prix, résumé, passage en caisse, retour de paiement, portail et webhook."""
+import logging
 from datetime import datetime
 from typing import Annotated
 
@@ -13,17 +14,20 @@ from app.core.current_user import get_current_user, get_now
 from app.core.db import get_db
 from app.core.security import truncate_ip
 from app.core.terms import CGV_VERSION
-from app.models import BillingConsent, User
+from app.models import BillingConsent, StripeEvent, User
 from app.schemas.billing import CheckoutIn, PlanOut, PlansOut, RedirectOut, SubscriptionOut, SyncIn
 from app.services import ratelimit
 from app.services.billing.access import premium_source
-from app.services.billing.gateway import BillingGateway, BillingUnavailable, InvalidSignature
+from app.services.billing.gateway import BillingGateway, BillingRejected, BillingUnavailable, InvalidSignature
 from app.services.billing.state import apply_subscription
 from app.services.billing.webhook import handle_event
 from app.services.security_log import log_event
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 GatewayDep = Annotated[BillingGateway | None, Depends(get_billing_gateway)]
+logger = logging.getLogger(__name__)
+# Abonnement existant mais suspendu : le régler dans le portail, pas en payer un second.
+SUSPENDED_STATUSES = frozenset({"unpaid", "paused"})
 
 
 def unavailable() -> HTTPException:
@@ -77,6 +81,9 @@ def billing_checkout(payload: CheckoutIn, request: Request, gateway: GatewayDep,
         raise fail(409, "already_premium", "Vous êtes déjà abonné : gérez votre abonnement depuis les Réglages.")
     if source in ("offered", "admin"):
         raise fail(409, "premium_offered", "Premium vous est déjà offert : inutile de vous abonner.")
+    if user.subscription is not None and user.subscription.status in SUSPENDED_STATUSES:
+        raise fail(409, "subscription_suspended",
+                   "Votre abonnement est suspendu : réglez le paiement depuis « Gérer mon abonnement » dans les Réglages.")
     if not (payload.accept_cgv and payload.waive_withdrawal):
         raise fail(422, "consent_required", "Cochez les deux cases pour continuer.")
     if ratelimit.over(db, "checkout_user", str(user.id), now):
@@ -106,6 +113,10 @@ def billing_sync(payload: SyncIn, gateway: GatewayDep, db: Session = Depends(get
                  user: User = Depends(get_current_user), now: datetime = Depends(get_now)) -> SubscriptionOut:
     """Retour de Stripe (/premium/merci) : applique l'abonnement sans attendre le webhook (spec 3.3)."""
     gateway = require_gateway(gateway)
+    if ratelimit.over(db, "billing_sync_user", str(user.id), now):
+        raise fail(429, "too_many_attempts", "Trop de vérifications du paiement : réessayez dans une heure.")
+    ratelimit.record(db, "billing_sync_user", str(user.id), now)
+    db.commit()
     try:
         info = gateway.checkout_session(payload.session_id)
         if info is None or info.user_id != str(user.id):
@@ -144,6 +155,12 @@ async def billing_webhook(request: Request, gateway: GatewayDep, db: Session = D
     def process() -> None:
         try:
             handle_event(db, gateway, event, now=now)
+            db.commit()
+        except BillingRejected:
+            # Refus définitif (4xx) : le renvoyer pendant des jours ne changerait rien. On le note et on accuse réception.
+            db.rollback()
+            logger.warning("Événement Stripe %s refusé définitivement par Stripe", event.id, exc_info=True)
+            db.add(StripeEvent(id=event.id, type=event.type, received_at=now))
             db.commit()
         except BillingUnavailable:
             db.rollback()

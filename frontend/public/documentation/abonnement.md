@@ -21,8 +21,8 @@ Code : `backend/app/services/billing/`, routes `backend/app/api/routes/billing.p
 
 1. **Page `/premium`** : prix lus chez Stripe (`GET /api/billing/plans`, gardés 1 heure en cache : un prix changé chez Stripe apparaît dans l'heure, ou tout de suite après un redémarrage de `api`), choix mensuel ou annuel avec l'économie de l'annuel. Deux cases obligatoires : acceptation des [CGV](/cgv ':ignore') et renonciation au droit de rétractation (accès immédiat). L'accord est enregistré dans `billing_consents` (version des CGV, date, IP tronquée) **avant** l'appel à Stripe.
 2. **Stripe Checkout** : `POST /api/billing/checkout` crée une page de paiement Stripe et renvoie son adresse. 10 passages en caisse par compte et par heure au plus.
-3. **Retour** sur `/premium/merci?session_id=…` : `POST /api/billing/sync` relit la session chez Stripe et active Premium sans attendre le webhook. Après 30 s sans activation, la page rassure : cela peut prendre quelques minutes.
-4. **Webhook** `POST /api/billing/webhook` : Stripe prévient de chaque changement. Seule la signature (`STRIPE_WEBHOOK_SECRET`) compte ; chaque événement est traité une seule fois (`stripe_events`, gardé 30 jours). L'état d'un abonnement ne s'écrit **que** par `apply_subscription()` (`services/billing/state.py`), qui envoie aussi les mails.
+3. **Retour** sur `/premium/merci?session_id=…` : `POST /api/billing/sync` relit la session chez Stripe et active Premium sans attendre le webhook. Après 30 s sans activation, la page rassure : cela peut prendre quelques minutes. La vérification est limitée à 30 par heure et par compte.
+4. **Webhook** `POST /api/billing/webhook` : Stripe prévient de chaque changement. Seule la signature (`STRIPE_WEBHOOK_SECRET`) compte ; chaque événement est traité une seule fois (`stripe_events`, gardé 30 jours). Un refus **définitif** de Stripe (erreur 4xx : abonnement inconnu, clé révoquée) est journalisé et l'événement marqué traité, pour que Stripe ne le renvoie pas pendant des jours ; une panne passagère renvoie 500 et Stripe réessaie. Un corps illisible (pas en UTF-8, pas du JSON) est refusé comme une mauvaise signature (400). L'état d'un abonnement ne s'écrit **que** par `apply_subscription()` (`services/billing/state.py`), qui envoie aussi les mails.
 5. **Gérer** : « Gérer mon abonnement » (Réglages, carte Abonnement) ouvre le **portail client Stripe** (`POST /api/billing/portal`) : carte, factures, changement de formule, résiliation.
 
 Tâches du worker :
@@ -31,7 +31,7 @@ Tâches du worker :
 |---|---|---|
 | `billing_sync` | 3 h 30 chaque nuit | Relit chez Stripe chaque abonnement vivant (et ceux terminés depuis moins de 7 jours) : rattrape un webhook perdu. Met aussi à jour l'adresse mail du client Stripe |
 | `renewal_notices` | 9 h chaque jour | Mail P5, 30 jours avant le renouvellement d'un abonnement **annuel** non résilié, une fois par échéance. Le prix annoncé est celui de l'abonnement de la personne, relu chez Stripe ; si Stripe ne répond pas, le mail attend le lendemain |
-| `stripe_cancellations` | Chaque minute | Résilie chez Stripe l'abonnement d'un compte supprimé, ou un abonnement payé en double, jusqu'à réussite (`stripe_cancellations`) |
+| `stripe_cancellations` | Chaque minute | Résilie chez Stripe l'abonnement d'un compte supprimé, ou un abonnement payé en double, et ferme les pages de paiement encore ouvertes d'un compte supprimé (identifiants `cs_…`), jusqu'à réussite |
 
 Mails :
 
@@ -49,7 +49,9 @@ Ce sont des mails du compte (pas des notifications N1 à N6) : ils partent toujo
 
 **Premium offert à un abonné payant** : la carte Abonnement garde le bouton « Gérer mon abonnement », pour qu'il puisse résilier.
 
-**Suppression d'un compte abonné** : `erase_account()` met l'abonnement vivant en file (`stripe_cancellations`) ; le worker le résilie immédiatement chez Stripe, sans remboursement (CGV, article 5).
+**Suppression d'un compte abonné** : `erase_account()` met l'abonnement vivant en file (`stripe_cancellations`) ; le worker le résilie immédiatement chez Stripe, sans remboursement (CGV, article 5). Les pages de paiement ouvertes depuis moins de 24 h sont aussi mises en file et fermées, pour qu'un paiement terminé après la suppression ne prélève rien.
+
+**Abonnement suspendu** (`unpaid` ou `paused` chez Stripe) : un nouveau passage en caisse est refusé (`409 subscription_suspended`) ; l'abonné règle le paiement depuis le portail. Un abonnement créé en même temps par `/sync` et par le webhook ne donne qu'une seule ligne.
 
 ## Mise en place
 
@@ -90,7 +92,7 @@ stripe listen --forward-to localhost:8095/api/billing/webhook
 
 ## Dépannage
 
-- **État de la configuration** (onglet Admin) : « Paiement (Stripe) », le mode, et l'heure du **dernier webhook reçu**. Aucune clé n'est jamais affichée. Pas de webhook depuis longtemps alors que des abonnés paient : vérifier l'adresse et le secret du webhook chez Stripe (Développeurs > Webhooks montre les envois en échec).
+- **État de la configuration** (onglet Admin) : « Paiement (Stripe) », le mode, et l'heure du **dernier webhook reçu**. Le nombre de **résiliations en attente** (`stripe_cancellations`) s'affiche aussi : s'il reste au-dessus de zéro, Stripe refuse ou ne répond pas (voir `last_error` dans la table). Aucune clé n'est jamais affichée. Pas de webhook depuis longtemps alors que des abonnés paient : vérifier l'adresse et le secret du webhook chez Stripe (Développeurs > Webhooks montre les envois en échec).
 - Journaux : `docker compose logs worker | grep -i stripe` et `docker compose logs api | grep -i stripe`.
 - Un abonnement mal à jour se corrige seul à la synchronisation de 3 h 30.
 - **Offrir Premium** sans paiement : onglet Admin, interrupteur **Premium offert** sur la ligne du membre.

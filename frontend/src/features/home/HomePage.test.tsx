@@ -53,3 +53,35 @@ test("membre avec le PEA : le top 10 le dit", async () => {
   renderWithProviders(<HomePage />);
   expect(await screen.findByText(/parmi les titres compatibles avec vos enveloppes \(PEA\)/)).toBeInTheDocument();
 });
+
+test("après connexion, le top 10 est relu pour ce compte", async () => {
+  // Le top suit les enveloppes du membre : la liste du visiteur ne doit pas rester affichée.
+  const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
+  const { MemoryRouter } = await import("react-router");
+  const { render, act } = await import("@testing-library/react");
+  let signedIn = false;
+  mockFetch((url) => {
+    if (url === "/api/me") return signedIn ? { body: ME } : { status: 401, body: { detail: "x" } };
+    if (url === "/api/settings/envelopes") return { body: { envelopes: ["pea"] } };
+    if (url.startsWith("/api/rankings/top")) {
+      return { body: [{ ...row(signedIn ? 2 : 1, signedIn ? "TTE" : "AAPL", signedIn ? "TotalEnergies" : "Apple", 1),
+                        technical: 80, fundamental: 70, reasons: [] }] };
+    }
+    if (url.startsWith("/api/rankings/movers")) return { body: { gainers: [], losers: [] } };
+    if (url.startsWith("/api/status")) return { body: { market_open: true, markets: [], jobs: [], indices: [] } };
+    return { body: [] };
+  });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(<QueryClientProvider client={client}><MemoryRouter><HomePage /></MemoryRouter></QueryClientProvider>);
+  expect(await screen.findByRole("link", { name: /Apple/ })).toBeInTheDocument();
+  signedIn = true;
+  act(() => client.setQueryData(["me"], ME));  // ce que fait le formulaire de connexion
+  expect(await screen.findByRole("link", { name: /TotalEnergies/ })).toBeInTheDocument();
+});
+
+test("les cartes du marché disent qu'elles mêlent Europe et États-Unis", async () => {
+  api([]);
+  renderWithProviders(<HomePage />);
+  expect(await screen.findByText(/Hausses et baisses du jour/)).toBeInTheDocument();
+  expect(screen.getAllByText(/Europe et États-Unis/).length).toBeGreaterThanOrEqual(2);
+});

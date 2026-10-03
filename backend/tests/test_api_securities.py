@@ -89,3 +89,11 @@ def test_status(client, db):
 def test_search_hides_unpriced(client, db):
     make_security(db, "RAW.DE", market="Xetra", name="Raiffeisen")
     assert client.get("/api/securities", params={"q": "Raiff"}).json()["total"] == 0
+
+
+def test_search_gives_the_quote_currency(client, db):
+    ny = make_security(db, "AAPL", market="Nasdaq", name="Apple", country="US")
+    db.add(SecurityQuote(security_id=ny.id, price=250.0, previous_close=248, change_pct=0.8, volume=1, as_of=AS_OF))
+    db.flush()
+    [item] = client.get("/api/securities", params={"q": "Apple"}).json()["items"]
+    assert item["currency"] == "USD"

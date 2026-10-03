@@ -12,6 +12,10 @@ class BillingUnavailable(Exception):
     """Stripe injoignable ou en erreur : rien n'est enregistré, l'utilisateur est invité à réessayer."""
 
 
+class BillingRejected(BillingUnavailable):
+    """Refus définitif de Stripe (objet inconnu, clé révoquée…) : réessayer ne changera rien."""
+
+
 class InvalidSignature(Exception):
     """Webhook sans signature Stripe valide."""
 
@@ -115,6 +119,8 @@ class BillingGateway(Protocol):
     def portal(self, customer_id: str, return_url: str) -> str: ...
 
     def cancel_now(self, subscription_id: str) -> None: ...
+
+    def expire_checkout(self, session_id: str) -> None: ...
 
     def update_customer_email(self, customer_id: str, email: str) -> None: ...
 

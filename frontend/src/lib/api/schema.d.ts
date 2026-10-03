@@ -1433,6 +1433,11 @@ export interface components {
             stripe_mode?: string | null;
             /** Stripe Last Webhook At */
             stripe_last_webhook_at?: string | null;
+            /**
+             * Stripe Pending Cancellations
+             * @default 0
+             */
+            stripe_pending_cancellations: number;
         };
         /** ConversationDetail */
         ConversationDetail: {
@@ -2370,6 +2375,8 @@ export interface components {
             change_pct: number | null;
             /** As Of */
             as_of: string | null;
+            /** Currency */
+            currency: string;
         };
         /** SecurityList */
         SecurityList: {

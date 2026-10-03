@@ -5,6 +5,7 @@ Les mails partent quand l'accès ou la résiliation change ; `dedupe_key` empêc
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -57,8 +58,10 @@ def apply_subscription(db: Session, user: User, sub: StripeSubscription, *, now:
     had_access = subscription_gives_access(row)
     was_canceling = same and row.cancel_at_period_end
     if row is None:
-        row = Subscription(user_id=user.id, stripe_customer_id=sub.customer_id, status=sub.status)
-        db.add(row)
+        # /sync et le webhook peuvent créer la ligne en même temps : la seconde insertion ne fait rien, et on relit.
+        db.execute(pg_insert(Subscription).values(user_id=user.id, stripe_customer_id=sub.customer_id, status=sub.status)
+                   .on_conflict_do_nothing(index_elements=["user_id"]))
+        row = db.get(Subscription, user.id, populate_existing=True)
     row.stripe_customer_id, row.stripe_subscription_id, row.status = sub.customer_id, sub.id, sub.status
     row.interval, row.current_period_end = sub.interval, sub.current_period_end
     row.cancel_at_period_end, row.updated_at = sub.cancel_at_period_end, now

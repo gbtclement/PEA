@@ -62,11 +62,14 @@ def rate_to_eur(currency: str | None) -> float | None:
     return _current().get((currency or "EUR").upper())
 
 
-def to_eur(value: float | None, currency: str | None) -> float | None:
+def to_eur(value: float | None, currency: str | None, *, strict: bool = False) -> float | None:
+    """Montant en euros. Devise inconnue : comptée 1 pour 1, ou None avec `strict` (quand une erreur fausserait une règle)."""
     if value is None:
         return None
     rate = rate_to_eur(currency)
-    return value * (rate if rate is not None else 1.0)
+    if rate is None:
+        return None if strict else value
+    return value * rate
 
 
 def currency_for_market(market: str) -> str:

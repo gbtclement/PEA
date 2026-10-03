@@ -15,7 +15,7 @@ Votre top 10 (selon vos enveloppes) :
 {% for item in left %}
 - Sortie : {{ item.name }}
 {% endfor %}
-{% else %}
+{% elif top_compared %}
 Le top 10 n'a pas changé cette semaine.
 {% endif %}
 

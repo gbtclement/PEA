@@ -17,3 +17,10 @@ export function useMe() {
   });
   return { me: data, isPending };
 }
+
+/** Clé de cache propre au compte (« visiteur » sans compte) : une liste qui dépend des enveloppes est relue à la connexion.
+ *  `undefined` tant que le compte n'est pas connu : la requête attend (`enabled`). */
+export function useAccountKey(): string | undefined {
+  const { me } = useMe();
+  return me === undefined ? undefined : (me?.id ?? "visiteur");
+}

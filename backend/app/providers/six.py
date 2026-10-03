@@ -8,6 +8,7 @@ SHARES_URL = "https://www.six-group.com/sheldon/equity_issuers/v1/equity_issuers
 ETFS_URL = ("https://www.six-group.com/fqs/ref.csv?select=ShortName,ValorSymbol,ISIN,TradingBaseCurrency,SecTypeDesc"
             "&where=PortalSegment=FU&orderby=ShortName&page=1&pagesize=99999")
 MARKET = "SIX Swiss Exchange"
+MIN_SHARES, MIN_ETFS = 100, 500  # environ 240 émetteurs et 2 300 ETF en octobre 2026
 
 
 def _rows(text: str, first_column: str) -> list[dict[str, str]]:
@@ -37,4 +38,8 @@ class SixListingProvider(SourceListing):
     min_rows = 500
 
     def fetch_live(self) -> list[ListedSecurity]:
-        return parse_six_shares(self._get(SHARES_URL)) + parse_six_etfs(self._get(ETFS_URL))
+        shares, etfs = parse_six_shares(self._get(SHARES_URL)), parse_six_etfs(self._get(ETFS_URL))
+        # Chaque fichier est contrôlé : une liste d'actions vide désactiverait Nestlé, Novartis, Roche… pour la journée.
+        if len(shares) < MIN_SHARES or len(etfs) < MIN_ETFS:
+            raise ValueError(f"Liste SIX incomplète ({len(shares)} actions, {len(etfs)} ETF)")
+        return shares + etfs

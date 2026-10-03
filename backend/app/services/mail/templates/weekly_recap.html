@@ -14,7 +14,7 @@
   <li>Sortie : <a href="{{ base_url }}/titres/{{ item.security_id }}" style="color:#4f46e5">{{ item.name }}</a></li>
 {% endfor %}
 </ul>
-{% else %}
+{% elif top_compared %}
 <p>Le top 10 n'a pas changé cette semaine.</p>
 {% endif %}
 {% if forecasts_checked %}

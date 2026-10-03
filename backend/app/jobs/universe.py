@@ -1,10 +1,13 @@
 import logging
 
+from sqlalchemy import select
+
 from app.jobs.context import JobContext
+from app.models import Security
 from app.providers.base import ListedSecurity
 from app.repositories.securities import SecurityUpsert, deactivate_missing, upsert_securities
 from app.seeds.loader import load_all_seeds
-from app.services.envelopes.rules import country_from_isin
+from app.services.envelopes.rules import EU_EEA_COUNTRIES, country_from_isin
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +21,9 @@ HOME_COUNTRIES: dict[str, frozenset[str]] = {
     "xetra": frozenset({"DE"}),
     "us": frozenset({"US"}),
 }
+
+# Pays européens : une action cotée hors de chez elle n'y est gardée que si elle est européenne (Strabag à Francfort).
+EUROPE = EU_EEA_COUNTRIES | {"CH", "GB", "LI"}
 
 
 def merge_listings(batches: dict[str, list[ListedSecurity]]) -> list[tuple[str, ListedSecurity]]:
@@ -34,6 +40,8 @@ def merge_listings(batches: dict[str, list[ListedSecurity]]) -> list[tuple[str, 
             secondary = source != "euronext" and item.kind == "stock" and country not in home
             if secondary and ((country == "US" and "us" in batches) or item.isin in listed_at_home):
                 continue  # cotation secondaire (Apple, SAP à Zurich) : la place d'origine la suit déjà
+            if secondary and "us" in batches and country is not None and country not in EUROPE:
+                continue  # société non européenne (Shopify, Toyota) : sa cotation américaine suffit, sans ISIN pour le prouver
             candidates.append((country not in home, rank, source, item))
     candidates.sort(key=lambda c: (c[0], c[1]))
     seen_isins: set[str] = set()
@@ -81,6 +89,11 @@ def refresh_universe(ctx: JobContext) -> int:
         for s in load_all_seeds() if s.yahoo_ticker not in listed_tickers  # une source prime sur la saisie manuelle
     ]
     with ctx.session_factory() as session:
+        if failed:
+            # Les ISIN d'une source en panne restent à elle : une autre place ne reprend pas ses lignes (favoris, ordres).
+            kept = set(session.scalars(select(Security.isin).where(
+                Security.active.is_(True), Security.source.in_(failed), Security.isin.is_not(None))))
+            items = [item for item in items if not item.isin or item.isin not in kept]
         count = upsert_securities(session, items)
         deactivate_missing(session, {item.yahoo_ticker for item in items}, sources=set(batches) | {"seed"})
         session.commit()

@@ -47,6 +47,11 @@ export function ConfigStatusCard() {
           <p className="text-xs text-muted-foreground">
             Stripe en mode {status.data.stripe_mode === "live" ? "réel" : "test"} · dernier webhook reçu :{" "}
             {status.data.stripe_last_webhook_at ? new Date(status.data.stripe_last_webhook_at).toLocaleString("fr-FR", { timeZone: "Europe/Paris" }) : "aucun"}
+            {status.data.stripe_pending_cancellations > 0 && (
+              <span className="text-amber-700">
+                {" "}· {status.data.stripe_pending_cancellations} résiliation{status.data.stripe_pending_cancellations > 1 ? "s" : ""} en attente chez Stripe
+              </span>
+            )}
           </p>
         )}
         <div className="flex items-center gap-3">

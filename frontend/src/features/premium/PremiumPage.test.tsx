@@ -75,3 +75,13 @@ test("Stripe pas configuré : l'abonnement arrive bientôt", async () => {
   expect(await screen.findByText("L'abonnement arrive bientôt.")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "S'abonner" })).not.toBeInTheDocument();
 });
+
+test("le bouton reste bloqué pendant la redirection vers Stripe", async () => {
+  renderPage({ body: ME });
+  await userEvent.click(await screen.findByRole("checkbox", { name: /CGV/ }));
+  await userEvent.click(screen.getByRole("checkbox", { name: /droit de rétractation/ }));
+  await userEvent.click(screen.getByRole("button", { name: "S'abonner" }));
+  await waitFor(() => expect(redirectTo).toHaveBeenCalled());
+  // La page Stripe met un instant à s'ouvrir : un second clic ouvrirait un second paiement.
+  expect(screen.getByRole("button", { name: /Redirection vers le paiement/ })).toBeDisabled();
+});

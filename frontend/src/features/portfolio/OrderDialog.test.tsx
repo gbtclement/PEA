@@ -99,3 +99,11 @@ test("vider des frais saisis à la main revient à l'estimation automatique", as
   await waitFor(() => expect(fee).toHaveValue("1,92"));
   expect(screen.getByText(/frais estimés automatiquement/)).toBeInTheDocument();
 });
+
+test("titre en dollars : le prix se saisit en euros, la devise du titre est rappelée", async () => {
+  mockFetch(() => ({ body: { amount: 0, fee: 0, rate: 0 } }));
+  renderWithProviders(<OrderDialog open onOpenChange={() => {}}
+                                   security={{ id: 9, name: "Apple", symbol: "AAPL", currency: "USD", price: 250 }} />);
+  expect(await screen.findByLabelText("Prix unitaire payé (€)")).toHaveValue("");
+  expect(screen.getByText(/Apple cote en USD \(cours actuel : 250,00 USD\)/)).toBeInTheDocument();
+});

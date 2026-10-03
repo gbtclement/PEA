@@ -109,7 +109,7 @@ Le **worker** remplit la base tout seul, dans cet ordre :
 |---|---|
 | Liste des titres (Euronext, ETF, Francfort, Suisse, pays nordiques, États-Unis : environ 20 000) | quelques minutes |
 | Données fondamentales (PER, dividende, dette…) : un cinquième des actions par jour ouvré | environ une heure par jour ; toutes les actions en une semaine |
-| Historique de cours complet (depuis la première cotation), en arrière-plan par paquets de 100 titres | plusieurs heures (environ 6 à 8 h) |
+| Historique de cours complet (depuis la première cotation), en arrière-plan par paquets de 50 titres | plusieurs heures (environ 6 à 8 h) |
 | Scores et prévisions des titres dont l'historique est arrivé | à chaque passage, puis après le rattrapage |
 
 Pendant ce temps, l'application fonctionne mais certaines pages sont vides ou partielles : un titre sans cours n'apparaît pas dans les listes. Le **top 10 se remplit progressivement** au fil de la première semaine : une action n'y entre que si au moins 60 % de son score est calculable, et la partie technique seule n'en représente que 50 %. En bas de la barre latérale, l'état du marché indique l'heure de la dernière mise à jour.

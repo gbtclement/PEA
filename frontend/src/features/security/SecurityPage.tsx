@@ -106,7 +106,8 @@ export function SecurityPage() {
         {data.kind === "stock" && <ForecastCard securityId={data.id} />}
         <NewsCard securityId={data.id} className={data.kind === "stock" ? "xl:col-span-2" : undefined} />
       </div>
-      <OrderDialog open={ordering} onOpenChange={setOrdering} security={{ id: data.id, name: data.name, symbol: data.symbol }}
+      <OrderDialog open={ordering} onOpenChange={setOrdering}
+                   security={{ id: data.id, name: data.name, symbol: data.symbol, currency: data.currency, price: data.price }}
                    price={data.currency === "EUR" ? data.price : null} />
     </section>
   );
