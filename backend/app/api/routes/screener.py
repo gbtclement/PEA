@@ -3,6 +3,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.api.cache import public_cache
 from app.core.current_user import get_optional_user
 from app.core.db import get_db
 from app.models import User
@@ -14,7 +15,7 @@ router = APIRouter(tags=["screener"])
 SortKey = Literal["name", "price", "change_pct", "perf_1w", "perf_1m", "perf_1y", "score", "pe", "dividend_yield"]
 
 
-@router.get("/screener", response_model=ScreenerPage)
+@router.get("/screener", response_model=ScreenerPage, dependencies=[Depends(public_cache(60))])
 def get_screener(
     kind: Literal["stock", "etf"] | None = None,
     region: Literal["europe", "us"] | None = None,
@@ -43,7 +44,7 @@ def get_screener(
     return ScreenerPage(items=[ScreenerRow.build(row) for row in rows], total=total)
 
 
-@router.get("/screener/facets", response_model=ScreenerFacets)
+@router.get("/screener/facets", response_model=ScreenerFacets, dependencies=[Depends(public_cache(600))])
 def get_screener_facets(kind: Literal["stock", "etf"] | None = None, region: Literal["europe", "us"] | None = None,
                         db: Session = Depends(get_db)) -> ScreenerFacets:
     return ScreenerFacets(**screener_facets(db, kind, region))

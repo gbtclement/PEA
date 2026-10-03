@@ -14,6 +14,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.api.cache import cache_control
 from app.core.brand import APP_NAME
 from app.core.config import Settings, get_settings
 from app.core.current_user import get_optional_user
@@ -31,6 +32,7 @@ PRIVATE_API_PATHS = ["/api/portfolio", "/api/orders", "/api/assistant/", "/api/s
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 DbDep = Annotated[Session, Depends(get_db)]
+SEO_FILES_MAX_AGE = 3600  # une heure : les robots relisent ces fichiers souvent
 
 
 def _url(settings: Settings, path: str) -> str:
@@ -42,7 +44,7 @@ def _public_securities():
 
 
 @router.get("/robots.txt")
-def robots(settings: SettingsDep) -> Response:
+def robots(request: Request, settings: SettingsDep) -> Response:
     lines = ["User-agent: *"]
     if not settings.seo_indexing:
         lines.append("Disallow: /")
@@ -52,20 +54,20 @@ def robots(settings: SettingsDep) -> Response:
         lines += [f"Disallow: {path}" for path in PRIVATE_PATHS]
         lines += [f"Disallow: {path}" for path in PRIVATE_API_PATHS]
         lines += ["", f"Sitemap: {_url(settings, '/sitemap.xml')}"]
-    return Response("\n".join(lines) + "\n", media_type="text/plain")
+    return Response("\n".join(lines) + "\n", media_type="text/plain", headers=cache_control(request, SEO_FILES_MAX_AGE))
 
 
 @router.get("/sitemap.xml")
-def sitemap(settings: SettingsDep, db: DbDep) -> Response:
+def sitemap(request: Request, settings: SettingsDep, db: DbDep) -> Response:
     ids = db.scalars(select(Security.id).where(*_public_securities()).order_by(Security.id))
     paths = PUBLIC_PATHS + [f"/titres/{security_id}" for security_id in ids]
     urls = "".join(f"<url><loc>{escape(_url(settings, path))}</loc></url>" for path in paths)
     body = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>\n'
-    return Response(body, media_type="application/xml")
+    return Response(body, media_type="application/xml", headers=cache_control(request, SEO_FILES_MAX_AGE))
 
 
 @router.get("/llms.txt")
-def llms(settings: SettingsDep, db: DbDep) -> Response:
+def llms(request: Request, settings: SettingsDep, db: DbDep) -> Response:
     counts = dict(db.execute(select(Security.kind, func.count()).where(*_public_securities()).group_by(Security.kind)).all())
     stocks, etfs = counts.get("stock", 0), counts.get("etf", 0)
     body = f"""# {APP_NAME}
@@ -91,7 +93,7 @@ Suivi actuel : {stocks} action{"s" if stocks > 1 else ""} et {etfs} ETF (Euronex
 
 - [sitemap.xml]({_url(settings, "/sitemap.xml")})
 """
-    return Response(body, media_type="text/markdown; charset=utf-8")
+    return Response(body, media_type="text/markdown; charset=utf-8", headers=cache_control(request, SEO_FILES_MAX_AGE))
 
 
 # --- Pages publiques en HTML enrichi (nginx y envoie /, /explorer, /etf, /titres/<id>, /premium et pages légales) ---

@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.api.cache import public_cache
 from app.core.current_user import get_optional_user
 from app.core.db import get_db
 from app.models import User
@@ -24,7 +25,7 @@ def _liquid_stocks(db: Session, user: User | None) -> list:
     ]
 
 
-@router.get("/rankings/top", response_model=list[TopItem])
+@router.get("/rankings/top", response_model=list[TopItem], dependencies=[Depends(public_cache(60))])
 def get_top(
     limit: int = Query(10, ge=1, le=50),
     db: Session = Depends(get_db),
@@ -35,7 +36,7 @@ def get_top(
     return [TopItem.build(row) for row in rows]
 
 
-@router.get("/rankings/movers", response_model=Movers)
+@router.get("/rankings/movers", response_model=Movers, dependencies=[Depends(public_cache(60))])
 def get_movers(
     limit: int = Query(5, ge=1, le=20),
     db: Session = Depends(get_db),
@@ -48,7 +49,7 @@ def get_movers(
     )
 
 
-@router.get("/market/heatmap", response_model=list[HeatmapItem])
+@router.get("/market/heatmap", response_model=list[HeatmapItem], dependencies=[Depends(public_cache(120))])
 def get_heatmap(db: Session = Depends(get_db), user: User | None = Depends(get_optional_user)) -> list[HeatmapItem]:
     items = []
     for security, quote, _score, fundamentals, _fav in _liquid_stocks(db, user):

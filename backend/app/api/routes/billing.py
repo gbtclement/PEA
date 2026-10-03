@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
+from app.api.cache import public_cache
 from app.api.deps import PLANS_CACHE, get_billing_gateway
 from app.api.routes.auth import client_ip, fail
 from app.core.config import get_settings
@@ -52,7 +53,7 @@ def _base_url() -> str:
     return get_settings().public_base_url.rstrip("/")
 
 
-@router.get("/plans", response_model=PlansOut)
+@router.get("/plans", response_model=PlansOut, dependencies=[Depends(public_cache(300))])
 def billing_plans(gateway: GatewayDep) -> PlansOut:
     if gateway is None:
         return PlansOut(configured=False, plans=[], yearly_saving_pct=None)
