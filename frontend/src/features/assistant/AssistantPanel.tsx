@@ -23,7 +23,7 @@ export function AssistantPanelProvider({ children }: { children: ReactNode }) {
     <PanelContext.Provider value={{ open }}>
       {children}
       <Sheet open={isOpen} onOpenChange={setOpen}>
-        <SheetContent side="right" className="flex w-[520px] flex-col gap-3 sm:max-w-[520px]">
+        <SheetContent side="right" className="flex w-full flex-col gap-3 sm:w-[520px] sm:max-w-[520px]">
           <SheetHeader>
             <SheetTitle>Assistant IA — {security?.name}</SheetTitle>
             <SheetDescription>

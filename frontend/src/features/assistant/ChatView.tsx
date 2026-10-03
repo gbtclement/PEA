@@ -42,7 +42,7 @@ export function ChatView({ conversationId, securityId, securityName, onConversat
   const empty = messages.length === 0 && !chat.pending;
   const suggestions = securityId ? SECURITY_SUGGESTIONS : GENERAL_SUGGESTIONS;
   return (
-    <div className={cn("flex min-h-0 flex-1 flex-col gap-4", compact ? "h-full" : "h-[calc(100vh-13rem)]")}>
+    <div className={cn("flex min-h-0 flex-1 flex-col gap-4", compact ? "h-full" : "h-[calc(100dvh-14rem)] md:h-[calc(100vh-13rem)]")}>
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         {empty ? (
           <div className="space-y-3 py-6">
