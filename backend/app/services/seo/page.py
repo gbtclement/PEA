@@ -75,11 +75,43 @@ def head_tags(page: PageContent, base_url: str) -> str:
     return "\n    ".join(tags)
 
 
-def render_page(template: str, page: PageContent, base_url: str) -> str:
+def route_module(path: str) -> str:
+    """Fichier source de la page chargée à la demande par le routeur (frontend : app/router.tsx)."""
+    if path.startswith("/titres/"):
+        return "src/features/security/SecurityPage.tsx"
+    if path in LISTS:
+        return "src/features/screener/ScreenerPage.tsx"
+    if path == "/premium":
+        return "src/features/premium/PremiumPage.tsx"
+    if path in STATIC_PAGES:
+        return "src/features/legal/LegalPage.tsx"
+    return "src/features/home/HomePage.tsx"
+
+
+def preload_tags(manifest: dict | None, path: str) -> str:
+    """Préchargement du code de la page (manifeste de Vite) : il part avec celui de l'application, sans attendre
+    que React le demande. Les morceaux déjà chargés par index.html sont omis."""
+    if not manifest or route_module(path) not in manifest:
+        return ""
+    loaded = {"index.html", *manifest.get("index.html", {}).get("imports", [])}
+    files: list[str] = []
+    pending, seen = [route_module(path)], set(loaded)
+    while pending:
+        key = pending.pop(0)
+        if key in seen or key not in manifest:
+            continue
+        seen.add(key)
+        files.append(manifest[key]["file"])
+        pending += manifest[key].get("imports", [])
+    return "".join(f'\n    <link rel="modulepreload" href="/{escape(file)}" />' for file in files)
+
+
+def render_page(template: str, page: PageContent, base_url: str, manifest: dict | None = None) -> str:
     """Remplit le gabarit : en-tête (titre et description par défaut retirés), résumé dans #root, données embarquées."""
     html = _drop_tag(template, "<title>", "</title>")
     html = _drop_tag(html, '<meta name="description"', ">")
-    html = html.replace("</head>", f"  {head_tags(page, base_url)}\n  </head>", 1)
+    head = head_tags(page, base_url) + preload_tags(manifest, page.path)
+    html = html.replace("</head>", f"  {head}\n  </head>", 1)
     data = f'<script id="cotalyx-data" type="application/json">{json_for_script(page.data)}</script>'
     return html.replace('<div id="root"></div>', f'<div id="root">{page.summary_html}</div>\n    {data}', 1)
 

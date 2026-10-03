@@ -3,6 +3,7 @@
 Tant que `SEO_INDEXING` est faux (local ou privé), robots.txt interdit tout. En ligne, seules les pages
 publiques sont autorisées ; les pages personnelles (portefeuille, assistant, réglages) ne le sont jamais.
 """
+import json
 import logging
 import time
 from typing import Annotated
@@ -157,6 +158,27 @@ def _load_template(request: Request, settings: Settings) -> str:
     return loader() if loader else get_spa_template(settings)
 
 
+def get_spa_manifest(settings: Settings = Depends(get_settings)) -> dict:
+    """Manifeste de Vite (fichier de chaque page et ses dépendances), lu dans le conteneur web (gardé une minute)."""
+    cached = _TEMPLATE_CACHE.get(settings.spa_manifest_url)
+    if cached and time.monotonic() - cached[0] < TEMPLATE_TTL_SECONDS:
+        return json.loads(cached[1])
+    response = httpx.get(settings.spa_manifest_url, timeout=2)
+    response.raise_for_status()
+    _TEMPLATE_CACHE[settings.spa_manifest_url] = (time.monotonic(), response.text)
+    return response.json()
+
+
+def _load_manifest(request: Request, settings: Settings) -> dict | None:
+    # Sans manifeste, la page reste complète : seul le préchargement manque.
+    loader = request.app.dependency_overrides.get(get_spa_manifest)
+    try:
+        return loader() if loader else get_spa_manifest(settings)
+    except Exception:
+        logger.warning("Manifeste Vite indisponible", exc_info=True)
+        return None
+
+
 @router.get("/page", response_class=HTMLResponse, include_in_schema=False)
 def page(request: Request, settings: SettingsDep, db: DbDep, path: str = Query(..., max_length=200),
          user: User | None = Depends(get_optional_user)) -> HTMLResponse:
@@ -173,5 +195,5 @@ def page(request: Request, settings: SettingsDep, db: DbDep, path: str = Query(.
         logger.warning("Gabarit index.html indisponible", exc_info=True)
         raise HTTPException(status_code=503, detail="Gabarit indisponible")
     # Contenu propre au compte (favoris, enveloppes) : jamais mis en cache par un intermédiaire.
-    return HTMLResponse(render_page(template, content, base_url), status_code=content.status,
+    return HTMLResponse(render_page(template, content, base_url, _load_manifest(request, settings)), status_code=content.status,
                         headers={"Cache-Control": "private, no-cache"})

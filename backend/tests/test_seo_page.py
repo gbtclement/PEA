@@ -143,3 +143,37 @@ def test_signed_in_member_gets_his_own_data(client, user, db):
     entries = dict((json.dumps(key), value) for key, value in _data(html))
     assert entries[json.dumps(["me"])]["email"] == "moi@example.com"
     assert json.dumps(["top", str(user.id)]) in entries
+
+
+MANIFEST = {
+    "index.html": {"file": "assets/index-a.js", "isEntry": True, "imports": ["_react-r.js"]},
+    "_react-r.js": {"file": "assets/react-r.js"},
+    "_gauge-g.js": {"file": "assets/gauge-g.js", "imports": ["_react-r.js"]},
+    "src/features/security/SecurityPage.tsx": {
+        "file": "assets/SecurityPage-s.js", "isDynamicEntry": True, "imports": ["_react-r.js", "_gauge-g.js", "index.html"]},
+}
+
+
+def test_page_preloads_the_code_of_its_route(pages, db):
+    # Le code de la fiche part en même temps que celui de l'application, sans attendre le démarrage de React.
+    from app.api.routes.seo import get_spa_manifest
+
+    pages.app.dependency_overrides[get_spa_manifest] = lambda: MANIFEST
+    lvmh = make_security(db, "MC.PA", name="LVMH")
+    _quote(db, lvmh)
+    html = _get(pages, f"/titres/{lvmh.id}").text
+    head = html.split("</head>")[0]
+    assert '<link rel="modulepreload" href="/assets/SecurityPage-s.js" />' in head
+    assert '<link rel="modulepreload" href="/assets/gauge-g.js" />' in head
+    assert "react-r.js" not in head and "index-a.js" not in head  # déjà chargés par index.html
+
+
+def test_page_works_without_manifest(pages, db):
+    from app.api.routes.seo import get_spa_manifest
+
+    def broken():
+        raise RuntimeError("manifeste absent")
+
+    pages.app.dependency_overrides[get_spa_manifest] = broken
+    response = _get(pages, "/")
+    assert response.status_code == 200 and "modulepreload" not in response.text

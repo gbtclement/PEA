@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "check:bundle": "node scripts/check-bundle.mjs",
+    "lighthouse": "node scripts/lighthouse.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",

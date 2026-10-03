@@ -92,7 +92,9 @@ Codes d'erreur des routes de compte, en plus de `invalid_credentials`, `email_no
 | Méthode | Route | Rôle |
 |---|---|---|
 | GET | `/health` | `{"status": "ok"}`, utilisé par le healthcheck Docker |
-| GET | `/status` | État de chaque place (`markets` : `europe`, `us`, ouverte ou non ; `market_open` = Europe), dernière réussite ou erreur de chaque tâche, valeur des indices |
+| GET | `/stat| GET | `/screener?kind=stock\|etf&region=europe\|us&q=&sector=&country=&market=&envelope=&min_score=&min_price=&max_price=&liquid=&fav=&sort=&order=asc\|desc&limit=50&offset=0` | Une page de l'Explorer ou des ETF : `{items, total}`. Filtres, tri et pagination côté serveur (50 lignes par page, 200 au plus). La recherche `q` ignore accents et majuscules ; tri par nom « naturel », valeurs vides en dernier, puis par identifiant (pages sans doublon). `fav` est ignoré pour un visiteur. Seuls les titres qui ont un cours sont listés |
+| GET | `/screener/facets?kind=&region=` | Valeurs proposées dans les filtres (secteurs, pays, places) |
+
 
 ## Titres
 
@@ -198,5 +200,11 @@ Relayés par nginx à la racine du site :
 | Route API | Adresse publique |
 |---|---|
 | `/seo/robots.txt` | `/robots.txt` |
-| `/seo/sitemap.xml` | `/sitemap.xml` |
+| `/seo/sitemap.xml` | `/sitemap.xml` : index des fichiers ci-dessous |
+| `/seo/sitemap-{pages\|guide\|actions-N\|etf-N}.xml` | `/sitemap-….xml` : au plus 10 000 adresses par fichier, fiches avec `lastmod` |
 | `/seo/llms.txt` | `/llms.txt` |
+| `/seo/page?path=` | Pages publiques (`/`, `/explorer`, `/etf`, `/titres/<id>`, `/premium`, pages légales) : HTML complet (voir [SEO](seo.md)). Non listée dans l'OpenAPI |
+
+## Cache HTTP
+
+Les routes publiques en lecture (classements, carte du marché, Explorer et ses filtres, fiche, historique, actualités, état, offres Premium) répondent `Cache-Control: public, max-age=N` (30 s à 10 min) avec `Vary: Cookie` et une empreinte `ETag` : un navigateur qui renvoie `If-None-Match` reçoit `304` sans corps. **Avec une session**, la même route répond `private, no-store` (favoris, enveloppes du membre) : rien n'est gardé par un intermédiaire. Les routes privées ne sont jamais publiques. Code : `backend/app/api/cache.py`.

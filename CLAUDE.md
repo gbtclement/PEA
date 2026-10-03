@@ -12,9 +12,9 @@ C'est un outil d'aide à la décision, pas un conseil en investissement : garder
 ## Architecture
 
 ```
-Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml, /llms.txt) ─► api (FastAPI) ─► db (PostgreSQL 16)
-                                                                   worker (APScheduler, même image que api) ─┘
-                                                                     └─ SMTP ─► mailpit (local, :8025) ou Brevo (en ligne)
+Navigateur ─► web (nginx : SPA React, pages publiques préparées par l'API, proxy /api, /robots.txt, /sitemap*.xml, /llms.txt) ─► api (FastAPI) ─► db (PostgreSQL 16)
+                                                                                       worker (APScheduler, même image que api) ─┘
+                                                                                         └─ SMTP ─► mailpit (local, :8025) ou Brevo (en ligne)
 ```
 
 **Ports** : web **8095**, API de développement **8000**, Vite **5180**, Mailpit **8025**. Ne pas prendre 8080, 8081 ni 5173, déjà utilisés sur ce PC.
@@ -150,9 +150,12 @@ npm run e2e          # Playwright contre http://localhost:8095 : reconstruire we
   - nginx : `proxy_buffering off` et `proxy_read_timeout 600s` pour le SSE.
 - **SEO** :
   - en local, `SEO_INDEXING=false`, donc robots.txt interdit tout. En ligne, passer à `true` et renseigner `PUBLIC_BASE_URL` ;
-  - l'API publique doit rester lisible par les robots, car les pages sont rendues dans le navigateur ;
+  - l'API publique doit rester lisible par les robots, car React complète les pages à partir de l'API ;
   - le portefeuille, l'assistant, les réglages et les **prévisions** sont toujours en `noindex` (prudence AMF pour les prévisions) et réservés aux membres connectés ;
-  - pré-générer les pages publiques à la mise en ligne.
+  - **pages publiques en HTML préparé par l'API** (`GET /api/seo/page`, `services/seo/`) : en-tête, résumé lisible dans `#root`, données embarquées sous les **mêmes clés de requête** que le frontend (`seedFromPage`), préchargement du code de la page via le manifeste de Vite. Une nouvelle page publique ou un changement de clé de requête se reporte dans `services/seo/builders.py` ; un changement de titre ou de description aussi (`security_meta` ↔ `securityMeta`). Si l'API tombe, nginx sert le `index.html` statique ;
+  - routes publiques en lecture : `dependencies=[Depends(public_cache(N))]` (`api/cache.py`), `private, no-store` dès qu'il y a une session ; jamais sur une route privée ;
+  - `/sitemap.xml` est un index (`sitemap-pages`, `-actions-N`, `-etf-N`, `-guide`), titres avec un cours seulement ;
+  - Explorer et ETF paginés côté serveur (`/api/screener`, 50 lignes) ; budget JavaScript de l'accueil vérifié par `npm run check:bundle`, notes Lighthouse par `npm run lighthouse`.
 - **Comptes et mails** :
   - la migration `a7c3e9f1b2d4` (identifiants des utilisateurs en UUID) est **à sens unique** : sauvegarder la base (`pg_dump`) avant la première reconstruction qui l'applique. L'API de dev partage le volume `pgdata` et migre au démarrage ;
   - `COOKIE_SECURE=false` seulement en local (HTTP). En ligne, `true`, sinon les sessions voyagent en clair ;

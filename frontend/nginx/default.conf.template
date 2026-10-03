@@ -78,6 +78,13 @@ server {
     include /etc/nginx/security-headers.conf;
   }
 
+  # Manifeste de Vite : l'API y lit le code de chaque page pour le précharger.
+  location = /_spa/manifest.json {
+    alias /usr/share/nginx/html/.vite/manifest.json;
+    add_header Cache-Control "no-store" always;
+    include /etc/nginx/security-headers.conf;
+  }
+
   # Pages publiques : HTML complet préparé par l'API (référencement, premier affichage sans attendre l'API).
   # Si l'API ne répond pas, le index.html statique prend le relais (l'application fonctionne comme avant).
   location ~ ^/(explorer|etf|premium|cgu|cgv|confidentialite|mentions-legales|titres/[0-9]+)?$ {
