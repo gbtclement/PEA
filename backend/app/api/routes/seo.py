@@ -66,12 +66,12 @@ def llms(settings: SettingsDep, db: DbDep) -> Response:
 
 > Radar des actions et ETF : top 10 du moment selon un score mixte technique et fondamental, explorateur, fiches détaillées avec graphiques et simulateur « et si j'avais investi ». Outil d'aide à la décision et d'apprentissage, pas un conseil en investissement.
 
-Suivi actuel : {stocks} action{"s" if stocks > 1 else ""} et {etfs} ETF (Euronext, Xetra, Madrid…). Cours issus de Yahoo Finance, en différé.
+Suivi actuel : {stocks} action{"s" if stocks > 1 else ""} et {etfs} ETF (Euronext, Francfort, Suisse, pays nordiques, États-Unis). Cours issus de Yahoo Finance, en différé, convertis en euros au cours de change du jour quand il le faut.
 
 ## Pages
 
 - [Accueil]({_url(settings, "/")}) : top 10 du moment avec l'explication de chaque score, indices, hausses et baisses du jour, carte du marché.
-- [Explorer]({_url(settings, "/explorer")}) : toutes les actions avec score, performances (1 jour à 1 an), PER, rendement et enveloppes compatibles (PEA…), triables et filtrables.
+- [Explorer]({_url(settings, "/explorer")}) : toutes les actions avec score, performances (1 jour à 1 an), PER, rendement et enveloppes compatibles (PEA, PEA-PME, compte-titres), triables et filtrables, par région (Europe ou États-Unis).
 - [ETF]({_url(settings, "/etf")}) : ETF classés par score technique.
 - Fiches titres ({_url(settings, "/titres/")}<id>) : cours, graphique en chandeliers avec moyennes mobiles, RSI et MACD, détail du score, données fondamentales, actualités, simulateur d'achat passé frais inclus.
 
@@ -79,7 +79,7 @@ Suivi actuel : {stocks} action{"s" if stocks > 1 else ""} et {etfs} ETF (Euronex
 
 - Score sur 100 : moitié technique (tendance, force relative face au CAC 40, RSI, MACD), moitié fondamentale (valorisation, croissance, bilan, dividende). Les ETF sont notés sur la partie technique seule.
 - Le top 10 exclut les titres peu échangés ou à l'historique trop court.
-- La compatibilité avec le PEA est déduite du pays du siège (code ISIN) : à confirmer auprès de son courtier.
+- Enveloppes : le compte-titres accepte tous les titres. La compatibilité avec le PEA est déduite du pays du siège (code ISIN) pour une action ; un ETF n'est indiqué compatible que si c'est confirmé ou si son nom contient « PEA ». À confirmer auprès de son courtier.
 
 ## Plan du site
 

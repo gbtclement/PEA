@@ -78,6 +78,7 @@ def test_llms_txt_describes_site(online, db):
     assert "2 actions" in text and "1 ETF" in text
     assert "/portefeuille" not in text
     assert "PEA Radar" not in text and "éligibles au PEA" not in text
+    assert "États-Unis" in text and "compte-titres" in text and "Euronext, Xetra, Madrid" not in text
 
 
 def test_premium_and_sales_terms_are_indexable(online):

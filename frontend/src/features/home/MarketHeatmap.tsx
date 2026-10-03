@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
+import { useAccountKey } from "@/features/auth/useMe";
 import { EChart } from "@/components/charts/EChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiGet, type HeatmapItem } from "@/lib/api/client";
@@ -8,7 +9,9 @@ import { buildHeatmapOption } from "./heatmapOption";
 
 export function MarketHeatmap() {
   const navigate = useNavigate();
-  const { data } = useQuery({ queryKey: ["heatmap"], queryFn: () => apiGet<HeatmapItem[]>("/api/market/heatmap"), refetchInterval: 120_000 });
+  const account = useAccountKey();
+  const { data } = useQuery({ queryKey: ["heatmap", account], enabled: account !== undefined,
+                              queryFn: () => apiGet<HeatmapItem[]>("/api/market/heatmap"), refetchInterval: 120_000 });
   const option = useMemo(() => buildHeatmapOption(data ?? []), [data]);
   const onItemClick = useCallback((item: unknown) => {
     const id = (item as { id?: number } | undefined)?.id;

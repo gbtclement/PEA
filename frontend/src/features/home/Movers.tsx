@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAccountKey } from "@/features/auth/useMe";
 import { apiGet, type Movers as MoversData, type ScreenerRow } from "@/lib/api/client";
 import { formatPct } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,9 @@ function MoverList({ title, rows }: { title: string; rows: ScreenerRow[] }) {
 }
 
 export function Movers() {
-  const { data } = useQuery({ queryKey: ["movers"], queryFn: () => apiGet<MoversData>("/api/rankings/movers", { limit: 5 }), refetchInterval: 60_000 });
+  const account = useAccountKey();
+  const { data } = useQuery({ queryKey: ["movers", account], enabled: account !== undefined,
+                              queryFn: () => apiGet<MoversData>("/api/rankings/movers", { limit: 5 }), refetchInterval: 60_000 });
   return (
     <Card>
       <CardHeader><CardTitle className="text-base">🔥 Hausses et baisses du jour</CardTitle></CardHeader>

@@ -67,10 +67,12 @@ def send_weekly_recaps(db: Session, now: datetime) -> int:
     for user, _ in recipients(db, "weekly_recap"):
         envelopes = user_envelopes(db, user.id)  # entrées et sorties du top 10 de ce membre
         top_now, top_before = user_top_ids(db, after, envelopes), user_top_ids(db, before, envelopes)
-        if top_now is None or top_before is None:  # photo antérieure aux enveloppes : entrées et sorties inconnues
-            entered, left = [], []
-        else:
+        # Une seule photo (premier récap) ou photo antérieure aux enveloppes : rien à comparer, on ne dit rien du top.
+        compared = start is not None and start != latest and top_now is not None and top_before is not None
+        if compared:
             entered, left = _names(db, top_now - top_before), _names(db, top_before - top_now)
+        else:
+            entered, left = [], []
         valued = value_portfolio(db, user.id, today)
         week_change = 0.0
         for v in valued.positions:
@@ -81,7 +83,8 @@ def send_weekly_recaps(db: Session, now: datetime) -> int:
         if notify(db, user, "weekly_recap",
                   {"week_end": today, "has_portfolio": bool(valued.positions), "total_value": valued.total,
                    "week_change": round(week_change, 2), "week_change_pct": round(week_change / base * 100, 2) if base else None,
-                   "entered": entered, "left": left, "forecasts_checked": len(checked), "forecasts_right": right},
+                   "entered": entered, "left": left, "top_compared": compared,
+                   "forecasts_checked": len(checked), "forecasts_right": right},
                   dedupe_key=f"weekly_recap:{user.id}:{today:%G-W%V}") is not None:
             sent += 1
     return sent

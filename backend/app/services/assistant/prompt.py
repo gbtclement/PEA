@@ -1,7 +1,7 @@
 from datetime import date
 
 from app.models import Security
-from app.services.envelopes.rules import ENVELOPES, filtering_envelopes
+from app.services.envelopes.rules import CTO, ENVELOPES, filtering_envelopes
 
 BASE = """Tu es l'assistant de Cotalyx, une application qui aide des investisseurs particuliers, souvent débutants, à comprendre les actions et les ETF, à choisir des titres et à suivre leur portefeuille.
 
@@ -23,10 +23,15 @@ TOOLS_RULE = """
 
 
 def _envelopes_rule(envelopes: list[str]) -> str:
+    names = ", ".join(ENVELOPES[code] for code in envelopes if code in ENVELOPES)
     if not filtering_envelopes(envelopes):
+        if CTO in envelopes and set(envelopes) - {CTO}:
+            # PEA (ou PEA-PME) et compte-titres : rien n'est filtré, mais le PEA reste une de ses enveloppes.
+            return (f"\n- Enveloppes : l'utilisateur investit via : {names}. Le compte-titres accepte tous les titres : "
+                    "le top 10 que tu reçois n'est pas filtré. Quand tu proposes un titre, précise s'il est éligible "
+                    "au PEA ou au PEA-PME (éligibilité déduite automatiquement, à confirmer auprès de son courtier).")
         return ("\n- Enveloppes : l'utilisateur n'a pas restreint ses enveloppes ; ne suppose pas qu'il investit via un PEA. "
                 "Si l'enveloppe compte pour la réponse, demande-la ou présente les cas (PEA, PEA-PME, compte-titres).")
-    names = ", ".join(ENVELOPES[code] for code in envelopes)
     return (f"\n- Enveloppes : l'utilisateur investit via : {names}. Le top 10 que tu reçois est déjà filtré sur ces enveloppes. "
             "L'éligibilité d'un titre est déduite automatiquement : invite-le à la confirmer auprès de son courtier.")
 

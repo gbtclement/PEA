@@ -94,3 +94,15 @@ def test_etf_eligibility_needs_confirmation_or_pea_in_name():
     assert pea_status(SecurityFacts("etf", None, None, name="AM ASIP EXJ PEA")) == (ELIGIBLE, "auto")
     assert pea_status(SecurityFacts("etf", "IE", None, name="iShares Core MSCI World")) == (TO_CHECK, "auto")
     assert pea_status(SecurityFacts("etf", None, None, name="Speaker Corp")) == (TO_CHECK, "auto")  # « PEA » doit être un mot
+
+
+def test_unknown_financial_currency_leaves_pea_pme_to_check():
+    # Chiffre d'affaires en devise inconnue : le compter en euros pourrait classer PEA-PME un géant (ou l'inverse).
+    from app.models import Security, SecurityFundamentals
+    from app.repositories.envelopes import facts_for
+
+    security = Security(kind="stock", country="FR", industry=None, name="X", yahoo_ticker="X.PA")
+    fundamentals = SecurityFundamentals(employees=100, revenue=5e9, revenue_currency="XYZ", market_cap=1e8, currency="EUR")
+    facts = facts_for(security, fundamentals)
+    assert facts.revenue_eur is None
+    assert pea_pme_status(ELIGIBLE, facts) == TO_CHECK

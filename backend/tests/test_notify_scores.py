@@ -138,3 +138,14 @@ def test_weekly_recap_without_pool_before_lists_no_entries(db, user):
     send_weekly_recaps(db, datetime(2026, 10, 3, 7, 0, tzinfo=UTC))
     [mail] = _mails(db, "weekly_recap")
     assert "LVMH" not in mail.text
+
+
+def test_first_weekly_recap_does_not_claim_an_unchanged_top(db, user):
+    # Une seule photo des scores : rien à comparer, on ne dit pas « le top 10 n'a pas changé ».
+    save_prefs(db, user.id, {"weekly_recap": True})
+    a = make_security(db, "A.PA", name="Alpha")
+    make_score(db, a, total=80.0)
+    take_score_snapshot(db, date(2026, 10, 2))
+    assert send_weekly_recaps(db, datetime(2026, 10, 3, 7, 0, tzinfo=UTC)) == 1
+    [mail] = _mails(db, "weekly_recap")
+    assert "n'a pas changé" not in mail.text and "n'a pas changé" not in mail.html
