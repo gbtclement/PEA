@@ -36,7 +36,7 @@ Les enveloppes sont recalculées :
 - à chaque passage de la tâche `universe` (liste des titres) ;
 - à chaque passage des fondamentaux (7 h 30 en semaine).
 
-L'effectif (`fullTimeEmployees`) et le chiffre d'affaires (`totalRevenue`, en devise `financialCurrency`) viennent de Yahoo. Une réponse qui ne les donne pas **n'efface pas** les valeurs connues. Le chiffre d'affaires et la capitalisation sont convertis en euros avant la comparaison aux seuils.
+L'effectif (`fullTimeEmployees`) et le chiffre d'affaires (`totalRevenue`, en devise `financialCurrency`) viennent de Yahoo. Une réponse qui ne les donne pas **n'efface pas** les valeurs connues. Le chiffre d'affaires et la capitalisation sont convertis en euros avant la comparaison aux seuils. Une devise sans cours de change connu donne un montant inconnu, donc `a_verifier` (jamais compté 1 pour 1 comme des euros).
 
 ## Les corrections manuelles
 
