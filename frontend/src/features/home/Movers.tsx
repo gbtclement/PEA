@@ -29,7 +29,10 @@ export function Movers() {
                               queryFn: () => apiGet<MoversData>("/api/rankings/movers", { limit: 5 }), refetchInterval: 60_000 });
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base">🔥 Hausses et baisses du jour</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle className="text-base">🔥 Hausses et baisses du jour</CardTitle>
+        <p className="text-sm text-muted-foreground">Actions liquides, Europe et États-Unis confondus.</p>
+      </CardHeader>
       <CardContent className="space-y-5">
         <MoverList title="Plus fortes hausses" rows={data?.gainers ?? []} />
         <MoverList title="Plus fortes baisses" rows={data?.losers ?? []} />

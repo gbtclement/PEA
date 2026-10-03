@@ -12,7 +12,7 @@ Cliquez sur **+ Nouvel ordre** sur la page Portefeuille, ou sur **+ J'ai acheté
 | Sens | Achat ou vente |
 | Titre | Recherche par nom, ticker ou ISIN |
 | Quantité | Nombre d'actions |
-| Prix | Prix unitaire obtenu |
+| Prix | Prix unitaire obtenu, **en euros**. Pour un titre coté dans une autre devise (une action américaine en dollars), saisissez le prix en euros indiqué par votre courtier : l'application rappelle la devise et le cours du titre. |
 | Frais | **Calculés automatiquement** avec votre grille ; corrigez-les si votre relevé indique un autre montant |
 
 Une **vente de plus d'actions que vous n'en possédez** à cette date est refusée.

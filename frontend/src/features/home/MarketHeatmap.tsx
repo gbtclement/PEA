@@ -21,7 +21,7 @@ export function MarketHeatmap() {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Carte du marché</CardTitle>
-        <p className="text-sm text-muted-foreground">Taille = capitalisation · couleur = variation du jour. Cliquez sur une case pour ouvrir la fiche.</p>
+        <p className="text-sm text-muted-foreground">Europe et États-Unis confondus. Taille = capitalisation · couleur = variation du jour. Cliquez sur une case pour ouvrir la fiche.</p>
       </CardHeader>
       <CardContent>
         <EChart option={option} label="Carte du marché : actions colorées selon leur variation du jour" onItemClick={onItemClick} className="h-[420px] w-full" />

@@ -78,3 +78,10 @@ test("après connexion, le top 10 est relu pour ce compte", async () => {
   act(() => client.setQueryData(["me"], ME));  // ce que fait le formulaire de connexion
   expect(await screen.findByRole("link", { name: /TotalEnergies/ })).toBeInTheDocument();
 });
+
+test("les cartes du marché disent qu'elles mêlent Europe et États-Unis", async () => {
+  api([]);
+  renderWithProviders(<HomePage />);
+  expect(await screen.findByText(/Hausses et baisses du jour/)).toBeInTheDocument();
+  expect(screen.getAllByText(/Europe et États-Unis/).length).toBeGreaterThanOrEqual(2);
+});

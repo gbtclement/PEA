@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { apiGet, type SecurityList } from "@/lib/api/client";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
-export type PickedSecurity = { id: number; name: string; symbol: string };
+/** Titre choisi ; `currency` et `price` (cours actuel) servent à rappeler la devise quand elle n'est pas l'euro. */
+export type PickedSecurity = { id: number; name: string; symbol: string; currency?: string; price?: number | null };
 
 type Props = { value: PickedSecurity | null; onChange: (security: PickedSecurity | null) => void };
 
@@ -39,7 +40,7 @@ export function SecurityPicker({ value, onChange }: Props) {
           {items.map((item) => (
             <li key={item.id}>
               <button type="button" className="flex w-full items-center justify-between px-3 py-1.5 text-left hover:bg-muted"
-                      onClick={() => { onChange({ id: item.id, name: item.name, symbol: item.symbol }); setSearch(""); }}>
+                      onClick={() => { onChange({ id: item.id, name: item.name, symbol: item.symbol, currency: item.currency, price: item.price }); setSearch(""); }}>
                 <span className="truncate">{item.name}</span>
                 <span className="ml-2 shrink-0 text-xs text-muted-foreground">{item.symbol} · {item.market}</span>
               </button>

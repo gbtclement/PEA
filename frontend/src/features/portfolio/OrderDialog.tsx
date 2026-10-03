@@ -58,6 +58,7 @@ function OrderForm({ security, price, order, onDone }: Omit<Props, "open" | "onO
   const [feeTouched, setFeeTouched] = useState(Boolean(order));
   const [feeInput, setFeeInput] = useState(order ? toInput(order.fee, 2) : "");
   const [note, setNote] = useState(order?.note ?? "");
+  const foreign = Boolean(picked?.currency && picked.currency !== "EUR");  // titre coté hors euro (dollar, franc suisse…)
   const [error, setError] = useState<string | null>(null);
   const save = useSaveOrder();
 
@@ -113,11 +114,18 @@ function OrderForm({ security, price, order, onDone }: Omit<Props, "open" | "onO
         </Field>
       </div>
       <SecurityPicker value={picked} onChange={setPicked} />
+      {foreign && picked && (
+        <p className="text-xs text-muted-foreground">
+          {picked.name} cote en {picked.currency}
+          {picked.price != null && ` (cours actuel : ${formatPrice(picked.price)} ${picked.currency})`}. Saisissez le prix payé
+          en euros, tel qu'indiqué par votre courtier : le portefeuille compte en euros.
+        </p>
+      )}
       <div className="grid grid-cols-3 gap-3">
         <Field label="Quantité" htmlFor={`${id}-qty`}>
           <Input id={`${id}-qty`} inputMode="numeric" className="bg-white" value={quantity} onChange={(e) => { setQuantity(e.target.value); setFeeTouched(false); }} />
         </Field>
-        <Field label="Prix unitaire (€)" htmlFor={`${id}-price`}>
+        <Field label={foreign ? "Prix unitaire payé (€)" : "Prix unitaire (€)"} htmlFor={`${id}-price`}>
           <Input id={`${id}-price`} inputMode="decimal" className="bg-white" value={unitPrice} onChange={(e) => { setUnitPrice(e.target.value); setFeeTouched(false); }} />
         </Field>
         <Field label="Frais (€)" htmlFor={`${id}-fee`}>

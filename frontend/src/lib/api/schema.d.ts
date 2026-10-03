@@ -2375,6 +2375,8 @@ export interface components {
             change_pct: number | null;
             /** As Of */
             as_of: string | null;
+            /** Currency */
+            currency: string;
         };
         /** SecurityList */
         SecurityList: {
