@@ -54,7 +54,7 @@ export function AssistantPage() {
                 <button
                   type="button"
                   aria-label={`Supprimer la conversation ${c.title}`}
-                  className="mr-2 rounded p-1 text-muted-foreground opacity-0 hover:text-down focus:opacity-100 group-hover:opacity-100"
+                  className="mr-2 flex items-center justify-center rounded p-1 text-muted-foreground hover:text-down max-md:size-11 md:opacity-0 md:focus:opacity-100 md:group-hover:opacity-100"
                   onClick={() => {
                     if (window.confirm("Supprimer cette conversation ?")) {
                       remove.mutate(c.id, { onSuccess: () => { if (c.id === selected) select(null); } });

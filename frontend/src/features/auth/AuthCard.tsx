@@ -22,7 +22,7 @@ export function AuthCard({ title, children }: { title: string; children: ReactNo
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-background to-primary/10 text-foreground">
       <AuthBrand />
       <main className="flex flex-1 items-center justify-center px-4 py-6">
-        <div className="w-full max-w-[480px] space-y-4 rounded-2xl bg-white p-8 shadow-xl">
+        <div className="w-full max-w-[480px] space-y-4 rounded-2xl bg-white p-5 shadow-xl sm:p-8">
           <h1 className="text-2xl font-semibold">{title}</h1>
           {children}
         </div>

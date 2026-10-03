@@ -101,7 +101,7 @@ export function SignalStatsView() {
       </div>
       <Card className="overflow-hidden py-0">
         <div className="overflow-x-auto">
-          <table aria-label="Statistiques des signaux" className="w-full text-sm tabular-nums">
+          <table aria-label="Statistiques des signaux" className="w-full min-w-[560px] text-sm tabular-nums">
             <thead>
               <tr className="border-b border-border text-xs text-muted-foreground">
                 <th scope="col" className="px-3 py-2 text-left font-medium" aria-sort={ariaSort(sort, "label")}>

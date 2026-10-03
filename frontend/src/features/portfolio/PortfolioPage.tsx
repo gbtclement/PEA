@@ -33,7 +33,7 @@ function Kpi({ label, value, sub, tone = 0 }: { label: string; value: string; su
 
 function KeyFigures({ data }: { data: PortfolioOut }) {
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       <Kpi label="Valeur totale" value={`${formatPrice(data.total_value)} €`} />
       <Kpi label="Montant investi" value={`${formatPrice(data.invested)} €`} sub="frais d'achat inclus" />
       <Kpi label="Plus/moins-value" value={signed(data.gain)} sub={formatPct(data.gain_pct)} tone={data.gain} />
@@ -49,7 +49,7 @@ function Charts({ data }: { data: PortfolioOut }) {
   const evolution = useMemo(() => buildHistoryOption(history.data ?? []), [history.data]);
   return (
     <>
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="text-base">Répartition par titre</CardTitle></CardHeader>
           <CardContent><EChart option={byTitle} label="Répartition du portefeuille par titre" className="h-60 w-full" /></CardContent>
@@ -112,7 +112,7 @@ export function PortfolioPage() {
 
   return (
     <section className="space-y-6">
-      <header className="flex items-start justify-between gap-6">
+      <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Portefeuille</h1>
           <p className="mt-1 text-sm text-muted-foreground">Vos positions, vos plus-values et le suivi de vos ordres annuels.</p>
@@ -124,7 +124,7 @@ export function PortfolioPage() {
       {(portfolio.isPending || orders.isPending) && <Skeleton className="h-24 w-full" />}
       {data && hasOrders && <KeyFigures data={data} />}
 
-      <div className="grid grid-cols-[1fr_2fr] gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[1fr_2fr]">
         <OrderCounterCard />
         {orders.data && !hasOrders && <EmptyCard onAdd={openNew} />}
         {data && hasOrders && <RealizedCard value={data.realized_gain} />}

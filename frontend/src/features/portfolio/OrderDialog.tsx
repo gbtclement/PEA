@@ -101,7 +101,7 @@ function OrderForm({ security, price, order, onDone }: Omit<Props, "open" | "onO
         <DialogTitle>{order ? "Modifier l'ordre" : "Nouvel ordre"}</DialogTitle>
         <DialogDescription>Recopiez l'ordre passé chez votre courtier. Les frais sont calculés selon votre grille.</DialogDescription>
       </DialogHeader>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Date" htmlFor={`${id}-date`}>
           <Input id={`${id}-date`} type="date" max={today} className="bg-white" value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
@@ -121,7 +121,7 @@ function OrderForm({ security, price, order, onDone }: Omit<Props, "open" | "onO
           en euros, tel qu'indiqué par votre courtier : le portefeuille compte en euros.
         </p>
       )}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field label="Quantité" htmlFor={`${id}-qty`}>
           <Input id={`${id}-qty`} inputMode="numeric" className="bg-white" value={quantity} onChange={(e) => { setQuantity(e.target.value); setFeeTouched(false); }} />
         </Field>

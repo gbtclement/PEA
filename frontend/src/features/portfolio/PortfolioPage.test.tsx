@@ -1,6 +1,6 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { mockFetch, renderWithProviders } from "@/test/utils";
+import { mockFetch, renderWithProviders, setViewportWidth } from "@/test/utils";
 import { PortfolioPage } from "./PortfolioPage";
 
 vi.mock("@/components/charts/EChart", () => ({ EChart: () => <div data-testid="echart" /> }));
@@ -56,4 +56,21 @@ test("supprimer un ordre refusé affiche le message du serveur", async () => {
   await userEvent.click(await screen.findByRole("button", { name: "Supprimer l'ordre du 02/03/2026" }));
   await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/orders/3", expect.objectContaining({ method: "DELETE" })));
   expect(await screen.findByText(/vous ne détenez que 0/)).toBeInTheDocument();
+});
+
+test("sur téléphone, positions et ordres en cartes, PRU expliqué sans survol", async () => {
+  setViewportWidth(390);
+  try {
+    api(FULL, ORDERS);
+    renderWithProviders(<PortfolioPage />);
+    const positions = await screen.findByRole("list", { name: "Positions" });
+    expect(within(positions).getByText("PRU (frais inclus)")).toBeInTheDocument();
+    expect(within(positions).getByRole("link", { name: "LVMH" })).toHaveAttribute("href", "/titres/1");
+    const orders = screen.getByRole("list", { name: "Ordres" });
+    expect(within(orders).getByText(/10 × 50,00 €/)).toBeInTheDocument();
+    expect(within(orders).getByRole("button", { name: /Modifier l'ordre/ })).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  } finally {
+    setViewportWidth(1200);
+  }
 });
