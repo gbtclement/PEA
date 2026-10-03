@@ -22,7 +22,7 @@ export function FundamentalsCard({ detail }: { detail: SecurityDetail }) {
         {!f ? (
           <p className="text-sm text-muted-foreground">Données fondamentales indisponibles pour ce titre.</p>
         ) : (
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
             {rows.map(([label, value]) => (
               <div key={label} className="flex items-baseline justify-between gap-3 border-b border-border py-1">
                 <dt className="text-muted-foreground">{label}</dt><dd className="shrink-0 whitespace-nowrap font-medium tabular-nums">{value}</dd>

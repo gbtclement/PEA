@@ -42,7 +42,7 @@ export function ForecastCard({ securityId }: { securityId: number }) {
             <div className="flex flex-wrap gap-1.5">
               {data.signals.map((s) => <SignalChip key={s.key} label={s.label} bullish={s.bullish} />)}
             </div>
-            <dl className="grid grid-cols-3 gap-3">
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               {HORIZONS.map((h) => {
                 const f = data.horizons[h.key];
                 return (

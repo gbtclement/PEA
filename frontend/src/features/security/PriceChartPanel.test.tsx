@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { mockFetch, renderWithProviders } from "@/test/utils";
+import { mockFetch, renderWithProviders, setViewportWidth } from "@/test/utils";
 import { PriceChartPanel } from "./PriceChartPanel";
 
 const { chart } = vi.hoisted(() => {
@@ -161,4 +161,19 @@ test("période personnalisée sans cours : message adapté, pas « bourse fermé
   await userEvent.click(screen.getByRole("button", { name: "Appliquer" }));
   expect(await screen.findByText(/Aucun cours sur cette période/)).toBeInTheDocument();
   expect(screen.queryByText(/bourse fermée/)).not.toBeInTheDocument();
+});
+
+test("sur téléphone, les indicateurs sont dans un menu et les périodes défilent", async () => {
+  setViewportWidth(390);
+  try {
+    mockFetch(() => ({ body: BOUNDED }));
+    renderWithProviders(<PriceChartPanel securityId={5} />);
+    await waitFor(() => expect(chart.addSeries).toHaveBeenCalled());
+    expect(screen.getByRole("group", { name: "Période" })).toHaveClass("overflow-x-auto");
+    expect(screen.queryByRole("checkbox", { name: "RSI" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Indicateurs" }));
+    expect(await screen.findByRole("checkbox", { name: "RSI" })).toBeInTheDocument();
+  } finally {
+    setViewportWidth(1200);
+  }
 });

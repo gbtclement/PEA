@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { CandlestickSeries, createChart, HistogramSeries, LineSeries, type Time } from "lightweight-charts";
 import type { HistoryOut } from "@/lib/api/client";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 const UP = "#16a34a";
 const DOWN = "#dc2626";
@@ -24,6 +25,7 @@ type Props = { history: HistoryOut; showSma50: boolean; showSma200: boolean; sho
 
 export function PriceChart({ history, showSma50, showSma200, showRsi, showMacd }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const mobile = useIsMobile();
 
   useEffect(() => {
     const chart = createChart(ref.current!, {
@@ -72,6 +74,6 @@ export function PriceChart({ history, showSma50, showSma200, showRsi, showMacd }
     return () => chart.remove();
   }, [history, showSma50, showSma200, showRsi, showMacd]);
 
-  const height = 420 + (showRsi ? 110 : 0) + (showMacd ? 110 : 0);
+  const height = (mobile ? 300 : 420) + (showRsi ? 110 : 0) + (showMacd ? 110 : 0);  // téléphone : moins haut
   return <div ref={ref} role="img" aria-label="Graphique des cours en chandeliers avec volumes et indicateurs" style={{ height }} className="w-full" />;
 }
