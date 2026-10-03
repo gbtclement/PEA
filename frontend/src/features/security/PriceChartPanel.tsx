@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,21 +22,33 @@ export function PriceChartPanel({ securityId }: { securityId: number }) {
   const [draft, setDraft] = useState({ start: "", end: "" });
   const [range, setRange] = useState<{ start: string; end: string } | null>(null);
   const [toggles, setToggles] = useState({ sma50: true, sma200: true, rsi: false, macd: false });
+  const [basePeriod, setBasePeriod] = useState<Exclude<Period, "custom">>("6M");
   const custom = period === "custom";
-  const { data, isPending, isError } = useQuery({
-    queryKey: ["history", securityId, period, custom ? range : null],
-    queryFn: () => apiGet<HistoryOut>(`/api/securities/${securityId}/history`, custom ? { period, ...range } : { period }),
-    enabled: !custom || range !== null,
-    // En « Personnalisé », la période précédente reste affichée en attendant les dates (jamais celle d'un autre titre).
+  // En « Personnalisé » sans dates appliquées, la dernière période choisie reste chargée : graphique et bornes des dates.
+  const shown = custom && range === null ? basePeriod : period;
+  const { data, isPending, isError, isPlaceholderData, isFetching } = useQuery({
+    queryKey: ["history", securityId, shown, shown === "custom" ? range : null],
+    queryFn: () => apiGet<HistoryOut>(`/api/securities/${securityId}/history`,
+                                      shown === "custom" ? { period: shown, ...range } : { period: shown }),
+    // Pendant le chargement d'une autre période, l'ancienne reste affichée (jamais celle d'un autre titre).
     placeholderData: (previous, previousQuery) => (previousQuery?.queryKey[1] === securityId ? previous : undefined),
-    refetchInterval: period === "1D" ? 60_000 : false,
+    refetchInterval: shown === "1D" ? 60_000 : false,
   });
+  const loadingOther = isFetching && isPlaceholderData;  // nouvelle période en route (Max : plusieurs secondes)
   const reversed = draft.start !== "" && draft.end !== "" && draft.end < draft.start;
   const choose = (value: Period) => {
-    if (value === "custom" && !custom) setDraft({ start: data?.first_date ?? "", end: data?.last_date ?? "" });
+    // Revenir sur « Personnalisé » reprend la période appliquée ; sinon tout l'historique connu.
+    if (value === "custom" && !custom) setDraft(range ?? { start: data?.first_date ?? "", end: data?.last_date ?? "" });
+    if (value !== "custom") setBasePeriod(value);
     setPeriod(value);
   };
-  const intraday = data?.intraday ?? (period === "1D" || period === "1W");
+  // « Personnalisé » choisi avant l'arrivée des premières données : les bornes sont remplies dès qu'elles arrivent.
+  useEffect(() => {
+    if (custom && draft.start === "" && draft.end === "" && data?.first_date && data?.last_date) {
+      setDraft({ start: data.first_date, end: data.last_date });
+    }
+  }, [custom, data?.first_date, data?.last_date]); // eslint-disable-line react-hooks/exhaustive-deps
+  const intraday = data?.intraday ?? (shown === "1D" || shown === "1W");
   const toggle = (key: keyof typeof toggles, label: string) => (
     <label className="flex items-center gap-1.5 text-sm">
       <input type="checkbox" aria-label={label} disabled={intraday} checked={toggles[key] && !intraday}
@@ -85,12 +97,17 @@ export function PriceChartPanel({ securityId }: { securityId: number }) {
         ) : isError ? (
           <p role="alert" className="py-20 text-center text-sm text-down">Impossible de charger le graphique.</p>
         ) : data.bars.length === 0 ? (
-          <p className="py-20 text-center text-sm text-muted-foreground">Pas de données pour cette période (bourse fermée ou source indisponible).</p>
+          <p className="py-20 text-center text-sm text-muted-foreground">
+            {shown === "custom"
+              ? "Aucun cours sur cette période : le titre n'était peut-être pas encore coté."
+              : "Pas de données pour cette période (bourse fermée ou source indisponible)."}
+          </p>
         ) : (
           <>
             <PriceChart history={data} showSma50={toggles.sma50 && !intraday} showSma200={toggles.sma200 && !intraday}
                         showRsi={toggles.rsi && !intraday} showMacd={toggles.macd && !intraday} />
             {GROUPED[data.interval] && <p className="text-xs text-muted-foreground">{GROUPED[data.interval]}</p>}
+            {loadingOther && <p role="status" className="text-xs text-muted-foreground">Chargement de la période…</p>}
           </>
         )}
       </CardContent>
