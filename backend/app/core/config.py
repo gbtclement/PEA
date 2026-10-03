@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     timezone: str = "Europe/Paris"
 
     euronext_list_url: str = "https://live.euronext.com/en/pd_es/data/stocks/download?mics=dm_all_stock"
-    yahoo_chunk_size: int = 50
+    yahoo_chunk_size: int = 100  # 10 000 titres américains : T3 doit tenir dans ses 5 minutes
     yahoo_pause_seconds: float = 1.0
     fundamentals_pause_seconds: float = 0.5
 

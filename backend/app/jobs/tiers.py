@@ -1,10 +1,13 @@
 from datetime import UTC, datetime, timedelta
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.repositories.market_data import average_turnover, refreshable_securities
+from app.models import Security
+from app.repositories.market_data import average_turnover
 from app.repositories.orders import held_security_ids
 from app.repositories.scores import alert_security_ids, favorite_security_ids, top_security_ids
+from app.services.fx import currency_for_market, to_eur
 from app.services.market_calendar import calendar_for_market
 
 TOP_IN_T1 = 10
@@ -17,7 +20,9 @@ def tier_tickers(session: Session, tier: int, tier2_size: int, now: datetime | N
 
     Avec `now`, seuls les titres dont la place est ouverte (les indices suivent l'Europe).
     """
-    candidates = refreshable_securities(session)
+    # Colonnes utiles seulement (pas d'objets complets) : T1 relit les quelque 18 000 titres chaque minute.
+    candidates = session.execute(select(Security.id, Security.yahoo_ticker, Security.market, Security.kind,
+                                        Security.currency).where(Security.active.is_(True))).all()
     if now is not None:
         candidates = [s for s in candidates if calendar_for_market(s.market).is_open(now)]
     priority_ids = (
@@ -32,7 +37,9 @@ def tier_tickers(session: Session, tier: int, tier2_size: int, now: datetime | N
     turnover = average_turnover(session, since)
     others = sorted(
         (s for s in candidates if s.id not in tier1_ids),
-        key=lambda s: (-turnover.get(s.id, 0.0), s.yahoo_ticker),
+        # Montants en euros : 100 000 couronnes ne doivent pas passer devant 50 000 €.
+        key=lambda s: (-(to_eur(turnover.get(s.id, 0.0), s.currency or currency_for_market(s.market)) or 0.0),
+                       s.yahoo_ticker),
     )
     selected = others[:tier2_size] if tier == 2 else others[tier2_size:]
     return [s.yahoo_ticker for s in selected]

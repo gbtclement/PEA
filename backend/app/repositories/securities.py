@@ -29,6 +29,11 @@ def upsert_securities(session: Session, items: list[SecurityUpsert]) -> int:
     by_isin = {s.isin: s for s in existing if s.isin}
     for item in unique.values():
         security = by_ticker.get(item.yahoo_ticker) or (by_isin.get(item.isin) if item.isin else None)
+        holder = by_isin.get(item.isin) if item.isin else None
+        if security is not None and holder is not None and holder is not security:
+            # L'ISIN est porté par une autre ligne (ancien ticker) : il passe au ticker coté aujourd'hui.
+            holder.isin = None
+            session.flush()
         if security is None:
             security = Security(industry=None)
             session.add(security)
@@ -38,6 +43,8 @@ def upsert_securities(session: Session, items: list[SecurityUpsert]) -> int:
         security.kind = item.kind
         security.market = item.market
         security.isin = item.isin
+        if item.isin:
+            by_isin[item.isin] = security
         security.country = item.country
         security.currency = item.currency
         security.source = item.source

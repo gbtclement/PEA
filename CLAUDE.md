@@ -32,7 +32,7 @@ Navigateur ─► web (nginx : SPA React + proxy /api, /robots.txt, /sitemap.xml
   - `jobs/` : tâches planifiées du worker :
     - univers à 7 h et historique quotidien à 7 h 30, en semaine ; passage du soir à 18 h 15 (clôtures européennes, puis scores et prévisions) et à 22 h 30 (clôtures américaines) ; cours de change (`fx`, table `fx_rates`) avant chaque passage ;
     - un calendrier par place (`services/market_calendar.py` : Europe, New York) : les paliers ne rafraîchissent que les titres dont la place est ouverte ;
-    - historique complet : `history_backfill` (20 h, après l'univers et en fin de démarrage) charge les titres pas encore marqués `history_complete`, par paquets de 100, en reprenant `HEAVY_JOBS_LOCK` à chaque paquet ;
+    - historique complet : `history_backfill` (20 h, après l'univers et en fin de démarrage) charge les titres pas encore marqués `history_complete`, par paquets de 50, en reprenant `HEAVY_JOBS_LOCK` à chaque paquet ;
     - fondamentaux : un cinquième des actions par jour ouvré (chacune relue une fois par semaine) ;
     - cours par paliers T1/T2/T3 (1, 5 et 5 min), pendant la séance de chaque place seulement ;
     - score après chaque passage T2.

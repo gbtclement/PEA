@@ -155,7 +155,10 @@ def test_parse_nordic():
         ("AAK.ST", "Nasdaq Stockholm", "SEK"), ("ACRI-A.ST", "Nasdaq Stockholm", "SEK")]
 
 
-def test_nordic_provider_reads_every_market_and_category():
+def test_nordic_provider_reads_every_market_and_category(monkeypatch):
+    import app.providers.nordic as nordic_module
+
+    monkeypatch.setattr(nordic_module, "MIN_MAIN_MARKET", 1)  # réponse de test à 2 lignes
     urls = []
 
     def get(url):

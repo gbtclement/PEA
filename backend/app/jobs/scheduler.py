@@ -25,7 +25,7 @@ from app.jobs.runner import run_job
 from app.jobs.scoring import refresh_scores
 from app.jobs.universe import refresh_universe
 from app.models import DailyPrice, DataStatus, Security, SecurityFundamentals
-from app.services.market_calendar import any_market_open, last_session_close
+from app.services.market_calendar import US, any_market_open, last_session_close
 
 # Univers, historique et fondamentaux s'exécutent l'un après l'autre (charge Yahoo, conflits d'insertion).
 HEAVY_JOBS_LOCK = threading.Lock()
@@ -148,6 +148,7 @@ def bootstrap_job(ctx: JobContext) -> None:
         has_fundamentals = session.scalar(select(func.count()).select_from(SecurityFundamentals)) > 0
         universe_at = _last_success(session, "universe")
         history_at = _last_success(session, "daily_history")
+        us_history_at = _last_success(session, "daily_history_us")
         fundamentals_at = _last_success(session, "fundamentals")
         forecasts_at = _last_success(session, "forecasts")
     with HEAVY_JOBS_LOCK:
@@ -155,7 +156,10 @@ def bootstrap_job(ctx: JobContext) -> None:
             run_job(ctx, "universe", refresh_universe)
         run_job(ctx, "fx", refresh_fx)  # avant les scores : liquidité convertie au cours du jour
         if not has_prices or _older_than(history_at, last_session_close(now)):
-            run_job(ctx, "daily_history", refresh_daily_history)
+            run_job(ctx, "daily_history", refresh_daily_history)  # toutes les places
+        elif _older_than(max(filter(None, (history_at, us_history_at))), US.last_session_close(now)):
+            # Passage de 22 h 30 manqué (PC éteint) : clôtures américaines rattrapées au démarrage.
+            run_job(ctx, "daily_history_us", lambda c: refresh_daily_history(c, region="us"))
         if _older_than(forecasts_at, last_session_close(now)):
             _refresh_forecasts(ctx)
     for tier in (1, 2, 3):

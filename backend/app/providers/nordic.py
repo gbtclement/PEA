@@ -8,6 +8,7 @@ SCREENER_URL = "https://api.nasdaq.com/api/nordic/screener/shares?category={cate
 MARKETS = {"STO": (".ST", "Nasdaq Stockholm"), "HEL": (".HE", "Nasdaq Helsinki"),
            "CPH": (".CO", "Nasdaq Copenhagen"), "ICE": (".IC", "Nasdaq Iceland")}
 CATEGORIES = ("MAIN_MARKET", "FIRST_NORTH")
+MIN_MAIN_MARKET = 10  # le plus petit, Reykjavik, compte une trentaine d'actions
 
 
 def parse_nordic(text: str, market_code: str) -> list[ListedSecurity]:
@@ -32,5 +33,12 @@ class NordicListingProvider(SourceListing):
     min_rows = 300
 
     def fetch_live(self) -> list[ListedSecurity]:
-        return [item for market in MARKETS for category in CATEGORIES
-                for item in parse_nordic(self._get(SCREENER_URL.format(category=category, market=market)), market)]
+        listed = []
+        for market in MARKETS:
+            for category in CATEGORIES:
+                items = parse_nordic(self._get(SCREENER_URL.format(category=category, market=market)), market)
+                # Le marché principal de chaque place doit répondre : sinon ses titres seraient désactivés.
+                if category == "MAIN_MARKET" and len(items) < MIN_MAIN_MARKET:
+                    raise ValueError(f"Liste Nasdaq Nordic incomplète ({market} : {len(items)} actions)")
+                listed += items
+        return listed
