@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router";
-import { ME, PREMIUM_ME, mockFetch, renderWithProviders } from "@/test/utils";
+import { ME, PREMIUM_ME, mockFetch, renderWithProviders, setViewportWidth } from "@/test/utils";
 import { SecurityPage } from "./SecurityPage";
 
 vi.mock("./PriceChartPanel", () => ({ PriceChartPanel: () => <div data-testid="chart" /> }));
@@ -159,4 +159,19 @@ test("ForecastCard ne demande pas la prévision sans Premium", async () => {
   const fetchMock = renderPage(200, DETAIL, FORECAST, { body: ME });
   expect(await screen.findByText("Réservé aux membres Premium")).toBeInTheDocument();
   expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/forecast"))).toBe(false);
+});
+
+test("sur téléphone, les actions sont dans la barre du bas", async () => {
+  setViewportWidth(390);
+  try {
+    renderPage();
+    const bar = await screen.findByRole("toolbar", { name: "Actions sur ce titre" });
+    // Libellés courts et boutons qui se partagent la largeur : la barre tient dans 360 px.
+    expect(within(bar).getByRole("button", { name: "Alerte" })).toHaveClass("flex-1");
+    expect(within(bar).getByRole("button", { name: /J'ai acheté/ })).toBeInTheDocument();
+    expect(within(bar).getByRole("button", { name: /alerte/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /J'ai acheté/ })).toHaveLength(1);
+  } finally {
+    setViewportWidth(1200);
+  }
 });

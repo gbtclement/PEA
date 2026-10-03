@@ -39,3 +39,4 @@ export function sseResponse(events: unknown[], { split = false } = {}) {
   });
   return new Response(body, { status: 200, headers: { "Content-Type": "text/event-stream" } });
 }
+export { setViewportWidth } from "./viewport";

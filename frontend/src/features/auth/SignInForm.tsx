@@ -72,7 +72,7 @@ export function SignInForm() {
           <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
           Rester connecté
         </label>
-        <Link to="/mot-de-passe-oublie" className="text-primary underline">Mot de passe oublié ?</Link>
+        <Link to="/mot-de-passe-oublie" className="text-primary underline max-md:inline-flex max-md:min-h-11 max-md:items-center">Mot de passe oublié ?</Link>
       </div>
       {siteKey && needCaptcha && <Turnstile key={captchaRound} siteKey={siteKey} onToken={setCaptcha} />}
       {googleError && !login.error && <p role="alert" className="text-sm text-red-600">{googleError}</p>}

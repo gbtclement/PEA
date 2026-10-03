@@ -192,3 +192,8 @@ body {
   .auth-art, .auth-candle, .auth-bar, .auth-badge, .auth-area, .auth-dot { animation: none; opacity: 1; }
   .auth-line { animation: none; stroke-dashoffset: 0; }
 }
+
+/* Téléphones : champs en 16 px, sinon iOS zoome la page à la saisie. */
+@media (max-width: 767px) {
+  input, select, textarea { font-size: 16px; }
+}

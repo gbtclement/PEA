@@ -15,7 +15,7 @@ type Security = { id: number; name: string; price: number | null; currency: stri
 
 const toText = (value: number | null) => (value == null ? "" : value.toFixed(2).replace(".", ","));
 
-export function PriceAlertButton({ security }: { security: Security }) {
+export function PriceAlertButton({ security, compact = false }: { security: Security; compact?: boolean }) {  // compact : barre du bas
   const { me } = useMe();
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,8 +41,9 @@ export function PriceAlertButton({ security }: { security: Security }) {
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => (me === null ? navigate(loginPath(location)) : setOpen(true))}>
-        <Bell className="size-4" aria-hidden />Créer une alerte
+      <Button variant="outline" size="sm" className={compact ? "flex-1" : undefined}
+              onClick={() => (me === null ? navigate(loginPath(location)) : setOpen(true))}>
+        <Bell className="size-4" aria-hidden />{compact ? "Alerte" : "Créer une alerte"}
       </Button>
       <Dialog open={open} onOpenChange={(next) => { setOpen(next); if (!next) create.reset(); }}>
         <DialogContent className="sm:max-w-sm">

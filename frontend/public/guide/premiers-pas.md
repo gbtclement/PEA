@@ -2,9 +2,11 @@
 
 Un parcours type, de la découverte d'une action jusqu'au suivi de votre achat.
 
+Cotalyx fonctionne aussi sur téléphone : le menu s'ouvre avec le bouton ☰ en haut à gauche, et sur la fiche d'un titre les actions (favori, alerte, achat, assistant) sont dans la barre en bas de l'écran.
+
 ## 1. Créer votre compte
 
-Cliquez sur **Créer un compte** en bas de la barre latérale, puis saisissez le code reçu par mail. Le compte est gratuit : il garde votre portefeuille, vos favoris et vos réglages. Voir [Votre compte](app/compte.md).
+Cliquez sur **Créer un compte** en bas de la barre latérale (dans le menu ☰ sur téléphone), puis saisissez le code reçu par mail. Le compte est gratuit : il garde votre portefeuille, vos favoris et vos réglages. Voir [Votre compte](app/compte.md).
 
 ## 2. Régler vos enveloppes et vos frais
 

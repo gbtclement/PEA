@@ -43,7 +43,7 @@ function SortButton({ label, sortKey, sort, onSort, className }: {
   const active = sort.key === sortKey;
   return (
     <button type="button" onClick={() => onSort(sortKey)}
-            className={cn("inline-flex items-center gap-1 whitespace-nowrap hover:text-foreground", active && "text-foreground", className)}>
+            className={cn("inline-flex items-center gap-1 whitespace-nowrap hover:text-foreground max-md:min-h-11", active && "text-foreground", className)}>
       {label}
       {active && (sort.desc ? <ArrowDown className="size-3" aria-hidden /> : <ArrowUp className="size-3" aria-hidden />)}
     </button>
@@ -101,7 +101,7 @@ export function SignalStatsView() {
       </div>
       <Card className="overflow-hidden py-0">
         <div className="overflow-x-auto">
-          <table aria-label="Statistiques des signaux" className="w-full text-sm tabular-nums">
+          <table aria-label="Statistiques des signaux" className="w-full min-w-[560px] text-sm tabular-nums">
             <thead>
               <tr className="border-b border-border text-xs text-muted-foreground">
                 <th scope="col" className="px-3 py-2 text-left font-medium" aria-sort={ariaSort(sort, "label")}>

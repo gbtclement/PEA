@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiGet, type HistoryOut } from "@/lib/api/client";
+import { useIsMobile } from "@/lib/useIsMobile";
 import { PriceChart } from "./PriceChart";
 
 const PERIODS = [
@@ -22,6 +23,8 @@ export function PriceChartPanel({ securityId }: { securityId: number }) {
   const [draft, setDraft] = useState({ start: "", end: "" });
   const [range, setRange] = useState<{ start: string; end: string } | null>(null);
   const [toggles, setToggles] = useState({ sma50: true, sma200: true, rsi: false, macd: false });
+  const mobile = useIsMobile();
+  const [showIndicators, setShowIndicators] = useState(false);  // téléphone : cases repliées dans un menu
   const [basePeriod, setBasePeriod] = useState<Exclude<Period, "custom">>("6M");
   const custom = period === "custom";
   // En « Personnalisé » sans dates appliquées, la dernière période choisie reste chargée : graphique et bornes des dates.
@@ -57,34 +60,40 @@ export function PriceChartPanel({ securityId }: { securityId: number }) {
     </label>
   );
 
+  const indicators = <>{toggle("sma50", "MM50")}{toggle("sma200", "MM200")}{toggle("rsi", "RSI")}{toggle("macd", "MACD")}</>;
+
   return (
     <Card>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-1">
+          <div role="group" aria-label="Période" className="-mx-1 flex max-w-full gap-1 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible md:pb-0">
             {PERIODS.map((p) => (
-              <Button key={p.value} size="sm" variant={p.value === period ? "default" : "outline"} onClick={() => choose(p.value)}>
+              <Button key={p.value} size="sm" variant={p.value === period ? "default" : "outline"} onClick={() => choose(p.value)}
+                      className="shrink-0 max-md:min-h-11">
                 {p.label}
               </Button>
             ))}
           </div>
-          <div className="flex gap-4">
-            {toggle("sma50", "MM50")}
-            {toggle("sma200", "MM200")}
-            {toggle("rsi", "RSI")}
-            {toggle("macd", "MACD")}
-          </div>
+          {mobile ? (
+            <Button variant="outline" size="sm" className="min-h-11" aria-expanded={showIndicators}
+                    onClick={() => setShowIndicators((v) => !v)}>Indicateurs</Button>
+          ) : (
+            <div className="flex gap-4">{indicators}</div>
+          )}
         </div>
+        {mobile && showIndicators && (
+          <div role="group" aria-label="Indicateurs" className="flex flex-wrap gap-x-5 gap-y-2 [&_label]:min-h-11">{indicators}</div>
+        )}
         {custom && (
           <form className="flex flex-wrap items-center gap-2 text-sm"
                 onSubmit={(e) => { e.preventDefault(); if (!reversed && draft.start && draft.end) setRange({ ...draft }); }}>
             <label className="flex items-center gap-1.5">Du
-              <Input type="date" aria-label="Début" className="w-40 bg-white" value={draft.start}
+              <Input type="date" aria-label="Début" className="w-full bg-white sm:w-40" value={draft.start}
                      min={data?.first_date ?? undefined} max={data?.last_date ?? undefined}
                      onChange={(e) => setDraft({ ...draft, start: e.target.value })} />
             </label>
             <label className="flex items-center gap-1.5">au
-              <Input type="date" aria-label="Fin" className="w-40 bg-white" value={draft.end}
+              <Input type="date" aria-label="Fin" className="w-full bg-white sm:w-40" value={draft.end}
                      min={data?.first_date ?? undefined} max={data?.last_date ?? undefined}
                      onChange={(e) => setDraft({ ...draft, end: e.target.value })} />
             </label>
@@ -93,7 +102,7 @@ export function PriceChartPanel({ securityId }: { securityId: number }) {
           </form>
         )}
         {isPending ? (
-          <Skeleton className="h-[420px] w-full" />
+          <Skeleton className="h-[300px] w-full md:h-[420px]" />
         ) : isError ? (
           <p role="alert" className="py-20 text-center text-sm text-down">Impossible de charger le graphique.</p>
         ) : data.bars.length === 0 ? (

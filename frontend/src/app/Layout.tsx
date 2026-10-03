@@ -3,6 +3,7 @@ import { Toaster } from "sonner";
 import { AssistantPanelProvider } from "@/features/assistant/AssistantPanel";
 import { useMe } from "@/features/auth/useMe";
 import { AccountMenu } from "./AccountMenu";
+import { MobileHeader } from "./MobileHeader";
 import { MarketStatus } from "./MarketStatus";
 import { Sidebar } from "./Sidebar";
 import { SignUpBanner } from "./SignUpBanner";
@@ -19,15 +20,17 @@ export function Layout() {
   }
   return (
     <AssistantPanelProvider>
-      <div className="min-h-screen min-w-[1024px] bg-background text-foreground">
+      {/* Barre d'actions fixée en bas (fiche, téléphone) : place réservée sous le pied de page, qui reste lisible. */}
+      <div className="min-h-screen bg-background text-foreground max-md:has-[[data-bottom-bar]]:pb-[calc(3.75rem+env(safe-area-inset-bottom))]">
+        <MobileHeader footer={<MarketStatus />} account={<AccountMenu />} admin={me?.role === "admin"} />
         <Sidebar footer={<MarketStatus />} account={<AccountMenu />} admin={me?.role === "admin"} />
-        <main className="ml-60 px-8 py-6">
+        <main className="px-4 py-4 md:px-8 md:py-6 lg:ml-60">
           <div className="mx-auto max-w-[1400px]">
             <SignUpBanner />
             <Outlet />
           </div>
         </main>
-        <footer className="ml-60 px-8 pb-6">
+        <footer className="px-4 pb-6 md:px-8 lg:ml-60">
           <div className="mx-auto max-w-[1400px] space-y-1 border-t border-border pt-4 text-xs text-muted-foreground">
             <p>
               {SITE_NAME} est un outil d'aide à la décision et d'apprentissage, pas un conseil en investissement. Cours Yahoo Finance

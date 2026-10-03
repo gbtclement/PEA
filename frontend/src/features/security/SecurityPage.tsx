@@ -13,8 +13,10 @@ import { OrderDialog } from "@/features/portfolio/OrderDialog";
 import { ApiError, apiGet, type SecurityDetail } from "@/lib/api/client";
 import { currencyUnit, formatDateTime, formatPct, formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/lib/useIsMobile";
 import { ForecastCard } from "./ForecastCard";
 import { FundamentalsCard } from "./FundamentalsCard";
+import { MobileActionBar } from "./MobileActionBar";
 import { NewsCard } from "./NewsCard";
 import { PriceAlertButton } from "./PriceAlertButton";
 import { PriceChartPanel } from "./PriceChartPanel";
@@ -48,6 +50,7 @@ export function SecurityPage() {
   const id = Number(useParams().id);
   const [ordering, setOrdering] = useState(false);
   const { me } = useMe();
+  const mobile = useIsMobile();
   const navigate = useNavigate();
   const location = useLocation();
   const { data, isPending, error } = useQuery({
@@ -68,6 +71,16 @@ export function SecurityPage() {
     );
   }
   const change = data.change_pct ?? 0;
+  // Une seule copie des boutons : en haut sur ordinateur, dans la barre du bas sur téléphone.
+  // Téléphone : libellés courts et boutons qui se partagent la largeur (la barre tient dans 360 px).
+  const actions = (
+    <>
+      <Button variant="outline" size="sm" className={mobile ? "flex-1" : undefined}
+              onClick={() => (me === null ? navigate(loginPath(location)) : setOrdering(true))}>+ J'ai acheté</Button>
+      <AskAiButton security={{ id: data.id, name: data.name }} label shortLabel={mobile} className={mobile ? "flex-1" : undefined} />
+      <PriceAlertButton security={{ id: data.id, name: data.name, price: data.price, currency: data.currency }} compact={mobile} />
+    </>
+  );
   return (
     <section className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
@@ -75,13 +88,7 @@ export function SecurityPage() {
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-semibold tracking-tight">{data.name}</h1>
             <FavoriteButton securityId={data.id} isFavorite={data.is_favorite} />
-            {data.kind !== "index" && (
-              <>
-                <Button variant="outline" size="sm" className="ml-2" onClick={() => (me === null ? navigate(loginPath(location)) : setOrdering(true))}>+ J'ai acheté</Button>
-                <AskAiButton security={{ id: data.id, name: data.name }} label />
-                <PriceAlertButton security={{ id: data.id, name: data.name, price: data.price, currency: data.currency }} />
-              </>
-            )}
+            {data.kind !== "index" && !mobile && <div className="ml-2 flex flex-wrap items-center gap-2">{actions}</div>}
           </div>
           <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
             {data.symbol} · {data.market}{data.isin && ` · ${data.isin}`} <EnvelopeBadges codes={data.envelopes} />
@@ -92,7 +99,7 @@ export function SecurityPage() {
             </p>
           )}
         </div>
-        <div className="text-right">
+        <div className="w-full md:w-auto md:text-right">
           <p className="text-3xl font-semibold">{formatPrice(data.price)} {currencyUnit(data.currency)}</p>
           <p className={cn("text-sm font-medium", change > 0 && "text-up", change < 0 && "text-down")}>{formatPct(data.change_pct)} aujourd'hui</p>
           <p className="text-xs text-muted-foreground">Mis à jour {formatDateTime(data.as_of)}</p>
@@ -106,6 +113,7 @@ export function SecurityPage() {
         {data.kind === "stock" && <ForecastCard securityId={data.id} />}
         <NewsCard securityId={data.id} className={data.kind === "stock" ? "xl:col-span-2" : undefined} />
       </div>
+      {data.kind !== "index" && mobile && <MobileActionBar>{actions}</MobileActionBar>}
       <OrderDialog open={ordering} onOpenChange={setOrdering}
                    security={{ id: data.id, name: data.name, symbol: data.symbol, currency: data.currency, price: data.price }}
                    price={data.currency === "EUR" ? data.price : null} />

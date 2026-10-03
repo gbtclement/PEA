@@ -28,10 +28,10 @@ function IndexCard({ index }: { index: StatusResponse["indices"][number] }) {
 export function IndicesBar() {
   const { data } = useQuery({ queryKey: ["status"], queryFn: () => apiGet<StatusResponse>("/api/status"), refetchInterval: 60_000 });
   // Place réservée pendant le chargement : sans elle, toute la page descend quand les indices arrivent.
-  if (!data) return <div className="grid grid-cols-3 gap-4">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-[102px] rounded-xl" />)}</div>;
+  if (!data) return <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-[102px] rounded-xl" />)}</div>;
   if (!data.indices.length) return null;
   return (
-    <div className="grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
       {data.indices.map((index) => <IndexCard key={index.id} index={index} />)}
     </div>
   );

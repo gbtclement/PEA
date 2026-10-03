@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ME, PREMIUM_ME, mockFetch, renderWithProviders } from "@/test/utils";
+import { ME, PREMIUM_ME, mockFetch, renderWithProviders, setViewportWidth } from "@/test/utils";
 import { ForecastsPage } from "./ForecastsPage";
 
 let chosen: string[] = ["pea"];
@@ -182,4 +182,29 @@ test("sans enveloppe choisie, pas de case et tous les titres", async () => {
   renderPage();
   expect(await screen.findByText("Étranger")).toBeInTheDocument();
   expect(screen.queryByRole("checkbox", { name: "Mes enveloppes uniquement" })).not.toBeInTheDocument();
+});
+
+test("sur téléphone, une carte par prédiction avec les trois horizons", async () => {
+  setViewportWidth(390);
+  try {
+    renderPage();
+    const card = await screen.findByRole("link", { name: /LVMH/ });
+    expect(screen.queryByRole("columnheader")).not.toBeInTheDocument();
+    expect(within(card).getByText("1 semaine")).toBeInTheDocument();
+  } finally {
+    setViewportWidth(1200);
+  }
+});
+
+test("sur téléphone, un choix de tri remplace les en-têtes de colonnes", async () => {
+  setViewportWidth(390);
+  try {
+    renderPage();
+    const sort = await screen.findByRole("combobox", { name: "Trier par" });
+    await userEvent.selectOptions(sort, "1m");
+    expect(sort).toHaveValue("1m");
+    expect(screen.getByRole("combobox", { name: "Sens" })).toHaveTextContent("Hausse et baisse (1 mois)");
+  } finally {
+    setViewportWidth(1200);
+  }
 });

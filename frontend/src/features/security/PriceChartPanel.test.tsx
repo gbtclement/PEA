@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { mockFetch, renderWithProviders } from "@/test/utils";
+import { mockFetch, renderWithProviders, setViewportWidth } from "@/test/utils";
 import { PriceChartPanel } from "./PriceChartPanel";
 
 const { chart } = vi.hoisted(() => {
@@ -58,6 +58,8 @@ test("les heures intraday sont affichées à l'heure de Paris", async () => {
   mockFetch(() => ({ body: DAILY }));
   renderWithProviders(<PriceChartPanel securityId={5} />);
   await waitFor(() => expect(createChart).toHaveBeenCalled());
+  // Un glissement vertical sur le graphique fait défiler la page (téléphone) au lieu de déplacer le graphique.
+  expect(vi.mocked(createChart).mock.calls[0][1]).toMatchObject({ handleScroll: { vertTouchDrag: false } });
   const options = vi.mocked(createChart).mock.calls.at(-1)![1] as { localization: { timeFormatter: (t: number | string) => string } };
   expect(options.localization.timeFormatter(Date.UTC(2026, 8, 25, 7, 0) / 1000)).toContain("09:00");
 });
@@ -161,4 +163,19 @@ test("période personnalisée sans cours : message adapté, pas « bourse fermé
   await userEvent.click(screen.getByRole("button", { name: "Appliquer" }));
   expect(await screen.findByText(/Aucun cours sur cette période/)).toBeInTheDocument();
   expect(screen.queryByText(/bourse fermée/)).not.toBeInTheDocument();
+});
+
+test("sur téléphone, les indicateurs sont dans un menu et les périodes défilent", async () => {
+  setViewportWidth(390);
+  try {
+    mockFetch(() => ({ body: BOUNDED }));
+    renderWithProviders(<PriceChartPanel securityId={5} />);
+    await waitFor(() => expect(chart.addSeries).toHaveBeenCalled());
+    expect(screen.getByRole("group", { name: "Période" })).toHaveClass("overflow-x-auto");
+    expect(screen.queryByRole("checkbox", { name: "RSI" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Indicateurs" }));
+    expect(await screen.findByRole("checkbox", { name: "RSI" })).toBeInTheDocument();
+  } finally {
+    setViewportWidth(1200);
+  }
 });

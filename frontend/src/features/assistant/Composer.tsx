@@ -12,7 +12,7 @@ export function Composer({ onSend, onStop, streaming }: Props) {
     onSend(value);
   }
   return (
-    <form className="flex items-end gap-2" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+    <form className="flex items-end gap-2 max-md:sticky max-md:bottom-0 max-md:bg-background max-md:pb-[env(safe-area-inset-bottom)]" onSubmit={(e) => { e.preventDefault(); submit(); }}>
       <textarea
         aria-label="Votre question"
         rows={2}
@@ -30,8 +30,8 @@ export function Composer({ onSend, onStop, streaming }: Props) {
         }}
       />
       {streaming
-        ? <Button type="button" variant="outline" onClick={onStop}>Arrêter</Button>
-        : <Button type="submit" disabled={!text.trim()}>Envoyer</Button>}
+        ? <Button type="button" variant="outline" className="max-md:min-h-11" onClick={onStop}>Arrêter</Button>
+        : <Button type="submit" className="max-md:min-h-11" disabled={!text.trim()}>Envoyer</Button>}
     </form>
   );
 }

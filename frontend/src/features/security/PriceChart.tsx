@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { CandlestickSeries, createChart, HistogramSeries, LineSeries, type Time } from "lightweight-charts";
 import type { HistoryOut } from "@/lib/api/client";
+import { useIsMobile } from "@/lib/useIsMobile";
 
 const UP = "#16a34a";
 const DOWN = "#dc2626";
@@ -24,10 +25,13 @@ type Props = { history: HistoryOut; showSma50: boolean; showSma200: boolean; sho
 
 export function PriceChart({ history, showSma50, showSma200, showRsi, showMacd }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const mobile = useIsMobile();
 
   useEffect(() => {
     const chart = createChart(ref.current!, {
       autoSize: true,
+      // Glissement vertical sur le graphique : la page défile (téléphone), le graphique ne bouge que dans le sens horizontal.
+      handleScroll: { vertTouchDrag: false },
       layout: { background: { color: "#ffffff" }, textColor: "#52525b", attributionLogo: true, panes: { separatorColor: "#e4e4e7" } },
       grid: { vertLines: { color: "#f4f4f5" }, horzLines: { color: "#f4f4f5" } },
       localization: { locale: "fr-FR", priceFormatter: (p: number) => priceFormat.format(p), timeFormatter: formatTime },
@@ -72,6 +76,6 @@ export function PriceChart({ history, showSma50, showSma200, showRsi, showMacd }
     return () => chart.remove();
   }, [history, showSma50, showSma200, showRsi, showMacd]);
 
-  const height = 420 + (showRsi ? 110 : 0) + (showMacd ? 110 : 0);
+  const height = (mobile ? 300 : 420) + (showRsi ? 110 : 0) + (showMacd ? 110 : 0);  // téléphone : moins haut
   return <div ref={ref} role="img" aria-label="Graphique des cours en chandeliers avec volumes et indicateurs" style={{ height }} className="w-full" />;
 }

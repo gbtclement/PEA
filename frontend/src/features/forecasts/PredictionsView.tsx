@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import type { SortingState } from "@tanstack/react-table";
 import { DataTable, type ColumnSpec } from "@/components/DataTable";
 import { Card } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { EnvelopeBadges } from "@/features/explorer/EnvelopeBadges";
 import { useEnvelopes } from "@/features/settings/useEnvelopes";
 import type { ForecastRow } from "@/lib/api/client";
 import { formatPrice } from "@/lib/format";
+import { useIsMobile } from "@/lib/useIsMobile";
 import {
   FirstRunNotice, HORIZONS, RELIABILITY_ORDER, ReliabilityDot, ReliabilityLegend, SignalChip, roundPct, signedPct, tone,
   useForecasts, type HorizonKey,
@@ -33,6 +34,37 @@ function horizonColumn(key: HorizonKey, label: string): ColumnSpec<ForecastRow> 
       );
     },
   };
+}
+
+/** Téléphone : une prédiction par carte (nom, cours, signaux du jour, gain attendu par horizon). */
+function PredictionCard({ row }: { row: ForecastRow }) {
+  return (
+    <Link to={`/titres/${row.security.id}`} className="block rounded-xl border border-border bg-card p-3 text-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate font-medium">{row.security.name}</p>
+          <p className="truncate text-xs text-muted-foreground">{row.security.symbol} · {row.security.market}</p>
+        </div>
+        <span className="font-medium whitespace-nowrap tabular-nums">{formatPrice(row.security.price)}</span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1">
+        {row.signals.slice(0, MAX_CHIPS).map((s) => <SignalChip key={s.key} label={s.label} bullish={s.bullish} />)}
+      </div>
+      <dl className="mt-2 grid grid-cols-3 gap-2 text-center">
+        {HORIZONS.map((h) => {
+          const value = row.horizons[h.key];
+          return (
+            <div key={h.key}>
+              <dt className="text-xs text-muted-foreground">{h.label}</dt>
+              <dd className={value ? `font-medium ${tone(value.expected_return)}` : "text-muted-foreground"}>
+                {value ? signedPct(value.expected_return) : "—"}
+              </dd>
+            </div>
+          );
+        })}
+      </dl>
+    </Link>
+  );
 }
 
 const COLUMNS: ColumnSpec<ForecastRow>[] = [
@@ -67,6 +99,7 @@ type Direction = "tous" | "hausse" | "baisse";
 type MinReliability = "faible" | "moyenne" | "elevee";
 
 export function PredictionsView() {
+  const mobile = useIsMobile();  // téléphone : pas d'en-têtes de colonnes, un choix de tri à la place
   const navigate = useNavigate();
   const { data, isPending, isError } = useForecasts();
   const [sorting, setSorting] = useState<SortingState>([{ id: "1w", desc: true }]);
@@ -99,7 +132,7 @@ export function PredictionsView() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3 text-sm">
-        <Input type="search" aria-label="Rechercher" placeholder="Nom ou ticker…" className="w-56 bg-white" value={search}
+        <Input type="search" aria-label="Rechercher" placeholder="Nom ou ticker…" className="w-full bg-white sm:w-56" value={search}
                onChange={(e) => setSearch(e.target.value)} />
         {filtering.length > 0 && (
           <label className="flex items-center gap-1.5">
@@ -107,14 +140,22 @@ export function PredictionsView() {
             Mes enveloppes uniquement
           </label>
         )}
+        {mobile && (
+          <select aria-label="Trier par" value={sorting[0]?.id ?? "1w"}
+                  onChange={(e) => setSorting([{ id: e.target.value, desc: e.target.value !== "name" }])}
+                  className="h-8 w-full rounded-lg border border-input bg-white px-2 max-md:min-h-11 sm:w-auto">
+            {HORIZONS.map((h) => <option key={h.key} value={h.key}>Trier par gain attendu à {h.label}</option>)}
+            <option value="name">Trier par nom</option>
+          </select>
+        )}
         <select aria-label="Sens" value={direction} onChange={(e) => setDirection(e.target.value as Direction)}
-                className="h-8 rounded-lg border border-input bg-white px-2">
+                className="h-8 w-full rounded-lg border border-input bg-white px-2 max-md:min-h-11 sm:w-auto">
           <option value="tous">Hausse et baisse ({horizonLabel})</option>
           <option value="hausse">Hausse attendue ({horizonLabel})</option>
           <option value="baisse">Baisse attendue ({horizonLabel})</option>
         </select>
         <select aria-label="Fiabilité minimale" value={minReliability} onChange={(e) => setMinReliability(e.target.value as MinReliability)}
-                className="h-8 rounded-lg border border-input bg-white px-2">
+                className="h-8 w-full rounded-lg border border-input bg-white px-2 max-md:min-h-11 sm:w-auto">
           <option value="faible">Toute fiabilité</option>
           <option value="moyenne">Fiabilité moyenne ou élevée</option>
           <option value="elevee">Fiabilité élevée</option>
@@ -128,7 +169,7 @@ export function PredictionsView() {
         ) : (
           <DataTable rows={rows} columns={COLUMNS} sorting={sorting} onSortingChange={setSorting}
                      getRowId={(row) => String(row.security.id)} onRowClick={(row) => navigate(`/titres/${row.security.id}`)}
-                     heightClass="h-[calc(100vh-390px)] min-h-[360px]" />
+                     heightClass="h-[calc(100vh-390px)] min-h-[360px]" renderCard={(row) => <PredictionCard row={row} />} />
         )}
       </Card>
       <p className="text-xs text-muted-foreground">

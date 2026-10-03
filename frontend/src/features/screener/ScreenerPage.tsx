@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { buildColumns } from "./columns";
 import { filterRows, filtersFromParams, SORT_KEYS } from "./filters";
 import { ScreenerFilters } from "./ScreenerFilters";
+import { ScreenerCard } from "./ScreenerCard";
 import { DataTable } from "@/components/DataTable";
 import { type Region, useScreener } from "./useScreener";
 
@@ -65,13 +66,15 @@ export function ScreenerPage({ kind, title, description }: Props) {
       </header>
       <div className="mb-3 flex gap-1" role="group" aria-label="Région">
         {REGIONS.map((r) => (
-          <Button key={r.value} size="sm" variant={r.value === region ? "default" : "outline"} aria-pressed={r.value === region}
+          <Button key={r.value} size="sm" variant={r.value === region ? "default" : "outline"} aria-pressed={r.value === region} className="max-md:min-h-11"
                   onClick={() => chooseRegion(r.value)}>
             {r.label}
           </Button>
         ))}
       </div>
-      <ScreenerFilters rows={data ?? []} filters={filters} onChange={update} count={rows.length} />
+      <ScreenerFilters rows={data ?? []} filters={filters} onChange={update} count={rows.length}
+                       sort={{ key: sorting[0].id, desc: sorting[0].desc }}
+                       onSortChange={(key, desc) => onSortingChange([{ id: key, desc }])} />
       <Card className="mt-4 overflow-hidden py-0">
         {isPending ? (
           <div className="space-y-3 p-6">{Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-10 w-full" />)}</div>
@@ -83,7 +86,7 @@ export function ScreenerPage({ kind, title, description }: Props) {
           </p>
         ) : (
           <DataTable rows={rows} columns={columns} sorting={sorting} onSortingChange={onSortingChange}
-                         onRowClick={(row) => navigate(`/titres/${row.id}`)} />
+                     onRowClick={(row) => navigate(`/titres/${row.id}`)} renderCard={(row) => <ScreenerCard row={row} />} />
         )}
       </Card>
     </section>

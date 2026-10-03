@@ -1,8 +1,9 @@
-import { useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { flexRender, getCoreRowModel, getSortedRowModel, useReactTable, type ColumnDef, type SortingState } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/lib/useIsMobile";
 /** Colonne de tableau : largeur CSS grid (ex. "80px" ou "minmax(150px, 2fr)") et alignement. */
 export type ColumnSpec<T> = ColumnDef<T> & { width: string; align?: "right" };
 
@@ -15,14 +16,21 @@ type Props<T> = {
   getRowId?: (row: T) => string;
   /** Hauteur de la zone qui défile (classes Tailwind). */
   heightClass?: string;
+  /** Téléphone : une carte par ligne au lieu des colonnes (même tri, même virtualisation). */
+  renderCard?: (row: T) => ReactNode;
+  /** Hauteur de la liste de cartes sur téléphone. */
+  cardHeightClass?: string;
 };
 
 const ROW_HEIGHT = 56;
+const CARD_HEIGHT = 112;  // estimation, mesurée ensuite ligne par ligne
 const COLUMN_GAP = 6;  // px, doit correspondre à gap-x-1.5
 
 /** Tableau triable et virtualisé : l'en-tête colle en haut et partage le défilement des lignes (colonnes alignées). */
 export function DataTable<T>({ rows, columns, sorting, onSortingChange, onRowClick, getRowId,
-                              heightClass = "h-[calc(100vh-270px)] min-h-[400px]" }: Props<T>) {
+                              heightClass = "h-[calc(100vh-270px)] min-h-[400px]", renderCard,
+                              cardHeightClass = "h-[calc(100dvh-220px)] min-h-[360px]" }: Props<T>) {
+  const cards = useIsMobile() && renderCard !== undefined;
   const table = useReactTable({
     data: rows,
     columns,
@@ -39,16 +47,33 @@ export function DataTable<T>({ rows, columns, sorting, onSortingChange, onRowCli
   const virtualizer = useVirtualizer({
     count: tableRows.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: () => (cards ? CARD_HEIGHT : ROW_HEIGHT),
     overscan: 12,
     initialRect: { width: 1200, height: 800 },
-    scrollMargin: bodyRef.current?.offsetTop ?? 0,  // les lignes commencent sous l'en-tête collant
+    scrollMargin: cards ? 0 : bodyRef.current?.offsetTop ?? 0,  // les lignes commencent sous l'en-tête collant (pas d'en-tête en cartes)
   });
+  // Rotation (cartes ⇄ lignes) : oublier les hauteurs mesurées dans l'autre mode, sinon des trous entre les lignes.
+  useEffect(() => virtualizer.measure(), [cards]); // eslint-disable-line react-hooks/exhaustive-deps
   const template = columns.map((c) => c.width).join(" ");
   // Largeur minimale des colonnes + marges : en dessous, le tableau défile horizontalement au lieu d'être coupé.
   // En-tête et lignes partagent le même conteneur de défilement : la barre verticale réduit leur largeur à tous
   // les deux, les colonnes restent donc alignées.
   const minWidth = columns.reduce((sum, c) => sum + Number(/(\d+)px/.exec(c.width)?.[1] ?? 0), 32 + COLUMN_GAP * (columns.length - 1));
+
+  if (cards) {
+    return (
+      <div ref={scrollRef} className={cn(cardHeightClass, "overflow-auto")}>
+        <div ref={bodyRef} style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+          {virtualizer.getVirtualItems().map((item) => (
+            <div key={item.key} data-index={item.index} ref={virtualizer.measureElement} className="absolute inset-x-0 pb-2"
+                 style={{ transform: `translateY(${item.start - virtualizer.options.scrollMargin}px)` }}>
+              {renderCard!(tableRows[item.index].original)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div role="table" aria-rowcount={tableRows.length + 1} ref={scrollRef}

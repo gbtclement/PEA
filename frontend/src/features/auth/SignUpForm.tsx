@@ -60,7 +60,7 @@ export function SignUpForm() {
         <p className="text-sm text-muted-foreground">Gratuit, sans engagement.</p>
       </div>
       <GoogleButton suite={params.get("suite")} remember />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field id="signup-first-name" label="Prénom">
           <Input id="signup-first-name" value={firstName} onChange={(e) => setFirstName(e.target.value)}
                  autoComplete="given-name" required maxLength={100} autoFocus className="bg-white" />

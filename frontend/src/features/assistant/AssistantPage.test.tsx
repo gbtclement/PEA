@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Link } from "react-router";
-import { mockFetch, renderWithProviders } from "@/test/utils";
+import { mockFetch, renderWithProviders, setViewportWidth } from "@/test/utils";
 import { AssistantPage } from "./AssistantPage";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -53,4 +53,41 @@ test("membre gratuit : ne demande ni la liste ni une conversation", async () => 
   renderWithProviders(<AssistantPage />, { route: "/assistant?c=3" });
   expect(await screen.findByText("Réservé aux membres Premium")).toBeInTheDocument();
   expect(fetch.mock.calls.map(([url]) => String(url)).filter((url) => url.includes("/conversations"))).toEqual([]);
+});
+
+test("sur téléphone, la conversation prend l'écran et la liste s'ouvre à la demande", async () => {
+  setViewportWidth(390);
+  try {
+    mockFetch((url) => {
+      if (url === "/api/assistant/status") return { body: { available: true, reason: null, spent_usd: 0.5, limit_usd: 5, model: "Claude Opus 5 (recommandé)" } };
+      if (url === "/api/assistant/conversations") return { body: [item(2, "Mon portefeuille", 0.0421)] };
+      return { body: {} };
+    });
+    renderWithProviders(<AssistantPage />);
+    expect(await screen.findByRole("heading", { level: 1, name: "Assistant IA" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "+ Nouvelle conversation" })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Conversations" }));
+    expect(await screen.findByRole("button", { name: "+ Nouvelle conversation" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Mon portefeuille/ })).toBeInTheDocument();
+  } finally {
+    setViewportWidth(1200);
+  }
+});
+
+test("tourner le téléphone garde la conversation et la question en cours de saisie", async () => {
+  const { act } = await import("@testing-library/react");
+  mockFetch((url) => {
+    if (url === "/api/assistant/status") return { body: { available: true, reason: null, spent_usd: 0.5, limit_usd: 5, model: "Claude Opus 5 (recommandé)" } };
+    if (url === "/api/assistant/conversations") return { body: [] };
+    return { body: {} };
+  });
+  renderWithProviders(<AssistantPage />);
+  const box = await screen.findByRole("textbox", { name: "Votre question" });
+  await userEvent.type(box, "Que penser de LVMH ?");
+  try {
+    act(() => setViewportWidth(390));
+    expect(screen.getByRole("textbox", { name: "Votre question" })).toHaveValue("Que penser de LVMH ?");
+  } finally {
+    act(() => setViewportWidth(1200));
+  }
 });

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import type { OrderOut } from "@/lib/api/client";
 import { formatDate, formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/lib/useIsMobile";
 import { useDeleteOrder } from "./api";
 
 const TH = "px-3 py-2 text-right text-xs font-medium text-muted-foreground";
@@ -12,6 +13,7 @@ const TD = "px-3 py-2 text-right tabular-nums";
 
 export function OrdersHistory({ orders, onEdit }: { orders: OrderOut[]; onEdit: (order: OrderOut) => void }) {
   const remove = useDeleteOrder();
+  const mobile = useIsMobile();  // téléphone : une carte par ordre
   const [error, setError] = useState<string | null>(null);
 
   function confirmDelete(order: OrderOut) {
@@ -27,6 +29,29 @@ export function OrdersHistory({ orders, onEdit }: { orders: OrderOut[]; onEdit: 
   return (
     <div className="space-y-2">
       {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-down">{error}</p>}
+      {mobile ? (
+        <ul aria-label="Ordres" className="space-y-2">
+          {orders.map((order) => (
+            <li key={order.id} className="rounded-xl border border-border p-3 text-sm">
+              <div className="flex items-center justify-between gap-2">
+                <span className="tabular-nums text-muted-foreground">{formatDate(order.trade_date)}</span>
+                <Badge variant={order.side === "buy" ? "secondary" : "outline"}>{order.side === "buy" ? "Achat" : "Vente"}</Badge>
+              </div>
+              <p className="mt-1 font-medium">{order.name}</p>
+              {order.note && <p className="text-xs text-muted-foreground">📝 {order.note}</p>}
+              <p className="mt-1 tabular-nums">
+                {order.quantity} × {formatPrice(order.unit_price)} € + {formatPrice(order.fee)} € de frais = <span className="font-medium">{formatPrice(order.amount)} €</span>
+              </p>
+              <div className="mt-2 flex gap-2 [&_button]:min-h-11">
+                <Button variant="outline" size="sm" onClick={() => onEdit(order)}
+                        aria-label={`Modifier l'ordre du ${formatDate(order.trade_date)}`}>Modifier</Button>
+                <Button variant="outline" size="sm" className="text-down" disabled={remove.isPending} onClick={() => confirmDelete(order)}
+                        aria-label={`Supprimer l'ordre du ${formatDate(order.trade_date)}`}>Supprimer</Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
       <table className="w-full text-sm">
         <thead className="border-b border-border">
           <tr>
@@ -65,6 +90,7 @@ export function OrdersHistory({ orders, onEdit }: { orders: OrderOut[]; onEdit: 
           ))}
         </tbody>
       </table>
+      )}
     </div>
   );
 }

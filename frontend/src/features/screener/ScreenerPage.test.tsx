@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router";
-import { mockFetch, renderWithProviders } from "@/test/utils";
+import { mockFetch, renderWithProviders, setViewportWidth } from "@/test/utils";
 import { ScreenerPage } from "./ScreenerPage";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -108,4 +108,19 @@ test("le cours affiche sa devise", async () => {
   );
   expect(await screen.findByText("101,00 €")).toBeInTheDocument();
   expect(screen.getByText("250,00 USD")).toBeInTheDocument();
+});
+
+test("sur téléphone, une carte par titre et les filtres dans un panneau", async () => {
+  setViewportWidth(390);
+  try {
+    renderPage();
+    await screen.findByText("LVMH");
+    expect(screen.queryByRole("columnheader")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /Airbus|Danone|LVMH/ })).toHaveLength(3);
+    await userEvent.click(screen.getByRole("button", { name: /Filtres/ }));
+    expect(await screen.findByRole("combobox", { name: "Secteur" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Trier par" })).toBeInTheDocument();
+  } finally {
+    setViewportWidth(1200);
+  }
 });

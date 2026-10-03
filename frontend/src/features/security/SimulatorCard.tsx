@@ -60,7 +60,7 @@ export function SimulatorCard({ securityId }: { securityId: number }) {
               </select>
             </>
           )}
-          <Button type="submit" size="sm">Simuler</Button>
+          <Button type="submit" size="sm" className="max-md:min-h-11">Simuler</Button>
         </form>
         {fee.data && (
           <p className="text-muted-foreground">
